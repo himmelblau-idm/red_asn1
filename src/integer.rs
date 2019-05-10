@@ -1,9 +1,28 @@
 use super::tag::Tag;
-use super::traits::{Asn1Object, Asn1InstanciableObject, Asn1Tagged};
+use super::traits::{Asn1Object, Asn1InstanciableObject, Asn1Tagged, Asn1Factory};
 use super::error::Asn1Error;
 use std::result::Result;
 
 pub static INTEGER_TAG_NUMBER: u8 = 0x2;
+
+#[allow(non_upper_case_globals)]
+pub static IntegerType: &IntegerFactory = &IntegerFactory{};
+
+
+pub struct IntegerFactory;
+
+impl Asn1Factory for IntegerFactory {
+
+    fn type_tag(&self) -> Tag {
+        return Tag::new_primitive_universal(INTEGER_TAG_NUMBER);
+    }
+
+    fn new_asn1(&self) -> Box<Asn1Object> {
+        return Box::new(Integer::new_default());
+    }
+}
+
+
 
 #[derive(Debug, PartialEq)]
 pub struct Integer {
@@ -16,6 +35,8 @@ impl Asn1Tagged for Integer {
         return Tag::new_primitive_universal(INTEGER_TAG_NUMBER);
     }
 }
+
+
 
 impl Asn1Object for Integer {    
 

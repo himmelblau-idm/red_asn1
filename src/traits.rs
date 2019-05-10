@@ -119,6 +119,11 @@ pub trait Asn1InstanciableObject: Asn1Object {
     fn new_default() -> Self;
 }
 
+pub trait Asn1Factory {
+    fn type_tag(&self) -> Tag;
+    fn new_asn1(&self) -> Box<Asn1Object>;
+}
+
 
 #[cfg(test)]
 mod tests {
