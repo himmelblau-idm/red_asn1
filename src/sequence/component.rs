@@ -1,5 +1,5 @@
 use super::super::tag::{Tag, TagClass, TagType};
-use super::super::traits::{Asn1Object, Asn1Factory};
+use super::super::traits::{Asn1Object, Asn1Tagged};
 use super::super::error::Asn1Error;
 use std::result::Result;
 
@@ -8,37 +8,34 @@ pub enum SeqCompOptionality {
     Optional
 }
 
-
 pub struct SequenceComponent<'a, 'b: 'a> {
     identifier: String,
     context_tag: Option<Tag>,
-    subtype_tag: Tag,
-    subtype: Box<&'a (Asn1Factory + 'b)>,
     optional: bool,
-    subtype_instance: Option<Box<Asn1Object>>,
-    subtype_value: Option<Box<&'a (Asn1Object + 'b)>>
+    subtype_tag: Tag,
+    subtype_value: Option<Box<&'a mut (Asn1Object + 'b)>>,
+    last_value_was_decoded: bool
 }
 
 impl<'a, 'b> SequenceComponent<'a, 'b> {
 
-    pub fn new(identifier: String, context_tag_number: Option<u8>, subtype: Box<&'a (Asn1Factory + 'b)>, optionality: SeqCompOptionality) 
-    -> Result<SequenceComponent<'a, 'b>, Asn1Error> {
+    pub fn new<T: Asn1Tagged>(identifier: String, context_tag_number: Option<u8>, optionality: SeqCompOptionality) 
+    -> SequenceComponent<'a, 'b> {
         let mut sequence_component = SequenceComponent{
             identifier,
             context_tag: None,
-            subtype_tag: subtype.type_tag(),
-            subtype,
+            subtype_tag: T::type_tag(),
             optional: false,
-            subtype_instance: None,
-            subtype_value: None
+            subtype_value: None,
+            last_value_was_decoded: false
         };
-        sequence_component._set_optionality(optionality)?;
+        sequence_component._set_optionality(optionality);
         sequence_component._calculate_tag(context_tag_number);
 
-        return Ok(sequence_component);
+        return sequence_component;
     }
 
-    fn _set_optionality(&mut self, optionality: SeqCompOptionality) -> Result<(), Asn1Error> {
+    fn _set_optionality(&mut self, optionality: SeqCompOptionality) {
         match optionality {
             SeqCompOptionality::Optional => {
                 self.optional = true;
@@ -47,7 +44,6 @@ impl<'a, 'b> SequenceComponent<'a, 'b> {
                 self.optional = false;
             }
         }
-        return Ok(());
     }
 
     fn _calculate_tag(&mut self, context_tag_number: Option<u8>) {
@@ -66,12 +62,13 @@ impl<'a, 'b> SequenceComponent<'a, 'b> {
         return &self.identifier;
     }
 
-    pub fn set_value(&mut self, value: Box<&'a (Asn1Object + 'b)>) -> Result<(),Asn1Error> {
+    pub fn set_value(&mut self, value: Box<&'a mut (Asn1Object + 'b)>) -> Result<(),Asn1Error> {
         if value.tag() != &self.subtype_tag {
             return Err(Asn1Error::new("Invalid type".to_string()));
         }
 
         self.subtype_value = Some(value);
+        self.last_value_was_decoded = false;
         return Ok(());
     }
 
@@ -107,21 +104,15 @@ impl<'a, 'b> SequenceComponent<'a, 'b> {
 
 
     fn _decode_inner(&mut self, raw: &[u8]) -> Result<usize,Asn1Error> {
-        match self.subtype_instance {
-            Some(ref value) => {
+        match &mut self.subtype_value {
+            Some(value) => {
                 let consumed_octets = value.decode(raw)?;
-                // obter dalgunha forma a referencia ao interior da Box
-                self.subtype_value = Some(*(&value));
                 return Ok(consumed_octets);
-            }
+            },
             None => {
-                let mut subtype_instance = self.subtype.new_asn1();
-                let consumed_octets = subtype_instance.decode(raw)?;
-                self.subtype_instance = Some(subtype_instance);
-                self.subtype_value = Some()
-                return Ok(consumed_octets);
+                return Err(Asn1Error::new("No value provided for decoding".to_string()));
             }
-        }
+        };
     }
 
 }

@@ -1,27 +1,9 @@
 use super::tag::Tag;
-use super::traits::{Asn1Object, Asn1InstanciableObject, Asn1Tagged, Asn1Factory};
+use super::traits::{Asn1Object, Asn1InstanciableObject, Asn1Tagged};
 use super::error::Asn1Error;
 use std::result::Result;
 
 pub static OCTET_STRING_TAG_NUMBER: u8 = 0x4;
-
-#[allow(non_upper_case_globals)]
-pub static OctetStringType: &OctetStringFactory = &OctetStringFactory{};
-
-
-pub struct OctetStringFactory;
-
-impl Asn1Factory for OctetStringFactory {
-
-    fn type_tag(&self) -> Tag {
-        return Tag::new_primitive_universal(OCTET_STRING_TAG_NUMBER);
-    }
-
-    fn new_asn1(&self) -> Box<Asn1Object> {
-        return Box::new(OctetString::new_default());
-    }
-}
-
 
 #[derive(Debug, PartialEq)]
 pub struct OctetString {

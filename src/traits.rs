@@ -2,6 +2,7 @@ use super::tag::Tag;
 use super::error::Asn1Error;
 use std::result::Result;
 
+
 pub trait Asn1Tagged {
     fn type_tag() -> Tag;
 }
@@ -117,11 +118,6 @@ pub trait Asn1Object {
 pub trait Asn1InstanciableObject: Asn1Object {
 
     fn new_default() -> Self;
-}
-
-pub trait Asn1Factory {
-    fn type_tag(&self) -> Tag;
-    fn new_asn1(&self) -> Box<Asn1Object>;
 }
 
 

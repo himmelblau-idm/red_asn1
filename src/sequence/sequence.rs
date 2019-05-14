@@ -1,5 +1,5 @@
 use super::super::tag::{Tag, TagClass, TagType};
-use super::super::traits::{Asn1Object, Asn1Factory, Asn1Tagged};
+use super::super::traits::{Asn1Object, Asn1Tagged};
 use super::super::error::Asn1Error;
 use super::component::{SequenceComponent, SeqCompOptionality};
 use std::result::Result;
@@ -82,19 +82,17 @@ impl<'a, 'b> Sequence<'a, 'b> {
         };
     }
 
-    pub fn def(&mut self, identifier: &str, context_tag_number: Option<u8>, subtype: Box<&'a (Asn1Factory + 'b)>) -> Result<(), Asn1Error> {
-        self.components.push(SequenceComponent::new(identifier.to_string(), context_tag_number, 
-                                subtype, SeqCompOptionality::Required)?);
-        return Ok(());
+    pub fn def<T: Asn1Tagged>(&mut self, identifier: &str, context_tag_number: Option<u8>) {
+        self.components.push(SequenceComponent::new::<T>(identifier.to_string(), context_tag_number, 
+                             SeqCompOptionality::Required));
     }
 
-    pub fn def_optional(&mut self, identifier: &str, context_tag_number: Option<u8>, subtype: Box<&'a (Asn1Factory + 'b)>) -> Result<(), Asn1Error> {
-        self.components.push(SequenceComponent::new(identifier.to_string(), context_tag_number, 
-                                subtype, SeqCompOptionality::Optional)?);
-        return Ok(());
+    pub fn def_optional<T: Asn1Tagged>(&mut self, identifier: &str, context_tag_number: Option<u8>) {
+        self.components.push(SequenceComponent::new::<T>(identifier.to_string(), context_tag_number, 
+                             SeqCompOptionality::Optional));
     }
 
-    pub fn set_value(&mut self, identifier: &str, value: Box<&'a (Asn1Object + 'b)>) -> Result<(), Asn1Error> {
+    pub fn set_value(&mut self, identifier: &str,  value: Box<&'a mut (Asn1Object + 'b)>) -> Result<(), Asn1Error> {
         for component in self.components.iter_mut() {
             if identifier == component.identifier() {
                 return component.set_value(value);
@@ -179,25 +177,24 @@ impl<'a, 'b> Sequence<'a, 'b> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::super::super::integer::{Integer, IntegerType, INTEGER_TAG_NUMBER};
-    use super::super::super::octetstring::{OctetString, OctetStringType, OCTET_STRING_TAG_NUMBER};
+    use super::super::super::integer::{Integer, INTEGER_TAG_NUMBER};
+    use super::super::super::octetstring::{OctetString, OCTET_STRING_TAG_NUMBER};
 
     #[test]
     fn test_encode_sequence() {
         let mut sequence = Sequence::new();
         
-        sequence.def("id", Some(0), Box::new(IntegerType)).unwrap();
-        sequence.def("data", Some(1), Box::new(OctetStringType)).unwrap();
+        sequence.def::<Integer>("id", Some(0));
+        sequence.def::<OctetString>("data", Some(1));
 
-        let inte = Integer::new(9);
-        let octet_str = OctetString::new(vec![0x1,0x2,0x3,0x4]);
+        let mut inte = Integer::new(9);
+        let mut octet_str = OctetString::new(vec![0x1,0x2,0x3,0x4]);
 
-        sequence.set_value("id", Box::new(& inte)).unwrap();
-        sequence.set_value("data", Box::new(& octet_str)).unwrap();
+        sequence.set_value("id", Box::new(&mut inte)).unwrap();
+        sequence.set_value("data", Box::new(&mut octet_str)).unwrap();
 
         assert_eq!(vec![0x30, 0xd, 
         0xa0,  0x3, INTEGER_TAG_NUMBER, 0x1, 0x9, 
@@ -208,14 +205,14 @@ mod tests {
     #[test]
     fn test_encode_sequence_without_context_tags() {
         let mut sequence = Sequence::new();
-        sequence.def("id", None, Box::new(IntegerType)).unwrap();
-        sequence.def("data", None, Box::new(OctetStringType)).unwrap();
+        sequence.def::<Integer>("id", None);
+        sequence.def::<OctetString>("data", None);
 
-        let inte = Integer::new(9);
-        let octet_str = OctetString::new(vec![0x1,0x2,0x3,0x4]);
+        let mut inte = Integer::new(9);
+        let mut octet_str = OctetString::new(vec![0x1,0x2,0x3,0x4]);
 
-        sequence.set_value("id", Box::new(& inte)).unwrap();
-        sequence.set_value("data", Box::new(& octet_str)).unwrap();
+        sequence.set_value("id", Box::new(&mut inte)).unwrap();
+        sequence.set_value("data", Box::new(&mut octet_str)).unwrap();
 
         assert_eq!(vec![0x30, 0x9, INTEGER_TAG_NUMBER, 0x1, 0x9, OCTET_STRING_TAG_NUMBER, 0x4, 0x1, 0x2, 0x3, 0x4], sequence.encode().unwrap());
     }
@@ -223,7 +220,7 @@ mod tests {
     #[test]
     fn test_encode_with_optional() {
         let mut sequence = Sequence::new();
-        sequence.def_optional("id", Some(0), Box::new(IntegerType)).unwrap();
+        sequence.def_optional::<Integer>("id", Some(0));
 
         assert_eq!(vec![0x30, 0x0], sequence.encode().unwrap());
     }
@@ -232,16 +229,18 @@ mod tests {
     #[test]
     fn test_set_component_value_of_incorrect_type() {
         let mut sequence = Sequence::new();
-        sequence.def("id", Some(0), Box::new(OctetStringType)).unwrap();
+        sequence.def::<OctetString>("id", Some(0));
 
-        sequence.set_value("id", Box::new(&mut Integer::new(9))).unwrap();
+        let mut inte = Integer::new(9);
+
+        sequence.set_value("id", Box::new(&mut inte)).unwrap();
     }
 
     #[should_panic(expected = "No value provided")]
     #[test]
     fn test_encode_without_give_required_values() {
         let mut sequence = Sequence::new();
-        sequence.def("id", Some(0), Box::new(IntegerType)).unwrap();
+        sequence.def::<Integer>("id", Some(0));
         sequence.encode().unwrap();
     }
 
@@ -304,13 +303,12 @@ mod tests {
     #[test]
     fn test_decode() {
         let mut sequence = Sequence::new();
-        // pasar de tercer argumento un singleton que proporcione la tag del tipo y también instancias del mismo...
-        sequence.def("id", Some(0), Box::new(IntegerType)).unwrap();
-        sequence.def("data", Some(1), Box::new(OctetStringType)).unwrap();
+        
+        sequence.def::<Integer>("id", Some(0));
+        sequence.def::<OctetString>("data", Some(1));
 
-        /*
-        let mut inte = Integer::new_default();
-        let mut octet_str = OctetString::new_default();
+        let mut inte = Integer::new(9);
+        let mut octet_str = OctetString::new(vec![0x1,0x2,0x3,0x4]);
 
         sequence.set_value("id", Box::new(&mut inte)).unwrap();
         sequence.set_value("data", Box::new(&mut octet_str)).unwrap();
@@ -319,21 +317,15 @@ mod tests {
                         0xa0,  0x3, INTEGER_TAG_NUMBER, 0x1, 0x9, 
                         0xa1, 0x6, OCTET_STRING_TAG_NUMBER, 0x4, 0x1, 0x2, 0x3, 0x4]).unwrap();
         
-
-        
-        let inte = sequence.get_value("id").unwrap();
-        let octet_str = sequence.get_value("data").unwrap();
-
-
         assert_eq!(&9, inte.value());
-        assert_eq!(&[0x1, 0x2, 0x3, 0x4], octet_str.value());*/
+        assert_eq!(&[0x1, 0x2, 0x3, 0x4], octet_str.value());
     }
 
     #[test]
     fn test_decode_without_context_tags() {
         let mut sequence = Sequence::new();
-        sequence.def("id", None, Box::new(IntegerType)).unwrap();
-        sequence.def("data", None, Box::new(OctetStringType)).unwrap();
+        sequence.def::<Integer>("id", None);
+        sequence.def::<OctetString>("data", None);
 
         let mut inte = Integer::new(9);
         let mut octet_str = OctetString::new(vec![0x1,0x2,0x3,0x4]);

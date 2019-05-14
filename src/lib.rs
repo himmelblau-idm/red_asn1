@@ -13,9 +13,9 @@ mod error;
 
 pub use traits::{Asn1Object, Asn1InstanciableObject, Asn1Tagged};
 pub use boolean::{Boolean, BOOLEAN_TAG_NUMBER};
-pub use integer::{Integer, IntegerType, INTEGER_TAG_NUMBER};
+pub use integer::{Integer, INTEGER_TAG_NUMBER};
 pub use bitstring::{BitSring, BIT_STRING_TAG_NUMBER};
-pub use octetstring::{OctetString, OctetStringType, OCTET_STRING_TAG_NUMBER};
+pub use octetstring::{OctetString, OCTET_STRING_TAG_NUMBER};
 pub use sequence::{Sequence, SEQUENCE_TAG_NUMBER};
 pub use ia5string::{IA5String, IA5STRING_TAG_NUMBER};
 pub use generalstring::{GeneralString, GENERALSTRING_TAG_NUMBER};

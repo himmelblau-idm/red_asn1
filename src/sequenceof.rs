@@ -3,7 +3,7 @@ use super::traits::{Asn1Object, Asn1InstanciableObject, Asn1Tagged};
 use super::sequence::{SEQUENCE_TAG_NUMBER};
 use super::error::Asn1Error;
 
-
+#[derive(Debug)]
 pub struct SequenceOf<T: Asn1InstanciableObject> {
     tag: Tag,
     components: Vec<T>
