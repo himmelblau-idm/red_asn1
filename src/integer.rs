@@ -1,6 +1,6 @@
 use super::tag::Tag;
 use super::traits::{Asn1Object, Asn1InstanciableObject, Asn1Tagged};
-use super::error::Asn1Error;
+use super::error::*;
 use std::result::Result;
 
 pub static INTEGER_TAG_NUMBER: u8 = 0x2;
@@ -23,7 +23,7 @@ impl Asn1Object for Integer {
         return &self.tag;
     }
 
-    fn encode_value(&self) -> Result<Vec<u8>,Asn1Error> {
+    fn encode_value(&self) -> Asn1Result<Vec<u8>> {
          let mut shifted_value;
 
         match self._value {
@@ -31,7 +31,7 @@ impl Asn1Object for Integer {
                 shifted_value = value;
             },
             None => {
-                return Err(Asn1Error::new("No value for encoding".to_string()));
+                return Err(Asn1ErrorKind::NoValue)?;
             }
         }
 
@@ -49,13 +49,13 @@ impl Asn1Object for Integer {
         return Ok(encoded_value);
     }
 
-    fn decode_value(&mut self, raw: &[u8]) -> Result<(), Asn1Error> {
+    fn decode_value(&mut self, raw: &[u8]) -> Asn1Result<()> {
         if raw.len() == 0 {
-            return Err(Asn1Error::new("Invalid value: Not enough data for type".to_string()));
+            return Err(Asn1ErrorKind::NoDataForType)?;
         }
 
         if raw.len() > 8 {
-            return Err(Asn1Error::new("Invalid value: Too much data for implementation".to_string()));
+            return Err(Asn1ErrorKind::InvalidValue("Too much data for implementation".to_string()))?;
         }
 
         let signed_bit = (raw[0] & 0x80) >> 7;

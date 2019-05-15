@@ -1,6 +1,6 @@
 use super::tag::Tag;
 use super::traits::{Asn1Object, Asn1Tagged};
-use super::error::Asn1Error;
+use super::error::*;
 use std::result::Result;
 
 pub static BOOLEAN_TAG_NUMBER: u8 = 0x1;
@@ -33,13 +33,13 @@ impl Asn1Object for Boolean {
         return &self.tag;
     }
 
-    fn encode_value(&self) -> Result<Vec<u8>,Asn1Error> {
+    fn encode_value(&self) -> Asn1Result<Vec<u8>> {
         return Ok(vec![(self.value as u8) * 0xff]);
     }
 
-    fn decode_value(&mut self, raw: &[u8]) -> Result<(),Asn1Error> {
+    fn decode_value(&mut self, raw: &[u8]) -> Asn1Result<()> {
         if raw.len() == 0 {
-            return Err(Asn1Error::new("Invalid value: Not enough data for type".to_string()));
+            return Err(Asn1ErrorKind::NoDataForType)?;
         }
 
         self.value = raw[0] != 0;

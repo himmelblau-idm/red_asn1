@@ -1,5 +1,5 @@
 use super::tag::Tag;
-use super::error::Asn1Error;
+use super::error::*;
 use std::result::Result;
 
 
@@ -16,12 +16,12 @@ pub trait Asn1Object {
         return self.tag().encode();
     }
 
-    fn decode_tag(&self, raw_tag: &[u8]) -> Result<usize, Asn1Error> {
+    fn decode_tag(&self, raw_tag: &[u8]) -> Asn1Result<usize> {
         let mut decoded_tag = Tag::new_empty();
         let consumed_octets = decoded_tag.decode(raw_tag)?;
 
         if &decoded_tag != self.tag() {
-            return Err(Asn1Error::new("Invalid tag: Not valid tag for type".to_string()));
+            return Err(Asn1ErrorKind::InvalidTypeTag)?;
         }
         return Ok(consumed_octets);
     }
@@ -49,10 +49,10 @@ pub trait Asn1Object {
         return encoded_length;
     }
 
-    fn decode_length(&self, raw_length: &[u8]) -> Result<(usize, usize), Asn1Error> {
+    fn decode_length(&self, raw_length: &[u8]) -> Asn1Result<(usize, usize)> {
         let raw_length_length = raw_length.len();
         if raw_length_length == 0 {
-            return Err(Asn1Error::new("Invalid length: Empty".to_string()));
+            return Err(Asn1ErrorKind::InvalidLengthEmpty)?;
         }
 
         let mut consumed_octets: usize = 1;
@@ -63,7 +63,7 @@ pub trait Asn1Object {
 
         let length_of_length = (raw_length[0] & 0x7F) as usize;
         if length_of_length >= raw_length_length {
-            return Err(Asn1Error::new("Invalid length: Invalid length of length".to_string()));
+            return Err(Asn1ErrorKind::InvalidLengthOfLength)?;
         }
 
         let mut length: usize = 0;
@@ -76,11 +76,11 @@ pub trait Asn1Object {
         return Ok((length, consumed_octets));
     }
     
-    fn encode_value(&self) -> Result<Vec<u8>, Asn1Error>;
+    fn encode_value(&self) -> Asn1Result<Vec<u8>>;
 
-    fn decode_value(&mut self, raw: &[u8]) -> Result<(),Asn1Error>;
+    fn decode_value(&mut self, raw: &[u8]) -> Asn1Result<()>;
 
-    fn encode(&self) -> Result<Vec<u8>,Asn1Error> {
+    fn encode(&self) -> Asn1Result<Vec<u8>> {
         let mut encoded = self.encode_tag();
         let mut encoded_value = self.encode_value()?;
         let mut encoded_length = self.encode_length(encoded_value.len());
@@ -91,7 +91,7 @@ pub trait Asn1Object {
         return Ok(encoded);
     }
 
-    fn decode(&mut self, raw: &[u8]) -> Result<usize,Asn1Error> {
+    fn decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
         let mut consumed_octets = self.decode_tag(raw)?;
 
         let (_, raw_length) = raw.split_at(consumed_octets);
@@ -102,7 +102,7 @@ pub trait Asn1Object {
         let (_, raw_value) = raw.split_at(consumed_octets);
 
         if value_length > raw_value.len() {
-            return Err(Asn1Error::new("Invalid value: Not enough data for length".to_string()));
+            return Err(Asn1ErrorKind::NoDataForLength)?;
         }
 
         let (raw_value, _) = raw_value.split_at(value_length);

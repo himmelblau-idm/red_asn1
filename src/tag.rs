@@ -1,4 +1,4 @@
-use super::Asn1Error;
+use super::error::*;
 use std::result::Result;
 use std::convert::From;
 
@@ -100,10 +100,10 @@ impl Tag {
         self.tag_class = tag_class;
     }
 
-    pub fn decode(&mut self, raw: &[u8]) -> Result<usize, Asn1Error> {
+    pub fn decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
         let raw_len = raw.len();
         if raw_len == 0 {
-            return Err(Asn1Error::new("Invalid tag: Empty".to_string()));
+            return Err(Asn1ErrorKind::InvalidTagEmpty)?;
         }
 
         let mut consumed_octets = 1;
@@ -138,7 +138,7 @@ impl Tag {
             consumed_octets += 1;
         }
         if consumed_octets == raw.len() {
-            return Err(Asn1Error::new("Invalid tag: Invalid tag number".to_string()));
+            return Err(Asn1ErrorKind::InvalidTagNumber)?;
         }
 
         return Ok((tag_number,consumed_octets));

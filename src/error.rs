@@ -1,49 +1,88 @@
 use std::error;
 use std::fmt;
+use failure::*;
+use failure_derive::Fail;
 
-#[derive(Debug, Clone)]
+pub type Asn1Result<T> = Result<T, Asn1Error>;
+
+
+#[derive(Debug)]
 pub struct Asn1Error {
-    message: String
+    inner: Context<Asn1ErrorKind>
+}
+
+#[derive(Clone, Debug, Fail)]
+pub enum Asn1ErrorKind {
+    #[fail (display = "Invalid tag: Empty")]
+    InvalidTagEmpty,
+    #[fail (display = "Invalid tag: Invalid tag number")]
+    InvalidTagNumber,
+    #[fail (display = "Invalid tag: Not valid tag for type")]
+    InvalidTypeTag,
+    #[fail (display = "Invalid length: Empty")]
+    InvalidLengthEmpty,
+    #[fail (display = "Invalid length: Invalid length of length")]
+    InvalidLengthOfLength,
+    #[fail (display = "Invalid value: Not enough data for length")]
+    NoDataForLength,
+    #[fail (display = "Invalid value: Not enough data for type")]
+    NoDataForType,
+    #[fail (display = "No value for encoding")]
+    NoValue,
+    #[fail (display = "Invalid value: {}", _0)]
+    InvalidValue(String)
 }
 
 impl Asn1Error {
-    pub fn new(message: String) -> Asn1Error {
-        return Asn1Error{
-            message
-        };
+
+    pub fn kind(&self) -> &Asn1ErrorKind {
+        return self.inner.get_context();
+    }
+
+}
+
+impl Fail for Asn1Error {
+    fn cause(&self) -> Option<&Fail> {
+        self.inner.cause()
+    }
+
+    fn backtrace(&self) -> Option<&Backtrace> {
+        self.inner.backtrace()
     }
 }
 
 impl fmt::Display for Asn1Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Asn1Error")
+        fmt::Display::fmt(&self.inner, f)
     }
 }
 
-impl error::Error for Asn1Error {
-    fn description(&self) -> &str {
-        return &self.message;
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        return None;
+impl std::convert::From<Asn1ErrorKind> for Asn1Error {
+    fn from(kind: Asn1ErrorKind) -> Asn1Error {
+        return Asn1Error {
+            inner: Context::new(kind)
+        };
     }
 }
 
-impl std::convert::From<ascii::ToAsciiCharError> for Asn1Error {
-    fn from(_inner: ascii::ToAsciiCharError) -> Asn1Error {
-        return Asn1Error::new("Invalid value: Error formating non-ascii characters".to_string());
+impl std::convert::From<Context<Asn1ErrorKind>> for Asn1Error {
+    fn from(inner: Context<Asn1ErrorKind>) -> Asn1Error {
+        return Asn1Error { inner };
     }
 }
 
 impl std::convert::From<std::str::Utf8Error> for Asn1Error {
     fn from(_inner: std::str::Utf8Error) -> Asn1Error {
-        return Asn1Error::new("Invalid value: Error formating non-utf8 characters".to_string());
+        return Asn1Error {
+            inner: Context::new(Asn1ErrorKind::InvalidValue("Error formating non-utf8 characters".to_string()))
+        };
     }
 }
 
 impl std::convert::From<std::num::ParseIntError> for Asn1Error {
     fn from(_inner: std::num::ParseIntError) -> Asn1Error {
-        return Asn1Error::new("Invalid value: Error parsing to int".to_string());
+        return Asn1Error {
+            inner: Context::new(Asn1ErrorKind::InvalidValue("Error parsing to int".to_string()))
+        };
     }
 }

@@ -1,7 +1,7 @@
 
 use super::tag::Tag;
 use super::traits::{Asn1Object, Asn1Tagged};
-use super::error::Asn1Error;
+use super::error::*;
 use std::result::Result;
 
 pub static BIT_STRING_TAG_NUMBER: u8 = 0x3;
@@ -25,7 +25,7 @@ impl Asn1Object for BitSring {
         return &self.tag;
     }
 
-    fn encode_value(&self) -> Result<Vec<u8>,Asn1Error> {
+    fn encode_value(&self) -> Asn1Result<Vec<u8>> {
         let mut encoded_value = vec![self.padding_length];
 
         let mut values = Vec::new();
@@ -37,9 +37,9 @@ impl Asn1Object for BitSring {
         return Ok(encoded_value);
     }
 
-    fn decode_value(&mut self, raw: &[u8]) -> Result<(), Asn1Error> {
+    fn decode_value(&mut self, raw: &[u8]) -> Asn1Result<()> {
         if raw.len() == 0 {
-            return Err(Asn1Error::new("Invalid value: Not enough data for type".to_string()));
+            return Err(Asn1ErrorKind::NoDataForType)?;
         }
 
         let (padding_length, raw_value) = raw.split_at(1);

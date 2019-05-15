@@ -1,7 +1,7 @@
 use chrono::prelude::*;
 use super::tag::Tag;
 use super::traits::{Asn1Object, Asn1Tagged};
-use super::error::Asn1Error;
+use super::error::*;
 use std::result::Result;
 use std::default::Default;
 use std::str;
@@ -46,13 +46,13 @@ impl Asn1Object for GeneralizedTime {
         return &self.tag;
     }
 
-    fn encode_value(&self) -> Result<Vec<u8>,Asn1Error> {
+    fn encode_value(&self) -> Asn1Result<Vec<u8>> {
         return Ok(self._format_as_string().into_bytes());
     }
 
-    fn decode_value(&mut self, raw: &[u8]) -> Result<(), Asn1Error> {
+    fn decode_value(&mut self, raw: &[u8]) -> Asn1Result<()> {
         if raw.len() < 15 {
-            return Err(Asn1Error::new("Invalid value: Not enough data for type".to_string())); 
+            return Err(Asn1ErrorKind::NoDataForType)?;
         }
 
         let year_str = str::from_utf8(&raw[0..4])?;
@@ -70,22 +70,23 @@ impl Asn1Object for GeneralizedTime {
         let second: u32 = second_str.parse()?;
         let mut decisecond: u32 = 0;
 
-        let is_utc: bool = raw[raw.len() - 1] == 'Z' as u8;
-
         if raw.len() >= 17 {
             let decisecond_str = str::from_utf8(&raw[15..16])?;
             decisecond = decisecond_str.parse()?;
         }
 
+        let is_utc: bool = raw[raw.len() - 1] == 'Z' as u8;
+
         if is_utc {
             self.value = Utc.ymd(year, month, day).and_hms_nano(hour, minute, second, decisecond * 100000000);
         }else {
-            return Err(Asn1Error::new("Invalid value: Local time decode is not implemented yet".to_string()));
+            return Err(Asn1ErrorKind::InvalidValue("Local time decode is not implemented yet".to_string()))?;
         }
 
         return Ok(());
     }
 }
+
 
 #[derive(Debug, PartialEq)]
 #[allow(non_camel_case_types)]

@@ -1,6 +1,6 @@
 use super::super::tag::{Tag, TagClass, TagType};
 use super::super::traits::{Asn1Object, Asn1Tagged};
-use super::super::error::Asn1Error;
+use super::super::error::*;
 use super::component::{SequenceComponent, SeqCompOptionality};
 use std::result::Result;
 
@@ -124,6 +124,7 @@ impl<'a, 'b> Sequence<'a, 'b> {
         return Ok(encoded);
     }
 
+    poner Asn1Result en vez de Asn1Error...
     fn _application_decode(&mut self, raw: &[u8]) -> Result<usize,Asn1Error> {
         let mut consumed_octets = self._decode_application_tag(raw)?;
         let (_, raw_length) = raw.split_at(consumed_octets);
@@ -132,6 +133,7 @@ impl<'a, 'b> Sequence<'a, 'b> {
         let (_, raw_value) = raw.split_at(consumed_octets);
 
         if value_length > raw_value.len() {
+            return Err(Asn1ErrorK) seguir poniendo bien los errores...
             return Err(Asn1Error::new("Invalid value: Not enough data for length".to_string()));
         }
 

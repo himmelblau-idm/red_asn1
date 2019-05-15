@@ -2,7 +2,7 @@ use ascii::AsciiString;
 use ascii::AsciiChar;
 use super::tag::Tag;
 use super::traits::{Asn1Object, Asn1Tagged};
-use super::error::Asn1Error;
+use super::error::*;
 use std::result::Result;
 
 pub static IA5STRING_TAG_NUMBER: u8 = 0x16;
@@ -39,7 +39,17 @@ impl Asn1Object for IA5String {
         let mut value = AsciiString::with_capacity(raw.len());
 
         for byte in raw.iter() {
-            value.push(AsciiChar::from(*byte as char)?);
+            let ascii_char;
+            
+            match AsciiChar::from(*byte as char) {
+                Ok(value) => {
+                    ascii_char = value;
+                },
+                Err(_) => {
+                    return Err(Asn1ErrorKind::InvalidValue("Error formating non-ascii characters".to_string()))?;
+                }
+            };
+            value.push(ascii_char);
         }
 
         self.value = value;

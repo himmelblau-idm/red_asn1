@@ -7,4 +7,5 @@ edition = "2018"
 [dependencies]
 ascii = "0.9.1"
 chrono = "0.4"
-mopa = "0.2.2"
+failure = "0.1.5"
+failure_derive = "0.1.5"
