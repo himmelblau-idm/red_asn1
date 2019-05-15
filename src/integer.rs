@@ -8,7 +8,7 @@ pub static INTEGER_TAG_NUMBER: u8 = 0x2;
 #[derive(Debug, PartialEq)]
 pub struct Integer {
     tag: Tag,
-    value: i64
+    _value: Option<i64>
 }
 
 impl Asn1Tagged for Integer {
@@ -17,8 +17,6 @@ impl Asn1Tagged for Integer {
     }
 }
 
-
-
 impl Asn1Object for Integer {    
 
     fn tag(&self) -> &Tag {
@@ -26,7 +24,17 @@ impl Asn1Object for Integer {
     }
 
     fn encode_value(&self) -> Result<Vec<u8>,Asn1Error> {
-         let mut shifted_value = self.value;
+         let mut shifted_value;
+
+        match self._value {
+            Some(value) => {
+                shifted_value = value;
+            },
+            None => {
+                return Err(Asn1Error::new("No value for encoding".to_string()));
+            }
+        }
+
          let length = self._encoded_value_size();
 
         let mut encoded_value: Vec<u8> = Vec::new();
@@ -58,7 +66,7 @@ impl Asn1Object for Integer {
             value += (*byte as i64) & 0xFF;
         }
 
-        self.value = value;
+        self._value = Some(value);
         
         return Ok(());
     }
@@ -66,7 +74,7 @@ impl Asn1Object for Integer {
 
 impl Asn1InstanciableObject for Integer {
     fn new_default() -> Integer {
-        return Integer::new(0);
+        return Integer::new_empty();
     }
 }
 
@@ -75,16 +83,30 @@ impl Integer {
     pub fn new(value: i64) -> Integer{
         return Integer{
             tag: Integer::type_tag(),
-            value
+            _value: Some(value)
         };
     }
 
-    pub fn value(&self) -> &i64 {
-        return &self.value;
+    pub fn new_empty() -> Integer {
+        return Integer {
+            tag: Integer::type_tag(),
+            _value: None
+        }
+    }
+
+    pub fn value(&self) -> Option<&i64> {
+        match &self._value {
+            Some(ref value) => {
+                return Some(value);
+            }
+            None => {
+                return None;
+            }
+        };
     }
 
     fn _encoded_value_size(&self) -> usize {
-        if self.value >= 0 {
+        if self._value.unwrap() >= 0 {
             return self._calculate_positive_integer_size() as usize;
         }
         
@@ -93,7 +115,7 @@ impl Integer {
 
     fn _calculate_negative_integer_size(&self) -> u8 {
         let mut bytes_count = 1;
-        let mut shifted_integer = self.value;
+        let mut shifted_integer = self._value.unwrap();
 
         while shifted_integer < -128 {
             bytes_count += 1;
@@ -105,7 +127,7 @@ impl Integer {
 
     fn _calculate_positive_integer_size(&self) -> u8 {
         let mut bytes_count = 1;
-        let mut shifted_integer = self.value;
+        let mut shifted_integer = self._value.unwrap();
 
         while shifted_integer > 127 {
             bytes_count += 1;
@@ -124,9 +146,15 @@ mod tests {
     #[test]
     fn test_integer_value_and_tag() {
         let integer1 = Integer::new(78);
-        assert_eq!(78, integer1.value);
+        assert_eq!(&78, integer1.value().unwrap());
 
         assert_eq!(vec![0x02], integer1.tag.encode());
+    }
+
+    #[test]
+    fn test_empty_integer() {
+        let integer1 = Integer::new_empty();
+        assert_eq!(None, integer1.value());
     }
 
     #[test]

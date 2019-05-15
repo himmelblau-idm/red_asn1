@@ -175,7 +175,6 @@ impl<'a, 'b> Asn1Object for SequenceComponent<'a, 'b> {
     }
 
     fn decode(&mut self, raw: &[u8]) -> Result<usize,Asn1Error> {
-        
         match self.context_tag {
             Some(_) => {
                 return self._decode_context(raw);

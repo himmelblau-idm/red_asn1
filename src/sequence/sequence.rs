@@ -317,7 +317,7 @@ mod tests {
                         0xa0,  0x3, INTEGER_TAG_NUMBER, 0x1, 0x9, 
                         0xa1, 0x6, OCTET_STRING_TAG_NUMBER, 0x4, 0x1, 0x2, 0x3, 0x4]).unwrap();
         
-        assert_eq!(&9, inte.value());
+        assert_eq!(&9, inte.value().unwrap());
         assert_eq!(&[0x1, 0x2, 0x3, 0x4], octet_str.value());
     }
 
@@ -337,8 +337,27 @@ mod tests {
                           INTEGER_TAG_NUMBER, 0x1, 0x9, 
                           OCTET_STRING_TAG_NUMBER, 0x4, 0x1, 0x2, 0x3, 0x4]).unwrap();
 
-        assert_eq!(&9, inte.value());
+        assert_eq!(&9, inte.value().unwrap());
         assert_eq!(&[0x1, 0x2, 0x3, 0x4], octet_str.value());
+    }
+
+    #[test]
+    fn test_decode_with_optional() {
+        let mut sequence = Sequence::new();
+        sequence.def_optional::<Integer>("id", Some(0));
+        sequence.def::<OctetString>("data", Some(1));
+
+        let mut inte = Integer::new(9);
+        let mut octet_str = OctetString::new(vec![0x1,0x2,0x3,0x4]);
+
+        sequence.set_value("id", Box::new(&mut inte)).unwrap();
+        sequence.set_value("data", Box::new(&mut octet_str)).unwrap();
+
+        sequence.decode(&[0x30, 0x8, 
+                        0xa1, 0x6, OCTET_STRING_TAG_NUMBER, 0x4, 0x1, 0x2, 0x3, 0x4]).unwrap();
+
+        assert_eq!(&[0x1, 0x2, 0x3, 0x4], octet_str.value());
+        assert_eq!(None, inte.value());
     }
 
 }
