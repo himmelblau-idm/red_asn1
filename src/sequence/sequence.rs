@@ -2,7 +2,6 @@ use super::super::tag::{Tag, TagClass, TagType};
 use super::super::traits::{Asn1Object, Asn1Tagged};
 use super::super::error::*;
 use super::component::{SequenceComponent, SeqCompOptionality};
-use std::result::Result;
 
 pub static SEQUENCE_TAG_NUMBER: u8 = 0x10;
 
@@ -24,7 +23,7 @@ impl<'a, 'b> Asn1Object for Sequence<'a, 'b> {
         return &self.tag;
     }
 
-    fn encode_value(&self) -> Result<Vec<u8>,Asn1Error> {
+    fn encode_value(&self) -> Asn1Result<Vec<u8>> {
         let mut value: Vec<u8> = Vec::new();
         for component in self.components.iter() {
             value.append(&mut component.encode()?);
@@ -33,7 +32,7 @@ impl<'a, 'b> Asn1Object for Sequence<'a, 'b> {
         return Ok(value);
     }
 
-    fn encode(&self) -> Result<Vec<u8>,Asn1Error> {
+    fn encode(&self) -> Asn1Result<Vec<u8>> {
         match &self.application_tag {
             Some(_) => {
                 return self._application_encode();
@@ -44,7 +43,7 @@ impl<'a, 'b> Asn1Object for Sequence<'a, 'b> {
         };
     }
 
-    fn decode_value(&mut self, raw: &[u8]) -> Result<(), Asn1Error> {
+    fn decode_value(&mut self, raw: &[u8]) -> Asn1Result<()> {
         let mut consumed_octets = 0;
         for component in self.components.iter_mut() {
             let component_consumed_octets = component.decode(&raw[consumed_octets..])?;
@@ -53,7 +52,7 @@ impl<'a, 'b> Asn1Object for Sequence<'a, 'b> {
         return Ok(());
     }
 
-    fn decode(&mut self, raw: &[u8]) -> Result<usize,Asn1Error> {
+    fn decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
         match &self.application_tag {
             Some(_) => {
                 return self._application_decode(raw);
