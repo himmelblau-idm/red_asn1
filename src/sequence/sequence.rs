@@ -348,6 +348,24 @@ mod tests {
         assert_eq!(&[0x1, 0x2, 0x3, 0x4], octet_str.value());
     }
 
+    #[should_panic (expected = "Invalid tag: Not valid tag for context")]
+    #[test]
+    fn test_bad_decode_without_expected_values() {
+        let mut sequence = Sequence::new();
+        
+        sequence.def::<Integer>("id", Some(0));
+        sequence.def::<OctetString>("data", Some(1));
+
+        let mut inte = Integer::new(9);
+        let mut octet_str = OctetString::new(vec![0x1,0x2,0x3,0x4]);
+
+        sequence.set_ref("id", Box::new(&mut inte)).unwrap();
+        sequence.set_ref("data", Box::new(&mut octet_str)).unwrap();
+
+        sequence.decode(&[0x30, 0x1, 0xf0]).unwrap();
+        
+    }
+
     #[test]
     fn test_decode_without_context_tags() {
         let mut sequence = Sequence::new();
@@ -385,6 +403,42 @@ mod tests {
 
         assert_eq!(&[0x1, 0x2, 0x3, 0x4], octet_str.value());
         assert_eq!(None, inte.value());
+    }
+
+    #[test]
+    fn test_decode_with_optional_without_context_tag() {
+        let mut sequence = Sequence::new();
+        sequence.def_optional::<Integer>("id", None);
+        sequence.def::<OctetString>("data", None);
+
+        let mut inte = Integer::new(9);
+        let mut octet_str = OctetString::new(vec![]);
+
+        sequence.set_ref("id", Box::new(&mut inte)).unwrap();
+        sequence.set_ref("data", Box::new(&mut octet_str)).unwrap();
+
+        sequence.decode(&[0x30, 0x6, 
+                          OCTET_STRING_TAG_NUMBER, 0x4, 0x1, 0x2, 0x3, 0x4]).unwrap();
+
+        assert_eq!(&[0x1, 0x2, 0x3, 0x4], octet_str.value());
+        assert_eq!(None, inte.value());
+    }
+
+    #[should_panic (expected = "Invalid tag: Not valid tag for type")]
+    #[test]
+    fn test_bad_decode_with_optional() {
+        let mut sequence = Sequence::new();
+        sequence.def_optional::<Integer>("id", Some(0));
+        sequence.def::<OctetString>("data", Some(1));
+
+        let mut inte = Integer::new(9);
+        let mut octet_str = OctetString::new(vec![]);
+
+        sequence.set_ref("id", Box::new(&mut inte)).unwrap();
+        sequence.set_ref("data", Box::new(&mut octet_str)).unwrap();
+
+        sequence.decode(&[0x30, 0x8, 
+                        0xa0, 0x6, OCTET_STRING_TAG_NUMBER, 0x4, 0x1, 0x2, 0x3, 0x4]).unwrap();
     }
 
 }
