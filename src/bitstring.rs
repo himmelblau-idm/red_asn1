@@ -8,7 +8,12 @@ pub static BIT_STRING_TAG_NUMBER: u8 = 0x3;
 #[derive(Debug, PartialEq)]
 pub struct BitSring {
     tag: Tag,
-    value: Vec<u8>,
+    _value: Option<BitSringValue>
+}
+
+#[derive(Debug, PartialEq)]
+pub struct BitSringValue {
+    bytes: Vec<u8>,
     padding_length: u8
 }
 
@@ -25,11 +30,22 @@ impl Asn1Object for BitSring {
     }
 
     fn encode_value(&self) -> Asn1Result<Vec<u8>> {
-        let mut encoded_value = vec![self.padding_length];
+        let bitstring_value;
+
+        match &self._value {
+            Some(value) => {
+                bitstring_value = value;
+            },
+            None => {
+                return Err(Asn1ErrorKind::NoValue)?;
+            }
+        };
+
+        let mut encoded_value = vec![bitstring_value.padding_length];
 
         let mut values = Vec::new();
-        for i in 0..self.value.len() {
-            values.push(self.value[i])
+        for i in 0..bitstring_value.bytes.len() {
+            values.push(bitstring_value.bytes[i])
         }
         encoded_value.append(&mut values);
 
@@ -43,41 +59,68 @@ impl Asn1Object for BitSring {
 
         let (padding_length, raw_value) = raw.split_at(1);
 
-        self.padding_length = padding_length[0];
-        self.value = raw_value.to_vec();
+        self._value = Some(BitSringValue{
+            bytes: raw_value.to_vec(),
+            padding_length: padding_length[0]
+        });
         self._padded_value_with_0();
 
         return Ok(());
     }
 
     fn unset_value(&mut self) {
+        self._value = None;
     }
 }
 
+add Asn1InstanciableObject trait...
+
 impl BitSring {
-    pub fn new(value: Vec<u8>, padding_length: u8) -> BitSring{
+    pub fn new(bytes: Vec<u8>, padding_length: u8) -> BitSring{
         let mut bs = BitSring {
             tag: BitSring::type_tag(),
-            value,
-            padding_length: padding_length % 8
+            _value: Some(BitSringValue{
+                            bytes,
+                            padding_length: padding_length % 8
+                    })
         };
         bs._padded_value_with_0();
         return bs;
     }
 
+    pub fn new_empty() -> BitSring {
+        return BitSring {
+            tag: BitSring::type_tag(),
+            _value: None
+        };
+    }
+
     fn _padded_value_with_0(&mut self) {
-        match self.value.pop() {
-            Some(last_item) => {
-                self.value.push(self._set_0_padding(last_item));
-            },
-            None => {}
+        if let Some(ref mut bitstring_value) = self._value {
+            match bitstring_value.bytes.pop() {
+                Some(last_item) => {
+                    bitstring_value.bytes.push(Self::_set_0_padding(last_item, bitstring_value.padding_length));
+                },
+                None => {}
+            }
         }
     }
 
-    fn _set_0_padding(&self, mut item: u8) -> u8 {
-        item >>= self.padding_length;
-        item <<= self.padding_length;
+    fn _set_0_padding(mut item: u8, padding_length: u8) -> u8 {
+        item >>= padding_length;
+        item <<= padding_length;
         return item;
+    }
+
+    pub fn value(&self) -> Option<&BitSringValue> {
+        match &self._value {
+            Some(ref value) => {
+                return Some(value);
+            }
+            None => {
+                return None;
+            }
+        };
     }
 
 }
@@ -89,7 +132,20 @@ mod tests {
     #[test]
     fn test_create() {
         let b = BitSring::new(vec![0x0], 0);
-        assert_eq!(vec![0x0], b.value().unwrap());
+        assert_eq!(&BitSringValue{ bytes: vec![0x0], padding_length: 0}, b.value().unwrap());
+    }
+
+    #[test]
+    fn test_create_empty() {
+        let b = BitSring::new_empty();
+        assert_eq!(None, b.value());
+    }
+
+    #[test]
+    fn test_unset_value() {
+        let mut b = BitSring::new(vec![0x0], 0);
+        b.unset_value();
+        assert_eq!(None, b.value());
     }
 
     #[test]

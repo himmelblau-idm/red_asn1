@@ -10,6 +10,8 @@ pub struct Boolean {
     value: bool
 }
 
+set value as Option and add Asn1InstanciableObject
+
 impl Boolean {
 
     pub fn new(value: bool) -> Boolean {
@@ -46,6 +48,7 @@ impl Asn1Object for Boolean {
     }
 
     fn unset_value(&mut self) {
+
     }
 }
 
