@@ -112,6 +112,7 @@ pub trait Asn1Object {
         return Ok(consumed_octets);
     }
 
+    fn unset_value(&mut self);
 }
 
 pub trait Asn1InstanciableObject: Asn1Object {
@@ -149,6 +150,9 @@ mod tests {
 
         fn decode_value(&mut self, _raw: &[u8]) -> Result<(), Asn1Error> {
             return Ok(());
+        }
+
+        fn unset_value(&mut self){
         }
     }
 

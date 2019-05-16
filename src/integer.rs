@@ -69,6 +69,10 @@ impl Asn1Object for Integer {
         
         return Ok(());
     }
+
+    fn unset_value(&mut self) {
+        self._value = None;
+    }
 }
 
 impl Asn1InstanciableObject for Integer {

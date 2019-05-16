@@ -56,6 +56,9 @@ impl Asn1Object for IA5String {
 
         return Ok(());
     }
+
+    fn unset_value(&mut self) {
+    }
 }
 
 impl IA5String {

@@ -44,6 +44,10 @@ impl <T: Asn1InstanciableObject> Asn1Object for SequenceOf<T> {
         self.components = components;
         return Ok(());
     }
+
+    fn unset_value(&mut self) {
+    }
+
 }
 
 impl<T: Asn1InstanciableObject> SequenceOf<T> {

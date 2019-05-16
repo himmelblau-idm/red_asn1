@@ -44,6 +44,9 @@ impl Asn1Object for Boolean {
         self.value = raw[0] != 0;
         return Ok(());
     }
+
+    fn unset_value(&mut self) {
+    }
 }
 
 #[cfg(test)]

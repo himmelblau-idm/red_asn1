@@ -37,6 +37,9 @@ impl Asn1Object for OctetString {
         self.value = raw.to_vec();
         return Ok(());
     }
+
+    fn unset_value(&mut self) {
+    }
 }
 
 impl Asn1InstanciableObject for OctetString {

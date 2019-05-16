@@ -84,6 +84,9 @@ impl Asn1Object for GeneralizedTime {
 
         return Ok(());
     }
+
+    fn unset_value(&mut self) {
+    }
 }
 
 

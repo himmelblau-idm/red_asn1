@@ -45,9 +45,34 @@ impl<'a, 'b> Asn1Object for Sequence<'a, 'b> {
 
     fn decode_value(&mut self, raw: &[u8]) -> Asn1Result<()> {
         let mut consumed_octets = 0;
-        for component in self.components.iter_mut() {
-            let component_consumed_octets = component.decode(&raw[consumed_octets..])?;
-            consumed_octets += component_consumed_octets;
+        for component in self.components.iter_mut() { 
+            match component.decode(&raw[consumed_octets..]) {
+                Ok(component_consumed_octets) => {
+                    consumed_octets += component_consumed_octets;
+                },
+                Err(asn1_error) => {
+                    match asn1_error.kind() {
+                        Asn1ErrorKind::InvalidContextTag => {
+                            if component.is_optional() {
+                                continue;
+                            }
+                            return Err(asn1_error);
+                        },
+                        Asn1ErrorKind::InvalidTypeTag => {
+                            if component.has_context_tag() {
+                                return Err(asn1_error);
+                            }
+                            if component.is_optional() {
+                                continue;
+                            }
+                            return Err(asn1_error);
+                        },
+                        _ => {
+                            return Err(asn1_error);
+                        }
+                    };
+                }
+            };
         }
         return Ok(());
     }
@@ -61,6 +86,9 @@ impl<'a, 'b> Asn1Object for Sequence<'a, 'b> {
                 return self._normal_decode(raw);
             }
         }
+    }
+
+    fn unset_value(&mut self) {
     }
 }
 
@@ -91,10 +119,10 @@ impl<'a, 'b> Sequence<'a, 'b> {
                              SeqCompOptionality::Optional));
     }
 
-    pub fn set_value(&mut self, identifier: &str,  value: Box<&'a mut (Asn1Object + 'b)>) -> Asn1Result<()> {
+    pub fn set_ref(&mut self, identifier: &str,  reference: Box<&'a mut (Asn1Object + 'b)>) -> Asn1Result<()> {
         for component in self.components.iter_mut() {
             if identifier == component.identifier() {
-                return component.set_value(value);
+                return component.set_ref(reference);
             }
         }
 
@@ -192,8 +220,8 @@ mod tests {
         let mut inte = Integer::new(9);
         let mut octet_str = OctetString::new(vec![0x1,0x2,0x3,0x4]);
 
-        sequence.set_value("id", Box::new(&mut inte)).unwrap();
-        sequence.set_value("data", Box::new(&mut octet_str)).unwrap();
+        sequence.set_ref("id", Box::new(&mut inte)).unwrap();
+        sequence.set_ref("data", Box::new(&mut octet_str)).unwrap();
 
         assert_eq!(vec![0x30, 0xd, 
         0xa0,  0x3, INTEGER_TAG_NUMBER, 0x1, 0x9, 
@@ -210,8 +238,8 @@ mod tests {
         let mut inte = Integer::new(9);
         let mut octet_str = OctetString::new(vec![0x1,0x2,0x3,0x4]);
 
-        sequence.set_value("id", Box::new(&mut inte)).unwrap();
-        sequence.set_value("data", Box::new(&mut octet_str)).unwrap();
+        sequence.set_ref("id", Box::new(&mut inte)).unwrap();
+        sequence.set_ref("data", Box::new(&mut octet_str)).unwrap();
 
         assert_eq!(vec![0x30, 0x9, INTEGER_TAG_NUMBER, 0x1, 0x9, OCTET_STRING_TAG_NUMBER, 0x4, 0x1, 0x2, 0x3, 0x4], sequence.encode().unwrap());
     }
@@ -232,7 +260,7 @@ mod tests {
 
         let mut inte = Integer::new(9);
 
-        sequence.set_value("id", Box::new(&mut inte)).unwrap();
+        sequence.set_ref("id", Box::new(&mut inte)).unwrap();
     }
 
     #[should_panic(expected = "No value provided")]
@@ -309,8 +337,8 @@ mod tests {
         let mut inte = Integer::new(9);
         let mut octet_str = OctetString::new(vec![0x1,0x2,0x3,0x4]);
 
-        sequence.set_value("id", Box::new(&mut inte)).unwrap();
-        sequence.set_value("data", Box::new(&mut octet_str)).unwrap();
+        sequence.set_ref("id", Box::new(&mut inte)).unwrap();
+        sequence.set_ref("data", Box::new(&mut octet_str)).unwrap();
 
         sequence.decode(&[0x30, 0xd, 
                         0xa0,  0x3, INTEGER_TAG_NUMBER, 0x1, 0x9, 
@@ -329,8 +357,8 @@ mod tests {
         let mut inte = Integer::new(9);
         let mut octet_str = OctetString::new(vec![0x1,0x2,0x3,0x4]);
 
-        sequence.set_value("id", Box::new(&mut inte)).unwrap();
-        sequence.set_value("data", Box::new(&mut octet_str)).unwrap();
+        sequence.set_ref("id", Box::new(&mut inte)).unwrap();
+        sequence.set_ref("data", Box::new(&mut octet_str)).unwrap();
 
         sequence.decode(&[0x30, 0x9, 
                           INTEGER_TAG_NUMBER, 0x1, 0x9, 
@@ -347,10 +375,10 @@ mod tests {
         sequence.def::<OctetString>("data", Some(1));
 
         let mut inte = Integer::new(9);
-        let mut octet_str = OctetString::new(vec![0x1,0x2,0x3,0x4]);
+        let mut octet_str = OctetString::new(vec![]);
 
-        sequence.set_value("id", Box::new(&mut inte)).unwrap();
-        sequence.set_value("data", Box::new(&mut octet_str)).unwrap();
+        sequence.set_ref("id", Box::new(&mut inte)).unwrap();
+        sequence.set_ref("data", Box::new(&mut octet_str)).unwrap();
 
         sequence.decode(&[0x30, 0x8, 
                         0xa1, 0x6, OCTET_STRING_TAG_NUMBER, 0x4, 0x1, 0x2, 0x3, 0x4]).unwrap();

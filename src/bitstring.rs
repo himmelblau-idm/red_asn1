@@ -49,6 +49,9 @@ impl Asn1Object for BitSring {
 
         return Ok(());
     }
+
+    fn unset_value(&mut self) {
+    }
 }
 
 impl BitSring {
