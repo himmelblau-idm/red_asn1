@@ -87,6 +87,12 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_create() {
+        let b = BitSring::new(vec![0x0], 0);
+        assert_eq!(vec![0x0], b.value().unwrap());
+    }
+
+    #[test]
     fn test_encode_bit_string() {
         assert_eq!(vec![0x3, 0x2, 0x0, 0x0], BitSring::new(vec![0x0], 0).encode().unwrap());
         assert_eq!(vec![0x3, 0x4, 0x6, 0x6e, 0x5d, 0xC0], BitSring::new(vec![0x6e, 0x5d, 0xFF], 6).encode().unwrap());
