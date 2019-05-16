@@ -1,7 +1,6 @@
 use super::tag::Tag;
 use super::traits::{Asn1Object, Asn1InstanciableObject, Asn1Tagged};
 use super::error::*;
-use std::result::Result;
 
 pub static INTEGER_TAG_NUMBER: u8 = 0x2;
 

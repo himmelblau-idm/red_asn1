@@ -1,6 +1,5 @@
 use super::tag::Tag;
 use super::error::*;
-use std::result::Result;
 
 
 pub trait Asn1Tagged {

@@ -1,6 +1,6 @@
 use super::super::tag::{Tag, TagClass, TagType};
 use super::super::traits::{Asn1Object, Asn1Tagged};
-use super::super::error::Asn1Error;
+use super::super::error::*;
 use std::result::Result;
 
 pub enum SeqCompOptionality {
@@ -62,9 +62,9 @@ impl<'a, 'b> SequenceComponent<'a, 'b> {
         return &self.identifier;
     }
 
-    pub fn set_value(&mut self, value: Box<&'a mut (Asn1Object + 'b)>) -> Result<(),Asn1Error> {
+    pub fn set_value(&mut self, value: Box<&'a mut (Asn1Object + 'b)>) -> Asn1Result<()> {
         if value.tag() != &self.subtype_tag {
-            return Err(Asn1Error::new("Invalid type".to_string()));
+            return Err(Asn1ErrorKind::InvalidTypeTag)?;
         }
 
         self.subtype_value = Some(value);
@@ -81,7 +81,7 @@ impl<'a, 'b> SequenceComponent<'a, 'b> {
         let (_, raw_value) = raw.split_at(consumed_octets);
 
         if value_length > raw_value.len() {
-            return Err(Asn1Error::new("Invalid value: Not enough data for length".to_string()));
+            return Err(Asn1ErrorKind::NoDataForLength)?;
         }
 
         let (raw_value, _) = raw_value.split_at(value_length);
@@ -92,25 +92,25 @@ impl<'a, 'b> SequenceComponent<'a, 'b> {
         return Ok(consumed_octets);
     }
 
-    fn _decode_context_tag(&self, raw_tag: &[u8]) -> Result<usize, Asn1Error> {
+    fn _decode_context_tag(&self, raw_tag: &[u8]) -> Asn1Result<usize> {
         let mut decoded_tag = Tag::new_empty();
         let consumed_octets = decoded_tag.decode(raw_tag)?;
 
         if &decoded_tag != &self.context_tag.unwrap() {
-            return Err(Asn1Error::new("Invalid tag: Not valid tag for type".to_string()));
+            return Err(Asn1ErrorKind::InvalidContextTag)?;
         }
         return Ok(consumed_octets);
     }
 
 
-    fn _decode_inner(&mut self, raw: &[u8]) -> Result<usize,Asn1Error> {
+    fn _decode_inner(&mut self, raw: &[u8]) -> Asn1Result<usize> {
         match &mut self.subtype_value {
             Some(value) => {
                 let consumed_octets = value.decode(raw)?;
                 return Ok(consumed_octets);
             },
             None => {
-                return Err(Asn1Error::new("No value provided for decoding".to_string()));
+                return Err(Asn1ErrorKind::NoValue)?;
             }
         };
     }
@@ -125,7 +125,7 @@ impl<'a, 'b> Asn1Object for SequenceComponent<'a, 'b> {
         }
     }
 
-    fn encode(&self) -> Result<Vec<u8>,Asn1Error> {
+    fn encode(&self) -> Asn1Result<Vec<u8>> {
         let mut encoded_value;
 
         match self.encode_value() {
@@ -159,22 +159,22 @@ impl<'a, 'b> Asn1Object for SequenceComponent<'a, 'b> {
     }
 
 
-    fn encode_value(&self) -> Result<Vec<u8>, Asn1Error> {
+    fn encode_value(&self) -> Asn1Result<Vec<u8>> {
         match &self.subtype_value {
             Some(value) => {
                 return value.encode();
             }
             None => {
-                return Err(Asn1Error::new("No value provided for encoding".to_string()));
+                return Err(Asn1ErrorKind::NoValue)?;
             }
         }
     }
 
-    fn decode_value(&mut self, _raw: &[u8]) -> Result<(), Asn1Error> {
+    fn decode_value(&mut self, _raw: &[u8]) -> Asn1Result<()> {
         return Ok(());
     }
 
-    fn decode(&mut self, raw: &[u8]) -> Result<usize,Asn1Error> {
+    fn decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
         match self.context_tag {
             Some(_) => {
                 return self._decode_context(raw);

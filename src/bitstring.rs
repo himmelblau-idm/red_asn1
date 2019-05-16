@@ -2,7 +2,6 @@
 use super::tag::Tag;
 use super::traits::{Asn1Object, Asn1Tagged};
 use super::error::*;
-use std::result::Result;
 
 pub static BIT_STRING_TAG_NUMBER: u8 = 0x3;
 

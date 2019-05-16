@@ -2,7 +2,6 @@ use chrono::prelude::*;
 use super::tag::Tag;
 use super::traits::{Asn1Object, Asn1Tagged};
 use super::error::*;
-use std::result::Result;
 use std::default::Default;
 use std::str;
 

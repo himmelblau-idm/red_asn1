@@ -1,4 +1,3 @@
-use std::error;
 use std::fmt;
 use failure::*;
 use failure_derive::Fail;
@@ -19,6 +18,8 @@ pub enum Asn1ErrorKind {
     InvalidTagNumber,
     #[fail (display = "Invalid tag: Not valid tag for type")]
     InvalidTypeTag,
+    #[fail (display = "Invalid tag: Not valid tag for context")]
+    InvalidContextTag,
     #[fail (display = "Invalid length: Empty")]
     InvalidLengthEmpty,
     #[fail (display = "Invalid length: Invalid length of length")]
@@ -27,10 +28,12 @@ pub enum Asn1ErrorKind {
     NoDataForLength,
     #[fail (display = "Invalid value: Not enough data for type")]
     NoDataForType,
-    #[fail (display = "No value for encoding")]
+    #[fail (display = "No value provided")]
     NoValue,
     #[fail (display = "Invalid value: {}", _0)]
-    InvalidValue(String)
+    InvalidValue(String),
+    #[fail (display = "No component with such identifier")]
+    NoComponent
 }
 
 impl Asn1Error {

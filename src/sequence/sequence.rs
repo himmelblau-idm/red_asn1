@@ -92,17 +92,17 @@ impl<'a, 'b> Sequence<'a, 'b> {
                              SeqCompOptionality::Optional));
     }
 
-    pub fn set_value(&mut self, identifier: &str,  value: Box<&'a mut (Asn1Object + 'b)>) -> Result<(), Asn1Error> {
+    pub fn set_value(&mut self, identifier: &str,  value: Box<&'a mut (Asn1Object + 'b)>) -> Asn1Result<()> {
         for component in self.components.iter_mut() {
             if identifier == component.identifier() {
                 return component.set_value(value);
             }
         }
 
-        return Err(Asn1Error::new("No subcomponent with such identifier".to_string()));
+        return Err(Asn1ErrorKind::NoComponent)?;
     }
     
-    fn _application_encode(&self) -> Result<Vec<u8>, Asn1Error> {
+    fn _application_encode(&self) -> Asn1Result<Vec<u8>> {
         let mut encoded = self.application_tag.unwrap().encode();
         let mut encoded_value = self._normal_encode()?;
         let mut encoded_length = self.encode_length(encoded_value.len());
@@ -113,7 +113,7 @@ impl<'a, 'b> Sequence<'a, 'b> {
         return Ok(encoded);
     }
 
-    fn _normal_encode(&self) -> Result<Vec<u8>, Asn1Error> {
+    fn _normal_encode(&self) -> Asn1Result<Vec<u8>> {
         let mut encoded = self.encode_tag();
         let mut encoded_value = self.encode_value()?;
         let mut encoded_length = self.encode_length(encoded_value.len());
@@ -124,8 +124,7 @@ impl<'a, 'b> Sequence<'a, 'b> {
         return Ok(encoded);
     }
 
-    poner Asn1Result en vez de Asn1Error...
-    fn _application_decode(&mut self, raw: &[u8]) -> Result<usize,Asn1Error> {
+    fn _application_decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
         let mut consumed_octets = self._decode_application_tag(raw)?;
         let (_, raw_length) = raw.split_at(consumed_octets);
         let (value_length, consumed_octets_by_length) = self.decode_length(raw_length)?;
@@ -133,8 +132,7 @@ impl<'a, 'b> Sequence<'a, 'b> {
         let (_, raw_value) = raw.split_at(consumed_octets);
 
         if value_length > raw_value.len() {
-            return Err(Asn1ErrorK) seguir poniendo bien los errores...
-            return Err(Asn1Error::new("Invalid value: Not enough data for length".to_string()));
+            return Err(Asn1ErrorKind::NoDataForLength)?;
         }
 
         let (raw_value, _) = raw_value.split_at(value_length);
@@ -145,18 +143,18 @@ impl<'a, 'b> Sequence<'a, 'b> {
         return Ok(consumed_octets);
     }
 
-    fn _decode_application_tag(&self, raw_tag: &[u8]) -> Result<usize, Asn1Error> {
+    fn _decode_application_tag(&self, raw_tag: &[u8]) -> Asn1Result<usize> {
         let mut decoded_tag = Tag::new_empty();
         let consumed_octets = decoded_tag.decode(raw_tag)?;
 
         if &decoded_tag != &self.application_tag.unwrap() {
-            return Err(Asn1Error::new("Invalid tag: Not valid tag for type".to_string()));
+            return Err(Asn1ErrorKind::InvalidTypeTag)?;
         }
         return Ok(consumed_octets);
     }
 
 
-    fn _normal_decode(&mut self, raw: &[u8]) -> Result<usize,Asn1Error> {
+    fn _normal_decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
         let mut consumed_octets = self.decode_tag(raw)?;
 
         let (_, raw_length) = raw.split_at(consumed_octets);
@@ -167,7 +165,7 @@ impl<'a, 'b> Sequence<'a, 'b> {
         let (_, raw_value) = raw.split_at(consumed_octets);
 
         if value_length > raw_value.len() {
-            return Err(Asn1Error::new("Invalid value: Not enough data for length".to_string()));
+            return Err(Asn1ErrorKind::NoDataForLength)?;
         }
 
         let (raw_value, _) = raw_value.split_at(value_length);
@@ -227,7 +225,7 @@ mod tests {
         assert_eq!(vec![0x30, 0x0], sequence.encode().unwrap());
     }
 
-    #[should_panic(expected = "Invalid type")]
+    #[should_panic(expected = "Invalid tag: Not valid tag for type")]
     #[test]
     fn test_set_component_value_of_incorrect_type() {
         let mut sequence = Sequence::new();
