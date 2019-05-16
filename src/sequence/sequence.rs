@@ -366,6 +366,22 @@ mod tests {
         
     }
 
+    #[should_panic (expected = "Invalid tag: Not valid tag for type")]
+    #[test]
+    fn test_bad_decode_without_expected_values_without_context_tag() {
+        let mut sequence = Sequence::new();
+        sequence.def::<Integer>("id", None);
+        sequence.def::<OctetString>("data", None);
+
+        let mut inte = Integer::new(9);
+        let mut octet_str = OctetString::new(vec![]);
+
+        sequence.set_ref("id", Box::new(&mut inte)).unwrap();
+        sequence.set_ref("data", Box::new(&mut octet_str)).unwrap();
+
+        sequence.decode(&[0x30, 0x1, 0xf0]).unwrap();
+    }
+
     #[test]
     fn test_decode_without_context_tags() {
         let mut sequence = Sequence::new();
