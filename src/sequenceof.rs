@@ -60,6 +60,7 @@ impl <T: Asn1InstanciableObject> Asn1Object for SequenceOf<T> {
     }
 
     fn unset_value(&mut self) {
+        self.components = Vec::new();
     }
 
 }
@@ -67,19 +68,48 @@ impl <T: Asn1InstanciableObject> Asn1Object for SequenceOf<T> {
 impl<T: Asn1InstanciableObject> SequenceOf<T> {
 
     pub fn new() -> SequenceOf<T> {
-        let components: Vec<T> = Vec::new();
         return SequenceOf{
             tag: SequenceOf::<T>::type_tag(),
-            components
+            components: Vec::<T>::new()
         };
     }
 
+    pub fn value(&self) -> &Vec<T> {
+        return &self.components;
+    }
+
+}
+
+impl<T: Asn1InstanciableObject> Asn1InstanciableObject for SequenceOf<T> {
+    fn new_default() -> SequenceOf<T> {
+        return SequenceOf::new();
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use super::super::integer::{Integer, INTEGER_TAG_NUMBER};
+
+    #[test]
+    fn test_create() {
+        let seq_of: SequenceOf<Integer> = SequenceOf::new();
+        assert_eq!(&Vec::<Integer>::new(), seq_of.value());
+    }
+
+    #[test]
+    fn test_create_default() {
+        let seq_of: SequenceOf<Integer> = SequenceOf::new_default();
+        assert_eq!(&Vec::<Integer>::new(), seq_of.value());
+    }
+
+    #[test]
+    fn test_unset_value() {
+        let mut seq_of: SequenceOf<Integer> = SequenceOf::new();
+        seq_of.push(Integer::new(9));
+        seq_of.unset_value();
+        assert_eq!(&Vec::<Integer>::new(), seq_of.value());
+    }
 
     #[test]
     fn test_encode_sequence_of_integers(){
