@@ -1,6 +1,6 @@
 
 use super::tag::Tag;
-use super::traits::{Asn1Object, Asn1Tagged};
+use super::traits::*;
 use super::error::*;
 
 pub static BIT_STRING_TAG_NUMBER: u8 = 0x3;
@@ -73,7 +73,11 @@ impl Asn1Object for BitSring {
     }
 }
 
-add Asn1InstanciableObject trait...
+impl Asn1InstanciableObject for BitSring {
+    fn new_default() -> BitSring {
+        return BitSring::new_empty();
+    }
+}
 
 impl BitSring {
     pub fn new(bytes: Vec<u8>, padding_length: u8) -> BitSring{

@@ -147,11 +147,22 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_integer_value_and_tag() {
-        let integer1 = Integer::new(78);
-        assert_eq!(&78, integer1.value().unwrap());
+    fn test_create() {
+        let b = Integer::new(78);
+        assert_eq!(&78, b.value().unwrap());
+    }
 
-        assert_eq!(vec![0x02], integer1.tag.encode());
+    #[test]
+    fn test_create_empty() {
+        let b = Integer::new_empty();
+        assert_eq!(None, b.value());
+    }
+
+    #[test]
+    fn test_unset_value() {
+        let mut b = Integer::new(78);
+        b.unset_value();
+        assert_eq!(None, b.value());
     }
 
     #[test]

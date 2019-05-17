@@ -1,5 +1,5 @@
 use super::tag::Tag;
-use super::traits::{Asn1Object, Asn1Tagged};
+use super::traits::*;
 use super::error::*;
 
 pub static BOOLEAN_TAG_NUMBER: u8 = 0x1;
@@ -7,20 +7,44 @@ pub static BOOLEAN_TAG_NUMBER: u8 = 0x1;
 #[derive(Debug, PartialEq)]
 pub struct Boolean {
     tag: Tag,
-    value: bool
+    _value: Option<bool>
 }
-
-set value as Option and add Asn1InstanciableObject
 
 impl Boolean {
 
     pub fn new(value: bool) -> Boolean {
         return Boolean {
             tag: Boolean::type_tag(),
-            value
-        }
+            _value: Some(value)
+        };
+    }
+
+    pub fn new_empty() -> Boolean {
+        return Boolean {
+            tag: Boolean::type_tag(),
+            _value: None
+        };
+    }
+
+    pub fn value(&self) -> Option<&bool> {
+        match &self._value {
+            Some(ref value) => {
+                return Some(value);
+            }
+            None => {
+                return None;
+            }
+        };
+    }
+
+}
+
+impl Asn1InstanciableObject for Boolean {
+    fn new_default() -> Boolean {
+        return Boolean::new_empty();
     }
 }
+
 
 impl Asn1Tagged for Boolean {
     fn type_tag() -> Tag {
@@ -35,7 +59,15 @@ impl Asn1Object for Boolean {
     }
 
     fn encode_value(&self) -> Asn1Result<Vec<u8>> {
-        return Ok(vec![(self.value as u8) * 0xff]);
+        match self._value {
+            Some(value) => {
+                return Ok(vec![(value as u8) * 0xff]);
+            },
+            None => {
+                return Err(Asn1ErrorKind::NoValue)?;
+            }
+        }
+        
     }
 
     fn decode_value(&mut self, raw: &[u8]) -> Asn1Result<()> {
@@ -43,18 +75,37 @@ impl Asn1Object for Boolean {
             return Err(Asn1ErrorKind::NoDataForType)?;
         }
 
-        self.value = raw[0] != 0;
+        self._value = Some(raw[0] != 0);
         return Ok(());
     }
 
     fn unset_value(&mut self) {
-
+        self._value = None;
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_create() {
+        let b = Boolean::new(true);
+        assert_eq!(&true, b.value().unwrap());
+    }
+
+    #[test]
+    fn test_create_empty() {
+        let b = Boolean::new_empty();
+        assert_eq!(None, b.value());
+    }
+
+    #[test]
+    fn test_unset_value() {
+        let mut b = Boolean::new(true);
+        b.unset_value();
+        assert_eq!(None, b.value());
+    }
 
     #[test]
     fn test_encode() {
