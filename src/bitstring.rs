@@ -146,6 +146,12 @@ mod tests {
     }
 
     #[test]
+    fn test_create_default() {
+        let b = BitSring::new_default();
+        assert_eq!(None, b.value());
+    }
+
+    #[test]
     fn test_unset_value() {
         let mut b = BitSring::new(vec![0x0], 0);
         b.unset_value();

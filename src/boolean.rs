@@ -101,6 +101,12 @@ mod tests {
     }
 
     #[test]
+    fn test_create_default() {
+        let b = Boolean::new_default();
+        assert_eq!(None, b.value());
+    }
+
+    #[test]
     fn test_unset_value() {
         let mut b = Boolean::new(true);
         b.unset_value();
