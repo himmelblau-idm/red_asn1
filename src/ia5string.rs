@@ -1,7 +1,7 @@
 use ascii::AsciiString;
 use ascii::AsciiChar;
 use super::tag::Tag;
-use super::traits::{Asn1Object, Asn1Tagged};
+use super::traits::*;
 use super::error::*;
 use std::result::Result;
 
@@ -10,7 +10,7 @@ pub static IA5STRING_TAG_NUMBER: u8 = 0x16;
 #[derive(Debug, PartialEq)]
 pub struct IA5String {
     tag: Tag,
-    value: AsciiString
+    _value: Option<AsciiString>
 }
 
 impl Asn1Tagged for IA5String {
@@ -26,9 +26,20 @@ impl Asn1Object for IA5String {
     }
 
     fn encode_value(&self) -> Result<Vec<u8>,Asn1Error> {
-        let mut encoded_value : Vec<u8> = Vec::with_capacity(self.value.len());
+        let value;
 
-        for &c in self.value.chars() {
+        match &self._value {
+            Some(_value) => {
+                value = _value;
+            },
+            None => {
+                return Err(Asn1ErrorKind::NoValue)?;
+            }
+        }
+
+        let mut encoded_value : Vec<u8> = Vec::with_capacity(value.len());
+
+        for &c in value.chars() {
             encoded_value.push(c as u8);
         }
 
@@ -52,12 +63,13 @@ impl Asn1Object for IA5String {
             value.push(ascii_char);
         }
 
-        self.value = value;
+        self._value = Some(value);
 
         return Ok(());
     }
 
     fn unset_value(&mut self) {
+        self._value = None;
     }
 }
 
@@ -65,22 +77,63 @@ impl IA5String {
     pub fn new(value: AsciiString) -> IA5String {
         return IA5String {
             tag: IA5String::type_tag(),
-            value
+            _value: Some(value)
         }
     }
 
     pub fn new_empty() -> IA5String {
         return IA5String {
             tag: IA5String::type_tag(),
-            value: AsciiString::from_ascii("").unwrap()
+            _value: None
         }
+    }
+
+    pub fn value(&self) -> Option<&AsciiString> {
+        match &self._value {
+            Some(ref value) => {
+                return Some(value);
+            }
+            None => {
+                return None;
+            }
+        };
     }
 }
 
+impl Asn1InstanciableObject for IA5String {
+    fn new_default() -> IA5String {
+        return IA5String::new_empty();
+    }
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_create() {
+        let b = IA5String::new(AsciiString::from_ascii("test1@rsa.com").unwrap());
+        assert_eq!(&AsciiString::from_ascii("test1@rsa.com").unwrap(), b.value().unwrap());
+    }
+
+    #[test]
+    fn test_create_empty() {
+        let b = IA5String::new_empty();
+        assert_eq!(None, b.value());
+    }
+
+    #[test]
+    fn test_create_default() {
+        let b = IA5String::new_default();
+        assert_eq!(None, b.value());
+    }
+
+    #[test]
+    fn test_unset_value() {
+        let mut b = IA5String::new(AsciiString::from_ascii("test1@rsa.com").unwrap());
+        b.unset_value();
+        assert_eq!(None, b.value());
+    }
 
     #[test]
     fn test_encode_ia5string() {

@@ -23,7 +23,7 @@ impl Asn1Object for Integer {
     }
 
     fn encode_value(&self) -> Asn1Result<Vec<u8>> {
-         let mut shifted_value;
+        let mut shifted_value;
 
         match self._value {
             Some(value) => {
