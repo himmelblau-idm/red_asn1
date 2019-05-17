@@ -1,6 +1,6 @@
 use super::tag::Tag;
 use super::traits::{Asn1Object, Asn1InstanciableObject, Asn1Tagged};
-use super::error::Asn1Error;
+use super::error::*;
 use std::result::Result;
 
 pub static OCTET_STRING_TAG_NUMBER: u8 = 0x4;
@@ -8,7 +8,7 @@ pub static OCTET_STRING_TAG_NUMBER: u8 = 0x4;
 #[derive(Debug, PartialEq)]
 pub struct OctetString {
     tag: Tag,
-    value: Vec<u8>
+    _value: Option<Vec<u8>>
 }
 
 impl Asn1Tagged for OctetString {
@@ -24,28 +24,40 @@ impl Asn1Object for OctetString {
     }
 
     fn encode_value(&self) -> Result<Vec<u8>,Asn1Error> {
-        let mut encoded_value = Vec::with_capacity(self.value.len());
+        let value;
 
-        for i in 0..self.value.len() {
-            encoded_value.push(self.value[i])
+        match &self._value {
+            Some(_value) => {
+                value = _value;
+            },
+            None => {
+                return Err(Asn1ErrorKind::NoValue)?;
+            }
+        }
+
+        let mut encoded_value = Vec::with_capacity(value.len());
+
+        for i in 0..value.len() {
+            encoded_value.push(value[i])
         }
 
         return Ok(encoded_value);
     }
 
     fn decode_value(&mut self, raw: &[u8]) -> Result<(), Asn1Error> {
-        self.value = raw.to_vec();
+        self._value = Some(raw.to_vec());
         return Ok(());
     }
 
     fn unset_value(&mut self) {
+        self._value = None;
     }
 }
 
 impl Asn1InstanciableObject for OctetString {
 
     fn new_default() -> OctetString {
-        return OctetString::new(vec![]);
+        return OctetString::new_empty();
     }
 
 }
@@ -55,12 +67,26 @@ impl OctetString {
     pub fn new(value: Vec<u8>) -> OctetString {
         return OctetString {
             tag: OctetString::type_tag(),
-            value
+            _value: Some(value)
         }
     }
 
-    pub fn value(&self) -> &[u8] {
-        return &self.value;
+    pub fn new_empty() -> OctetString {
+        return OctetString {
+            tag: OctetString::type_tag(),
+            _value: None
+        }
+    }
+
+    pub fn value(&self) -> Option<&Vec<u8>> {
+        match &self._value {
+            Some(ref value) => {
+                return Some(value);
+            }
+            None => {
+                return None;
+            }
+        };
     }
 
 }
@@ -68,6 +94,31 @@ impl OctetString {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_create() {
+        let b = OctetString::new(vec![0x0]);
+        assert_eq!(&vec![0x0], b.value().unwrap());
+    }
+
+    #[test]
+    fn test_create_empty() {
+        let b = OctetString::new_empty();
+        assert_eq!(None, b.value());
+    }
+
+    #[test]
+    fn test_create_default() {
+        let b = OctetString::new_default();
+        assert_eq!(None, b.value());
+    }
+
+    #[test]
+    fn test_unset_value() {
+        let mut b = OctetString::new(vec![0x0]);
+        b.unset_value();
+        assert_eq!(None, b.value());
+    }
 
     #[test]
     fn test_encode_octet_string() {

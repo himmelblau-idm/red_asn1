@@ -345,7 +345,7 @@ mod tests {
                         0xa1, 0x6, OCTET_STRING_TAG_NUMBER, 0x4, 0x1, 0x2, 0x3, 0x4]).unwrap();
         
         assert_eq!(&9, inte.value().unwrap());
-        assert_eq!(&[0x1, 0x2, 0x3, 0x4], octet_str.value());
+        assert_eq!(&vec![0x1, 0x2, 0x3, 0x4], octet_str.value().unwrap());
     }
 
     #[should_panic (expected = "Invalid tag: Not valid tag for context")]
@@ -392,7 +392,7 @@ mod tests {
                           OCTET_STRING_TAG_NUMBER, 0x4, 0x1, 0x2, 0x3, 0x4]).unwrap();
 
         assert_eq!(&9, inte.value().unwrap());
-        assert_eq!(&[0x1, 0x2, 0x3, 0x4], octet_str.value());
+        assert_eq!(&vec![0x1, 0x2, 0x3, 0x4], octet_str.value().unwrap());
     }
 
     #[test]
@@ -410,7 +410,7 @@ mod tests {
         sequence.decode(&[0x30, 0x8, 
                         0xa1, 0x6, OCTET_STRING_TAG_NUMBER, 0x4, 0x1, 0x2, 0x3, 0x4]).unwrap();
 
-        assert_eq!(&[0x1, 0x2, 0x3, 0x4], octet_str.value());
+        assert_eq!(&vec![0x1, 0x2, 0x3, 0x4], octet_str.value().unwrap());
         assert_eq!(None, inte.value());
     }
 
@@ -429,7 +429,7 @@ mod tests {
         sequence.decode(&[0x30, 0x6, 
                           OCTET_STRING_TAG_NUMBER, 0x4, 0x1, 0x2, 0x3, 0x4]).unwrap();
 
-        assert_eq!(&[0x1, 0x2, 0x3, 0x4], octet_str.value());
+        assert_eq!(&vec![0x1, 0x2, 0x3, 0x4], octet_str.value().unwrap());
         assert_eq!(None, inte.value());
     }
 
