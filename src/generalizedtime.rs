@@ -1,6 +1,6 @@
 use chrono::prelude::*;
 use super::tag::Tag;
-use super::traits::{Asn1Object, Asn1Tagged};
+use super::traits::*;
 use super::error::*;
 use std::default::Default;
 use std::str;
@@ -10,7 +10,7 @@ pub static GENERALIZED_TIME_TAG_NUMBER: u8 = 0x18;
 #[derive(Debug, PartialEq)]
 pub struct GeneralizedTime {
     tag: Tag,
-    value: DateTime<Utc>,
+    _value: Option<DateTime<Utc>>,
     format: TimeFormat
 }
 
@@ -18,7 +18,15 @@ impl GeneralizedTime {
     pub fn new(value: DateTime<Utc>) -> GeneralizedTime {
         return GeneralizedTime {
             tag: GeneralizedTime::type_tag(),
-            value,
+            _value: Some(value),
+            format: TimeFormat::default()
+        };
+    }
+
+    pub fn new_empty() -> GeneralizedTime {
+        return GeneralizedTime {
+            tag: GeneralizedTime::type_tag(),
+            _value: None,
             format: TimeFormat::default()
         };
     }
@@ -27,8 +35,19 @@ impl GeneralizedTime {
         self.format = format;
     }
 
-    fn _format_as_string(&self) -> String {
-        return self.format.format(&self.value);
+    pub fn value(&self) -> Option<&DateTime<Utc>> {
+        match &self._value {
+            Some(ref value) => {
+                return Some(value);
+            }
+            None => {
+                return None;
+            }
+        };
+    }
+
+    fn _format_datetime_as_string(&self, datetime: &DateTime<Utc>) -> String {
+        return self.format.format(datetime);
     }
 
 }
@@ -46,7 +65,14 @@ impl Asn1Object for GeneralizedTime {
     }
 
     fn encode_value(&self) -> Asn1Result<Vec<u8>> {
-        return Ok(self._format_as_string().into_bytes());
+        match self._value {
+            Some(value) => {
+                return Ok(self._format_datetime_as_string(&value).into_bytes());
+            },
+            None => {
+                return Err(Asn1ErrorKind::NoValue)?;
+            }
+        }
     }
 
     fn decode_value(&mut self, raw: &[u8]) -> Asn1Result<()> {
@@ -77,7 +103,7 @@ impl Asn1Object for GeneralizedTime {
         let is_utc: bool = raw[raw.len() - 1] == 'Z' as u8;
 
         if is_utc {
-            self.value = Utc.ymd(year, month, day).and_hms_nano(hour, minute, second, decisecond * 100000000);
+            self._value = Some(Utc.ymd(year, month, day).and_hms_nano(hour, minute, second, decisecond * 100000000));
         }else {
             return Err(Asn1ErrorKind::InvalidValue("Local time decode is not implemented yet".to_string()))?;
         }
@@ -86,6 +112,7 @@ impl Asn1Object for GeneralizedTime {
     }
 
     fn unset_value(&mut self) {
+        self._value = None;
     }
 }
 
@@ -119,9 +146,40 @@ impl TimeFormat {
     }
 }
 
+impl Asn1InstanciableObject for GeneralizedTime {
+    fn new_default() -> GeneralizedTime {
+        return GeneralizedTime::new_empty();
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_create() {
+        let b = GeneralizedTime::new(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000));
+        assert_eq!(&Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000), b.value().unwrap());
+    }
+
+    #[test]
+    fn test_create_empty() {
+        let b = GeneralizedTime::new_empty();
+        assert_eq!(None, b.value());
+    }
+
+    #[test]
+    fn test_create_default() {
+        let b = GeneralizedTime::new_default();
+        assert_eq!(None, b.value());
+    }
+
+    #[test]
+    fn test_unset_value() {
+        let mut b = GeneralizedTime::new(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000));
+        b.unset_value();
+        assert_eq!(None, b.value());
+    }
 
     #[test]
     fn test_encode_generalized_time() {
