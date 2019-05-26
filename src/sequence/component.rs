@@ -213,3 +213,13 @@ impl<'a, 'b> Asn1Object for SequenceComponent<'a, 'b> {
         self.unset_subtype_ref_value();
     }
 }
+
+
+pub struct SequenceComponent2<T> {
+    identifier: String,
+    context_tag: Option<Tag>,
+    optional: bool,
+    subtype_tag: Tag,
+    subtype: Option<T>,
+    last_value_was_decoded: bool
+}

@@ -1,0 +1,54 @@
+use std::fmt;
+use failure::*;
+use failure_derive::Fail;
+
+pub type ParseComponentResult<T> = Result<T, ParseComponentError>;
+
+
+#[derive(Debug)]
+pub struct ParseComponentError {
+    inner: Context<Asn1ErrorKind>
+}
+
+#[derive(Clone, Debug, Fail)]
+pub enum ParseComponentErrorKind {
+}
+
+
+impl ParseComponentError {
+
+    pub fn kind(&self) -> &ParseComponentErrorKind {
+        return self.inner.get_context();
+    }
+
+}
+
+impl Fail for ParseComponentError {
+    fn cause(&self) -> Option<&Fail> {
+        self.inner.cause()
+    }
+
+    fn backtrace(&self) -> Option<&Backtrace> {
+        self.inner.backtrace()
+    }
+}
+
+impl fmt::Display for ParseComponentError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(&self.inner, f)
+    }
+}
+
+impl std::convert::From<ParseComponentErrorKind> for ParseComponentError {
+    fn from(kind: ParseComponentErrorKind) -> ParseComponentError {
+        return ParseComponentError {
+            inner: Context::new(kind)
+        };
+    }
+}
+
+impl std::convert::From<Context<ParseComponentErrorKind>> for ParseComponentError {
+    fn from(inner: Context<ParseComponentErrorKind>) -> ParseComponentError {
+        return ParseComponentError { inner };
+    }
+}

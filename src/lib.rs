@@ -16,7 +16,7 @@ pub use boolean::{Boolean, BOOLEAN_TAG_NUMBER};
 pub use integer::{Integer, INTEGER_TAG_NUMBER};
 pub use bitstring::{BitSring, BIT_STRING_TAG_NUMBER};
 pub use octetstring::{OctetString, OCTET_STRING_TAG_NUMBER};
-pub use sequence::{Sequence, SEQUENCE_TAG_NUMBER};
+pub use sequence::{Sequence, SEQUENCE_TAG_NUMBER, SequenceComponent2};
 pub use ia5string::{IA5String, IA5STRING_TAG_NUMBER};
 pub use generalstring::{GeneralString, GENERALSTRING_TAG_NUMBER};
 pub use generalizedtime::{GeneralizedTime, GENERALIZED_TIME_TAG_NUMBER, TimeFormat};

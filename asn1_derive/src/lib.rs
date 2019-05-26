@@ -7,6 +7,8 @@ extern crate quote;
 use proc_macro::TokenStream;
 use syn::*;
 
+use parse_error::*;
+
 struct ComponentDefinition {
     id: Ident,
     kind: Ident,
@@ -100,15 +102,6 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
         }
     }
 
-    let expanded = quote! {
-        impl HelloMacro for #name {
-            fn hello_macro(&self) {
-                println!("Hello, Macro! My name is {}", 
-                stringify!(#name));
-            }
-        }
-    };
-
     let encode_value = quote! {
         fn encode_value(&self) -> Vec<u8> {
             let mut value: Vec<u8> = Vec::new();
@@ -125,8 +118,6 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
     };
 
     let total_exp = quote! {
-        #expanded
-
         impl #name {
             #expanded_getters
             #encode_value
@@ -141,14 +132,14 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
 
 
 
-fn extract_components_definitions(data_struct : &DataStruct) -> Vec<ComponentDefinition> {
+fn extract_components_definitions(data_struct : &DataStruct) -> ParseComponentResult<Vec<ComponentDefinition>> {
     if let Fields::Named(fields_named) = &data_struct.fields {
         return parse_structure_fields(fields_named);
     }
     unreachable!()
 }
 
-fn parse_structure_fields(fields : &FieldsNamed) -> Vec<ComponentDefinition> {
+fn parse_structure_fields(fields : &FieldsNamed) -> ParseComponentResult<Vec<ComponentDefinition>> {
     let mut components_definitions: Vec<ComponentDefinition> = Vec::new();
     for field in fields.named.iter() {
         components_definitions.push(parse_structure_field(&field));
@@ -156,6 +147,7 @@ fn parse_structure_fields(fields : &FieldsNamed) -> Vec<ComponentDefinition> {
     return components_definitions;
 }
 
+seguir incluyendo ParseComponentResult
 fn parse_structure_field(field : &Field) -> ComponentDefinition {
     let field_name;
     if let Some(name) = &field.ident {
