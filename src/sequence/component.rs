@@ -216,61 +216,18 @@ impl<'a, 'b> Asn1Object for SequenceComponent<'a, 'b> {
 
 
 pub struct SequenceComponent2<T: Asn1InstanciableObject> {
-    identifier: String,
-    context_tag: Option<Tag>,
-    optional: bool,
     subtype: Option<T>
 }
 
 impl<T: Asn1InstanciableObject> SequenceComponent2<T> {
 
-    pub fn new(identifier: String, context_tag_number: Option<u8>, optionality: SeqCompOptionality) 
+    pub fn new() 
     -> SequenceComponent2<T> {
-        let mut sequence_component = SequenceComponent2{
-            identifier,
-            context_tag: None,
-            optional: false,
+        let sequence_component = SequenceComponent2{
             subtype: None
         };
-        sequence_component._set_optionality(optionality);
-        sequence_component._calculate_tag(context_tag_number);
 
         return sequence_component;
-    }
-
-    fn _set_optionality(&mut self, optionality: SeqCompOptionality) {
-        match optionality {
-            SeqCompOptionality::Optional => {
-                self.optional = true;
-            }
-            SeqCompOptionality::Required => {
-                self.optional = false;
-            }
-        }
-    }
-
-    fn _calculate_tag(&mut self, context_tag_number: Option<u8>) {
-        self.context_tag = match context_tag_number {
-            Some(tag_number) => {
-                let new_tag = Tag::new(tag_number, TagType::Constructed, TagClass::Context);
-                Some(new_tag)
-            }
-            None => {
-                None
-            }
-        };
-    }
-
-    pub fn identifier(&self) -> &String {
-        return &self.identifier;
-    }
-
-    pub fn is_optional(&self) -> bool {
-        return self.optional;
-    }
-
-    pub fn has_context_tag(&self) -> bool {
-        return self.context_tag != None;
     }
 
     pub fn get_inner_value(&self) -> Option<&T> {

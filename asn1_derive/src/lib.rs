@@ -33,6 +33,7 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
     let mut expanded_getters = quote! {};
     let mut encode_calls = quote! {};
     let mut decode_calls = quote! {};
+    let mut new_fields = quote! {};
     let components : Vec<ComponentDefinition>;
 
     if let Data::Struct(data_struct) = &ast.data {
@@ -107,6 +108,11 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                 };
             };
 
+            new_fields = quote! {
+                #new_fields
+                #field_name: SequenceComponent2::new()
+            }
+
         }
     }
     
@@ -129,6 +135,11 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
 
     let total_exp = quote! {
         impl #name {
+            fn new() -> #name {
+                return #name {
+                    #new_fields
+                };
+            }
             #expanded_getters
             // #encode_value
             // #decode_value
