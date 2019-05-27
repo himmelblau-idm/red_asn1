@@ -7,6 +7,8 @@ extern crate quote;
 use proc_macro::TokenStream;
 use syn::*;
 
+mod parse_error;
+
 use parse_error::*;
 
 struct ComponentDefinition {
@@ -16,10 +18,14 @@ struct ComponentDefinition {
     context_tag_number: Option<u8>
 }
 
-
+static SEQUENCE_COMPONENT_TYPE_NAME: &str = "SequenceComponent2";
+static ASN1_SEQ_COMP_ATTR: &str = "seq_comp";
+static OPTIONAL_ATTR: &str = "optional";
+static TAG_NUMBER_ATTR: &str = "tag_number";
 
 #[proc_macro_derive(Asn1Sequence, attributes(seq_comp))]
 pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
+    
     let ast = parse_macro_input!(input as DeriveInput);
 
     let name = &ast.ident;
@@ -30,7 +36,7 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
     let components : Vec<ComponentDefinition>;
 
     if let Data::Struct(data_struct) = &ast.data {
-        components = extract_components_definitions(data_struct);
+        components = extract_components_definitions(data_struct).unwrap();
 
         for component in components {
             let field_name = component.id;
@@ -57,7 +63,7 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                 fn #getter_name (&self) -> Option<&#inner_type> {
                     return self.#field_name.get_inner_value();
                 }
-
+                
                 fn #setter_name (&mut self, value: #inner_type) {
                     return self.#field_name.set_inner_value(value);
                 }
@@ -66,13 +72,15 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                     return self.#field_name.unset_inner_value();
                 }
 
+                /*
                 fn #decoder_name (&mut self, raw: &[u8]) -> Result<()> {
                     return self.#field_name.decode(raw);
                 }
 
+                
                 fn #encoder_name (&self) -> Result<Vec<u8>> {
                     return self.#field_name.encode();
-                }
+                }*/
             };
 
             encode_calls = quote! {
@@ -101,7 +109,7 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
 
         }
     }
-
+    
     let encode_value = quote! {
         fn encode_value(&self) -> Vec<u8> {
             let mut value: Vec<u8> = Vec::new();
@@ -110,6 +118,7 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
         }
     };
 
+    
     let decode_value = quote! {
         fn decode_value(&mut self, raw: &[u8]) -> Result<()> {
             let mut consumed_octets = 0;
@@ -117,17 +126,17 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
         }
     };
 
+
     let total_exp = quote! {
         impl #name {
             #expanded_getters
-            #encode_value
-            #decode_value
+            // #encode_value
+            // #decode_value
         }
     };
 
-    // println!("{}", total_exp);
 
-    TokenStream::from(total_exp)
+    return TokenStream::from(total_exp);
 }
 
 
@@ -142,63 +151,77 @@ fn extract_components_definitions(data_struct : &DataStruct) -> ParseComponentRe
 fn parse_structure_fields(fields : &FieldsNamed) -> ParseComponentResult<Vec<ComponentDefinition>> {
     let mut components_definitions: Vec<ComponentDefinition> = Vec::new();
     for field in fields.named.iter() {
-        components_definitions.push(parse_structure_field(&field));
+        components_definitions.push(parse_structure_field(&field)?);
     }
-    return components_definitions;
+    return Ok(components_definitions);
 }
 
-seguir incluyendo ParseComponentResult
-fn parse_structure_field(field : &Field) -> ComponentDefinition {
+
+fn parse_structure_field(field : &Field) -> ParseComponentResult<ComponentDefinition> {
     let field_name;
     if let Some(name) = &field.ident {
         field_name = name;
     }else {
-        panic!();
+        unreachable!();
     }
  
-    let field_type = extract_component_type(&field.ty);
+    let field_type = extract_component_type(&field.ty)?;
     let mut context_tag_number = None;
     let mut optional = false;
 
-    if let Some((opt, tag_number)) = parse_field_attrs(&field.attrs){
-        optional = opt;
-        context_tag_number = tag_number;
-    }
 
-    return ComponentDefinition{
-        id: field_name.clone(),
-        kind: field_type,
-        optional,
-        context_tag_number
-    };
-}
-
-fn extract_component_type(field_type: &Type) -> Ident {
-    if let Type::Path(path) = &field_type {
-        println!("Field is {}", path.path.segments[0].ident);
-        if path.path.segments[0].ident == "SequenceComponent" {
-            if let PathArguments::AngleBracketed(brack_argument) = &path.path.segments[0].arguments {
-                if let GenericArgument::Type(ty) = &brack_argument.args[0] {
-                    if let Type::Path(path) = ty {
-                        return path.path.segments[0].ident.clone();
-                    }
+    match parse_field_attrs(&field.attrs) {
+        Ok((opt, tag_number)) => {
+            optional = opt;
+            context_tag_number = tag_number;
+        },
+        Err(parse_error) => {
+            match parse_error.kind() {
+                ParseComponentErrorKind::NotFoundAttributeTag => {
+                },
+                _ => {
+                    return Err(parse_error);
                 }
             }
         }
     }
-    panic!();
+
+    return Ok(ComponentDefinition{
+        id: field_name.clone(),
+        kind: field_type,
+        optional,
+        context_tag_number
+    });
 }
 
-fn parse_field_attrs(attrs: &Vec<Attribute>) -> Option<(bool, Option<u8>)> {
-    for attr in attrs {
-        if attr.path.segments.len() > 0 && attr.path.segments[0].ident == "seq_comp" {
-            return Some(parse_component_attr(attr));
+fn extract_component_type(field_type: &Type) -> ParseComponentResult<Ident> {
+    if let Type::Path(path) = &field_type {
+        println!("Field is {}", path.path.segments[0].ident);
+        if path.path.segments[0].ident == SEQUENCE_COMPONENT_TYPE_NAME {
+            if let PathArguments::AngleBracketed(brack_argument) = &path.path.segments[0].arguments {
+                if let GenericArgument::Type(ty) = &brack_argument.args[0] {
+                    if let Type::Path(path) = ty {
+                        return Ok(path.path.segments[0].ident.clone());
+                    }
+                }
+            }
+        } else {
+            return Err(ParseComponentErrorKind::InvalidFieldType)?;
         }
     }
-    return None;
+    unreachable!();
 }
 
-fn parse_component_attr(attr: &Attribute) -> (bool, Option<u8>) {
+fn parse_field_attrs(attrs: &Vec<Attribute>) -> ParseComponentResult<(bool, Option<u8>)> {
+    for attr in attrs {
+        if attr.path.segments.len() > 0 && attr.path.segments[0].ident == ASN1_SEQ_COMP_ATTR {
+            return parse_component_attr(attr);
+        }
+    }
+    return Err(ParseComponentErrorKind::NotFoundAttributeTag)?;
+}
+
+fn parse_component_attr(attr: &Attribute) -> ParseComponentResult<(bool, Option<u8>)> {
     let mut optional = false;
     let mut tag_number = None;
 
@@ -208,37 +231,37 @@ fn parse_component_attr(attr: &Attribute) -> (bool, Option<u8>) {
             if let syn::NestedMeta::Meta(ref a) = subattr {
                 match a {
                     Meta::NameValue(name_value) => {
-                        if name_value.ident == "tag_number" {
+                        if name_value.ident == TAG_NUMBER_ATTR {
                             match name_value.lit {
                                 syn::Lit::Int(ref value) => {
                                     let int_value = value.value();
                                     if int_value >= 256 {
-                                        panic!()
+                                        return Err(ParseComponentErrorKind::InvalidTagNumberValue)?;
                                     }
                                     tag_number = Some(int_value as u8);
                                 },
                                 _ => {
-                                    panic!();
+                                    return Err(ParseComponentErrorKind::InvalidTagNumberValue)?;
                                 }
                             }
                         }else {
-                            panic!();
+                            return Err(ParseComponentErrorKind::UnknownAttribute)?;
                         }
                     },
                     Meta::Word(ident) => {
-                        if ident == "optional" {
+                        if ident == OPTIONAL_ATTR {
                             optional = true;
                         }else {
-                            panic!();
+                            return Err(ParseComponentErrorKind::UnknownAttribute)?;
                         }
                     },
                     _ => {
-                        panic!();
+                        return Err(ParseComponentErrorKind::UnknownAttribute)?;
                     }
                 };
             }
         }
     }
 
-    return (optional,tag_number);
+    return Ok((optional,tag_number));
 }

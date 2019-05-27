@@ -12,6 +12,7 @@ fn simple_sequence() {
 
     #[derive(Asn1Sequence)]
     struct Person {
+        #[seq_comp(optional)]
         age: SequenceComponent2<Integer>
     }
 

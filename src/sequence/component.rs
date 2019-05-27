@@ -1,5 +1,5 @@
 use super::super::tag::{Tag, TagClass, TagType};
-use super::super::traits::{Asn1Object, Asn1Tagged};
+use super::super::traits::{Asn1Object, Asn1Tagged, Asn1InstanciableObject};
 use super::super::error::*;
 
 pub enum SeqCompOptionality {
@@ -215,11 +215,124 @@ impl<'a, 'b> Asn1Object for SequenceComponent<'a, 'b> {
 }
 
 
-pub struct SequenceComponent2<T> {
+pub struct SequenceComponent2<T: Asn1InstanciableObject> {
     identifier: String,
     context_tag: Option<Tag>,
     optional: bool,
-    subtype_tag: Tag,
-    subtype: Option<T>,
-    last_value_was_decoded: bool
+    subtype: Option<T>
+}
+
+impl<T: Asn1InstanciableObject> SequenceComponent2<T> {
+
+    pub fn new(identifier: String, context_tag_number: Option<u8>, optionality: SeqCompOptionality) 
+    -> SequenceComponent2<T> {
+        let mut sequence_component = SequenceComponent2{
+            identifier,
+            context_tag: None,
+            optional: false,
+            subtype: None
+        };
+        sequence_component._set_optionality(optionality);
+        sequence_component._calculate_tag(context_tag_number);
+
+        return sequence_component;
+    }
+
+    fn _set_optionality(&mut self, optionality: SeqCompOptionality) {
+        match optionality {
+            SeqCompOptionality::Optional => {
+                self.optional = true;
+            }
+            SeqCompOptionality::Required => {
+                self.optional = false;
+            }
+        }
+    }
+
+    fn _calculate_tag(&mut self, context_tag_number: Option<u8>) {
+        self.context_tag = match context_tag_number {
+            Some(tag_number) => {
+                let new_tag = Tag::new(tag_number, TagType::Constructed, TagClass::Context);
+                Some(new_tag)
+            }
+            None => {
+                None
+            }
+        };
+    }
+
+    pub fn identifier(&self) -> &String {
+        return &self.identifier;
+    }
+
+    pub fn is_optional(&self) -> bool {
+        return self.optional;
+    }
+
+    pub fn has_context_tag(&self) -> bool {
+        return self.context_tag != None;
+    }
+
+    pub fn get_inner_value(&self) -> Option<&T> {
+        match self.subtype {
+            Some(ref subtype) => {
+                return Some(&subtype);
+            },
+            None => {
+                return None;
+            }
+        }
+    }
+
+    pub fn set_inner_value(&mut self, value: T) {
+        self.subtype = Some(value);
+    }
+
+    pub fn unset_inner_value(&mut self) {
+        self.subtype = None;
+    }
+
+    /*
+    fn _decode_context(&mut self, raw: &[u8]) -> Asn1Result<usize> {
+        let mut consumed_octets = self._decode_context_tag(raw)?;
+        let (_, raw_length) = raw.split_at(consumed_octets);
+        let (value_length, consumed_octets_by_length) = self.decode_length(raw_length)?;
+        consumed_octets += consumed_octets_by_length;
+        let (_, raw_value) = raw.split_at(consumed_octets);
+
+        if value_length > raw_value.len() {
+            return Err(Asn1ErrorKind::NoDataForLength)?;
+        }
+
+        let (raw_value, _) = raw_value.split_at(value_length);
+
+        self._decode_inner(raw_value)?;
+        consumed_octets += value_length;
+
+        return Ok(consumed_octets);
+    }
+
+    fn _decode_context_tag(&self, raw_tag: &[u8]) -> Asn1Result<usize> {
+        let mut decoded_tag = Tag::new_empty();
+        let consumed_octets = decoded_tag.decode(raw_tag)?;
+
+        if &decoded_tag != &self.context_tag.unwrap() {
+            return Err(Asn1ErrorKind::InvalidContextTag)?;
+        }
+        return Ok(consumed_octets);
+    }
+
+
+    fn _decode_inner(&mut self, raw: &[u8]) -> Asn1Result<usize> {
+        match &mut self.subtype_ref {
+            Some(value) => {
+                let consumed_octets = value.decode(raw)?;
+                return Ok(consumed_octets);
+            },
+            None => {
+                return Err(Asn1ErrorKind::NoValue)?;
+            }
+        };
+    }*/
+
 }

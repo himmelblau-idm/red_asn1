@@ -7,11 +7,19 @@ pub type ParseComponentResult<T> = Result<T, ParseComponentError>;
 
 #[derive(Debug)]
 pub struct ParseComponentError {
-    inner: Context<Asn1ErrorKind>
+    inner: Context<ParseComponentErrorKind>
 }
 
 #[derive(Clone, Debug, Fail)]
 pub enum ParseComponentErrorKind {
+    #[fail (display = "Not found attribute tag")]
+    NotFoundAttributeTag,
+    #[fail (display = "Invalid tag number value: must a number between 0 and 255")]
+    InvalidTagNumberValue,
+    #[fail (display = "Unknown attribute")]
+    UnknownAttribute,
+    #[fail (display = "Invalid field type")]
+    InvalidFieldType
 }
 
 
