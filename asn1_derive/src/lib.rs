@@ -207,7 +207,6 @@ fn parse_structure_field(field : &Field) -> ParseComponentResult<ComponentDefini
 
 fn extract_component_type(field_type: &Type) -> ParseComponentResult<Ident> {
     if let Type::Path(path) = &field_type {
-        println!("Field is {}", path.path.segments[0].ident);
         if path.path.segments[0].ident == SEQUENCE_COMPONENT_TYPE_NAME {
             if let PathArguments::AngleBracketed(brack_argument) = &path.path.segments[0].arguments {
                 if let GenericArgument::Type(ty) = &brack_argument.args[0] {

@@ -1,6 +1,4 @@
 extern crate asn1;
-
-#[macro_use]
 extern crate asn1_derive;
 
 
@@ -12,12 +10,11 @@ fn simple_sequence() {
 
     #[derive(Asn1Sequence)]
     struct Person {
-        #[seq_comp(optional)]
         age: SequenceComponent2<Integer>
     }
 
-    let p = Person::new();
+    let mut p = Person::new();
     p.set_age(Integer::new(9));
 
-    assert_eq!(&Integer::new(9), p.get_age());
+    assert_eq!(&Integer::new(9), p.get_age().unwrap());
 }
