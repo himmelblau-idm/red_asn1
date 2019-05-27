@@ -1,3 +1,4 @@
+#![recursion_limit="128"]
 extern crate proc_macro;
 extern crate syn;
 
@@ -73,15 +74,16 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                     return self.#field_name.unset_inner_value();
                 }
 
+                fn #encoder_name (&self) -> Asn1Result<Vec<u8>> {
+                    return self.#field_name.encode();
+                }
+
                 /*
                 fn #decoder_name (&mut self, raw: &[u8]) -> Result<()> {
                     return self.#field_name.decode(raw);
                 }
 
-                
-                fn #encoder_name (&self) -> Result<Vec<u8>> {
-                    return self.#field_name.encode();
-                }*/
+                */
             };
 
             encode_calls = quote! {
@@ -91,10 +93,12 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                         value.append(bytes);
                     },
                     Err(error) => {
-                        return error;
+                        return Err(error);
                     }
                 };
             };
+
+            
 
             decode_calls = quote! {
                 #decode_calls
@@ -103,7 +107,7 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                         consumed_octets += num_octets;
                     },
                     Err(error) => {
-                        return error;
+                        return Err(error);
                     }
                 };
             };
@@ -117,10 +121,10 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
     }
     
     let encode_value = quote! {
-        fn encode_value(&self) -> Vec<u8> {
+        fn encode_value(&self) -> Asn1Result<Vec<u8>> {
             let mut value: Vec<u8> = Vec::new();
             #encode_calls
-            return value;
+            return Ok(value);
         }
     };
 
@@ -140,8 +144,47 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                     #new_fields
                 };
             }
+
+            fn encode(&self) -> Asn1Result<Vec<u8>> {
+                let mut encoded = self.encode_tag();
+                let mut encoded_value = self.encode_value()?;
+                let mut encoded_length = self.encode_length(encoded_value.len());
+
+                encoded.append(&mut encoded_length);
+                encoded.append(&mut encoded_value);
+
+                return Ok(encoded);
+            }
+
+            fn encode_tag(&self) -> Vec<u8> {
+                return Tag::new_constructed_universal(SEQUENCE_TAG_NUMBER).encode();
+            }
+
+            
+            fn encode_length(&self, value_size: usize) -> Vec<u8> {
+                if value_size < 128 {
+                    return vec![value_size as u8];
+                }
+
+                let mut shifted_length = value_size;
+                let mut octets_count: u8 = 0;
+                let mut encoded_length : Vec<u8> = Vec::new();
+
+                while shifted_length > 0 {
+                    octets_count += 1;
+                    encoded_length.push(shifted_length as u8);
+                    shifted_length >>= 8;
+                }
+
+                encoded_length.push(octets_count | 0b10000000);
+                
+                encoded_length.reverse();
+
+                return encoded_length;
+            }
+
             #expanded_getters
-            // #encode_value
+            #encode_value
             // #decode_value
         }
     };

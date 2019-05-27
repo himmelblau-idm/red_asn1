@@ -249,6 +249,22 @@ impl<T: Asn1InstanciableObject> SequenceComponent2<T> {
         self.subtype = None;
     }
 
+    pub fn encode(&self) -> Asn1Result<Vec<u8>> {
+        let encoded_value = self.encode_value()?;
+        return Ok(encoded_value);
+    }
+
+    fn encode_value(&self) -> Asn1Result<Vec<u8>> {
+        match &self.subtype {
+            Some(value) => {
+                return value.encode();
+            }
+            None => {
+                return Err(Asn1ErrorKind::NoValue)?;
+            }
+        }
+    }
+
     /*
     fn _decode_context(&mut self, raw: &[u8]) -> Asn1Result<usize> {
         let mut consumed_octets = self._decode_context_tag(raw)?;
