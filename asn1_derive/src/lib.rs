@@ -74,9 +74,6 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                     return self.#field_name.unset_inner_value();
                 }
 
-                fn #decoder_name (&mut self, raw: &[u8]) -> Asn1Result<usize> {
-                    return self.#field_name.decode(raw);
-                }
             };
 
             if let Some(context_tag_number) = component.context_tag_number {
@@ -94,6 +91,33 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
 
                         return Ok(encoded);
                     }
+
+                    fn #decoder_name (&mut self, raw: &[u8]) -> Asn1Result<usize> {
+                        let mut decoded_tag = Tag::new_empty();
+                        let mut consumed_octets = decoded_tag.decode(raw)?;
+
+                        if decoded_tag != Tag::new(#context_tag_number, TagType::Constructed, TagClass::Context) {
+                            return Err(Asn1ErrorKind::InvalidTypeTag)?;
+                        }
+
+                        let (_, raw_length) = raw.split_at(consumed_octets);
+
+                        let (value_length, consumed_octets_by_length) = self.decode_length(raw_length)?;
+                        consumed_octets += consumed_octets_by_length;
+
+                        let (_, raw_value) = raw.split_at(consumed_octets);
+
+                        if value_length > raw_value.len() {
+                            return Err(Asn1ErrorKind::NoDataForLength)?;
+                        }
+
+                        let (raw_value, _) = raw_value.split_at(value_length);
+
+                        self.#field_name.decode(raw_value)?;
+                        consumed_octets += value_length;
+
+                        return Ok(consumed_octets);
+                    }
                 }
             }else {
                 expanded_getters = quote! {
@@ -101,6 +125,10 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                     
                     fn #encoder_name (&self) -> Asn1Result<Vec<u8>> {
                         return self.#field_name.encode();
+                    }
+
+                    fn #decoder_name (&mut self, raw: &[u8]) -> Asn1Result<usize> {
+                        return self.#field_name.decode(raw);
                     }
                 }
             }
