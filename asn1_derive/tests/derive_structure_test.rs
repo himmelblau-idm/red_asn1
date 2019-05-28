@@ -16,7 +16,7 @@ fn test_simple_sequence_definition() {
     let mut p = Person::new();
     p.set_age(Integer::new(9));
 
-    assert_eq!(&Integer::new(9), p.get_age());
+    assert_eq!(&Integer::new(9), p.get_age().unwrap());
 }
 
 
@@ -75,7 +75,7 @@ fn test_simple_sequence_decoding() {
     let mut p = Person::new();
     p.decode(&[0x30, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x9]).unwrap();
 
-    assert_eq!(&Integer::new(9), p.get_age());
+    assert_eq!(&Integer::new(9), p.get_age().unwrap());
 }
 
 
@@ -91,5 +91,20 @@ fn test_decoding_sequence_with_context_tags() {
     let mut p = Person::new();
     p.decode(&[0x30, 0x5, 0xa0, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x9]).unwrap();
 
-    assert_eq!(&Integer::new(9), p.get_age());
+    assert_eq!(&Integer::new(9), p.get_age().unwrap());
+}
+
+#[test]
+fn test_decoding_sequence_with_optional() {
+
+    #[derive(Asn1Sequence)]
+    struct Person {
+        #[seq_comp(optional)]
+        age: SequenceComponent2<Integer>
+    }
+
+    let mut p = Person::new();
+    p.decode(&[0x30, 0x0]).unwrap();
+
+    assert_eq!(None, p.get_age());
 }

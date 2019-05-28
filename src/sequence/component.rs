@@ -216,7 +216,7 @@ impl<'a, 'b> Asn1Object for SequenceComponent<'a, 'b> {
 
 
 pub struct SequenceComponent2<T: Asn1InstanciableObject> {
-    subtype: T
+    subtype: Option<T>
 }
 
 impl<T: Asn1InstanciableObject> SequenceComponent2<T> {
@@ -224,22 +224,29 @@ impl<T: Asn1InstanciableObject> SequenceComponent2<T> {
     pub fn new() 
     -> SequenceComponent2<T> {
         let sequence_component = SequenceComponent2{
-            subtype: T::new_default()
+            subtype: None
         };
 
         return sequence_component;
     }
 
-    pub fn get_inner_value(&self) -> &T {
-        return &self.subtype;
+    pub fn get_inner_value(&self) -> Option<&T> {
+        match self.subtype {
+            Some(ref subtype) => {
+                return Some(&subtype);
+            },
+            None => {
+                return None;
+            }
+        }
     }
 
     pub fn set_inner_value(&mut self, value: T) {
-        self.subtype = value;
+        self.subtype = Some(value);
     }
 
     pub fn unset_inner_value(&mut self) {
-        self.subtype.unset_value();
+        self.subtype = None;
     }
 
     pub fn encode(&self) -> Asn1Result<Vec<u8>> {
@@ -248,54 +255,21 @@ impl<T: Asn1InstanciableObject> SequenceComponent2<T> {
     }
 
     fn encode_value(&self) -> Asn1Result<Vec<u8>> {
-        return self.subtype.encode();
-    }
-
-    pub fn decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
-        return self.subtype.decode(raw);
-    }
-
-    /*
-    fn _decode_context(&mut self, raw: &[u8]) -> Asn1Result<usize> {
-        let mut consumed_octets = self._decode_context_tag(raw)?;
-        let (_, raw_length) = raw.split_at(consumed_octets);
-        let (value_length, consumed_octets_by_length) = self.decode_length(raw_length)?;
-        consumed_octets += consumed_octets_by_length;
-        let (_, raw_value) = raw.split_at(consumed_octets);
-
-        if value_length > raw_value.len() {
-            return Err(Asn1ErrorKind::NoDataForLength)?;
-        }
-
-        let (raw_value, _) = raw_value.split_at(value_length);
-
-        self._decode_inner(raw_value)?;
-        consumed_octets += value_length;
-
-        return Ok(consumed_octets);
-    }
-
-    fn _decode_context_tag(&self, raw_tag: &[u8]) -> Asn1Result<usize> {
-        let mut decoded_tag = Tag::new_empty();
-        let consumed_octets = decoded_tag.decode(raw_tag)?;
-
-        if &decoded_tag != &self.context_tag.unwrap() {
-            return Err(Asn1ErrorKind::InvalidContextTag)?;
-        }
-        return Ok(consumed_octets);
-    }
-
-
-    fn _decode_inner(&mut self, raw: &[u8]) -> Asn1Result<usize> {
-        match &mut self.subtype_ref {
+        match &self.subtype {
             Some(value) => {
-                let consumed_octets = value.decode(raw)?;
-                return Ok(consumed_octets);
-            },
+                return value.encode();
+            }
             None => {
                 return Err(Asn1ErrorKind::NoValue)?;
             }
         };
-    }*/
+    }
+
+    pub fn decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
+        let mut new_subtype = T::new_default();
+        let size = new_subtype.decode(raw)?;
+        self.subtype = Some(new_subtype);
+        return Ok(size);
+    }
 
 }

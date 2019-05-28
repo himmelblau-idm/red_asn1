@@ -62,7 +62,7 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
             expanded_getters = quote! {
                 #expanded_getters
 
-                fn #getter_name (&self) -> &#inner_type {
+                fn #getter_name (&self) -> Option<&#inner_type> {
                     return self.#field_name.get_inner_value();
                 }
                 
@@ -96,8 +96,17 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                         let mut decoded_tag = Tag::new_empty();
                         let mut consumed_octets = decoded_tag.decode(raw)?;
 
+                        match decoded_tag.decode(raw) {
+                            Ok(octets_count) => {
+                                consumed_octets += octets_count;
+                            },
+                            Err(_) => {
+                                return Err(Asn1ErrorKind::InvalidContextTag)?;
+                            }
+                        }
+
                         if decoded_tag != Tag::new(#context_tag_number, TagType::Constructed, TagClass::Context) {
-                            return Err(Asn1ErrorKind::InvalidTypeTag)?;
+                            return Err(Asn1ErrorKind::InvalidContextTag)?;
                         }
 
                         let (_, raw_length) = raw.split_at(consumed_octets);
@@ -151,24 +160,29 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                         }
                     };
                 };
+
+                decode_calls = quote! {
+                    #decode_calls
+                    match self.#decoder_name(&raw[consumed_octets..]) {
+                        Ok(num_octets) => {
+                            consumed_octets += num_octets;
+                        },
+                        Err(error) => {
+                            return Err(error);
+                        }
+                    };
+                };
             }else {
                 encode_calls = quote! {
                     #encode_calls
                     value.append(&mut self.#encoder_name()?);
                 };
-            }
 
-            decode_calls = quote! {
-                #decode_calls
-                match self.#decoder_name(&raw[consumed_octets..]) {
-                    Ok(num_octets) => {
-                        consumed_octets += num_octets;
-                    },
-                    Err(error) => {
-                        return Err(error);
-                    }
+                decode_calls = quote! {
+                    #decode_calls
+                    consumed_octets += self.#decoder_name(&raw[consumed_octets..])?;
                 };
-            };
+            }
 
             new_fields = quote! {
                 #new_fields
