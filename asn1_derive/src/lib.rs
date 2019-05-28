@@ -1,4 +1,4 @@
-#![recursion_limit="128"]
+#![recursion_limit="256"]
 extern crate proc_macro;
 extern crate syn;
 
@@ -62,7 +62,7 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
             expanded_getters = quote! {
                 #expanded_getters
 
-                fn #getter_name (&self) -> Option<&#inner_type> {
+                fn #getter_name (&self) -> &#inner_type {
                     return self.#field_name.get_inner_value();
                 }
                 
@@ -74,12 +74,9 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                     return self.#field_name.unset_inner_value();
                 }
 
-                /*
-                fn #decoder_name (&mut self, raw: &[u8]) -> Result<()> {
+                fn #decoder_name (&mut self, raw: &[u8]) -> Asn1Result<usize> {
                     return self.#field_name.decode(raw);
                 }
-
-                */
             };
 
             if let Some(context_tag_number) = component.context_tag_number {
@@ -163,9 +160,10 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
 
     
     let decode_value = quote! {
-        fn decode_value(&mut self, raw: &[u8]) -> Result<()> {
+        fn decode_value(&mut self, raw: &[u8]) -> Asn1Result<()> {
             let mut consumed_octets = 0;
             #decode_calls
+            return Ok(());
         }
     };
 
@@ -189,8 +187,22 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                 return Ok(encoded);
             }
 
+            fn tag(&self) -> Tag {
+                return Tag::new_constructed_universal(SEQUENCE_TAG_NUMBER);
+            } 
+
             fn encode_tag(&self) -> Vec<u8> {
-                return Tag::new_constructed_universal(SEQUENCE_TAG_NUMBER).encode();
+                return self.tag().encode();
+            }
+
+            fn decode_tag(&self, raw_tag: &[u8]) -> Asn1Result<usize> {
+                let mut decoded_tag = Tag::new_empty();
+                let consumed_octets = decoded_tag.decode(raw_tag)?;
+
+                if decoded_tag != self.tag() {
+                    return Err(Asn1ErrorKind::InvalidTypeTag)?;
+                }
+                return Ok(consumed_octets);
             }
 
             
@@ -216,9 +228,58 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                 return encoded_length;
             }
 
+            fn decode_length(&self, raw_length: &[u8]) -> Asn1Result<(usize, usize)> {
+                let raw_length_length = raw_length.len();
+                if raw_length_length == 0 {
+                    return Err(Asn1ErrorKind::InvalidLengthEmpty)?;
+                }
+
+                let mut consumed_octets: usize = 1;
+                let is_short_form = (raw_length[0] & 0x80) == 0;
+                if is_short_form {
+                    return Ok(((raw_length[0] & 0x7F) as usize, consumed_octets));
+                }
+
+                let length_of_length = (raw_length[0] & 0x7F) as usize;
+                if length_of_length >= raw_length_length {
+                    return Err(Asn1ErrorKind::InvalidLengthOfLength)?;
+                }
+
+                let mut length: usize = 0;
+                for i in 1..(length_of_length + 1) {
+                    length <<= 8;
+                    length += raw_length[i] as usize;
+                }
+                consumed_octets += length_of_length;
+
+                return Ok((length, consumed_octets));
+            }
+
+            fn decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
+                let mut consumed_octets = self.decode_tag(raw)?;
+
+                let (_, raw_length) = raw.split_at(consumed_octets);
+
+                let (value_length, consumed_octets_by_length) = self.decode_length(raw_length)?;
+                consumed_octets += consumed_octets_by_length;
+
+                let (_, raw_value) = raw.split_at(consumed_octets);
+
+                if value_length > raw_value.len() {
+                    return Err(Asn1ErrorKind::NoDataForLength)?;
+                }
+
+                let (raw_value, _) = raw_value.split_at(value_length);
+
+                self.decode_value(raw_value)?;
+                consumed_octets += value_length;
+
+                return Ok(consumed_octets);
+            }
+
             #expanded_getters
             #encode_value
-            // #decode_value
+            #decode_value
         }
     };
 
