@@ -21,7 +21,7 @@ pub use ia5string::{IA5String, IA5STRING_TAG_NUMBER};
 pub use generalstring::{GeneralString, GENERALSTRING_TAG_NUMBER};
 pub use generalizedtime::{GeneralizedTime, GENERALIZED_TIME_TAG_NUMBER, TimeFormat};
 pub use sequenceof::{SequenceOf};
-pub use error::{Asn1Error, Asn1Result};
+pub use error::{Asn1Error, Asn1Result, Asn1ErrorKind};
 pub use tag::{Tag, TagClass, TagType};
 
 #[cfg(test)]

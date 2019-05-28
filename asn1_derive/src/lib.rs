@@ -74,8 +74,6 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                     return self.#field_name.unset_inner_value();
                 }
 
-                
-
                 /*
                 fn #decoder_name (&mut self, raw: &[u8]) -> Result<()> {
                     return self.#field_name.decode(raw);
@@ -110,19 +108,30 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                 }
             }
 
-            encode_calls = quote! {
-                #encode_calls
-                match self.#encoder_name() {
-                    Ok(ref mut bytes) => {
-                        value.append(bytes);
-                    },
-                    Err(error) => {
-                        return Err(error);
-                    }
+            if component.optional {
+                encode_calls = quote! {
+                    #encode_calls
+                    match self.#encoder_name() {
+                        Ok(ref mut bytes) => {
+                            value.append(bytes);
+                        },
+                        Err(error) => {
+                            match error.kind() {
+                                Asn1ErrorKind::NoValue => {
+                                }
+                                _ => {
+                                    return Err(error);
+                                }
+                            }
+                        }
+                    };
                 };
-            };
-
-            
+            }else {
+                encode_calls = quote! {
+                    #encode_calls
+                    value.append(&mut self.#encoder_name()?);
+                };
+            }
 
             decode_calls = quote! {
                 #decode_calls

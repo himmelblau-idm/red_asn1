@@ -49,3 +49,17 @@ fn test_sequence_with_context_tags_encoding() {
     assert_eq!(vec![0x30, 0x5, 
                     0xa0, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x9], p.encode().unwrap());
 }
+
+#[test]
+fn test_sequence_with_optional_component_encoding() {
+
+    #[derive(Asn1Sequence)]
+    struct Person {
+        #[seq_comp(optional)]
+        age: SequenceComponent2<Integer>
+    }
+
+    let p = Person::new();
+
+    assert_eq!(vec![0x30, 0x0], p.encode().unwrap());
+}
