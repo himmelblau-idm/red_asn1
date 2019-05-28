@@ -74,9 +74,7 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                     return self.#field_name.unset_inner_value();
                 }
 
-                fn #encoder_name (&self) -> Asn1Result<Vec<u8>> {
-                    return self.#field_name.encode();
-                }
+                
 
                 /*
                 fn #decoder_name (&mut self, raw: &[u8]) -> Result<()> {
@@ -85,6 +83,32 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
 
                 */
             };
+
+            if let Some(context_tag_number) = component.context_tag_number {
+                expanded_getters = quote! {
+                    #expanded_getters
+                    
+                    fn #encoder_name (&self) -> Asn1Result<Vec<u8>> {
+                        let tag = Tag::new(#context_tag_number, TagType::Constructed, TagClass::Context);
+                        let mut encoded = tag.encode();
+                        let mut encoded_value = self.#field_name.encode()?;
+                        let mut encoded_length = self.encode_length(encoded_value.len());
+
+                        encoded.append(&mut encoded_length);
+                        encoded.append(&mut encoded_value);
+
+                        return Ok(encoded);
+                    }
+                }
+            }else {
+                expanded_getters = quote! {
+                    #expanded_getters
+                    
+                    fn #encoder_name (&self) -> Asn1Result<Vec<u8>> {
+                        return self.#field_name.encode();
+                    }
+                }
+            }
 
             encode_calls = quote! {
                 #encode_calls
