@@ -20,6 +20,10 @@ pub enum Asn1ErrorKind {
     InvalidTypeTag,
     #[fail (display = "Invalid tag: Not valid tag for context")]
     InvalidContextTag,
+    #[fail (display = "Invalid tag: Invalid tag number for context")]
+    InvalidContextTagNumber,
+    #[fail (display = "Invalid tag: Empty tag for context")]
+    InvalidContextTagEmpty,
     #[fail (display = "Invalid length: Empty")]
     InvalidLengthEmpty,
     #[fail (display = "Invalid length: Invalid length of length")]

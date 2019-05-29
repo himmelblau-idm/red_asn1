@@ -94,14 +94,24 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
 
                     fn #decoder_name (&mut self, raw: &[u8]) -> Asn1Result<usize> {
                         let mut decoded_tag = Tag::new_empty();
-                        let mut consumed_octets = decoded_tag.decode(raw)?;
+                        let mut consumed_octets = 0;
 
                         match decoded_tag.decode(raw) {
                             Ok(octets_count) => {
                                 consumed_octets += octets_count;
                             },
-                            Err(_) => {
-                                return Err(Asn1ErrorKind::InvalidContextTag)?;
+                            Err(error) => {
+                                match error.kind() {
+                                    Asn1ErrorKind::InvalidTagNumber => {
+                                        return Err(Asn1ErrorKind::InvalidContextTagNumber)?;
+                                    },
+                                    Asn1ErrorKind::InvalidTagEmpty => {
+                                        return Err(Asn1ErrorKind::InvalidContextTagEmpty)?;
+                                    },
+                                    _ => {
+                                        return Err(error);
+                                    }
+                                }
                             }
                         }
 
@@ -168,11 +178,17 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                             consumed_octets += num_octets;
                         },
                         Err(error) => {
-                            return Err(error);
+                            match error.kind() {
+                                Asn1ErrorKind::InvalidTagEmpty => {
+                                },
+                                _ => {
+                                    return Err(error);
+                                }
+                            }
                         }
                     };
                 };
-            }else {
+            } else {
                 encode_calls = quote! {
                     #encode_calls
                     value.append(&mut self.#encoder_name()?);
