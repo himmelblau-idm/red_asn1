@@ -171,23 +171,45 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                     };
                 };
 
-                decode_calls = quote! {
-                    #decode_calls
-                    match self.#decoder_name(&raw[consumed_octets..]) {
-                        Ok(num_octets) => {
-                            consumed_octets += num_octets;
-                        },
-                        Err(error) => {
-                            match error.kind() {
-                                Asn1ErrorKind::InvalidTagEmpty => {
-                                },
-                                _ => {
-                                    return Err(error);
+                if let Some(_) = component.context_tag_number {
+                    decode_calls = quote! {
+                        #decode_calls
+                        match self.#decoder_name(&raw[consumed_octets..]) {
+                            Ok(num_octets) => {
+                                consumed_octets += num_octets;
+                            },
+                            Err(error) => {
+                                match error.kind() {
+                                    Asn1ErrorKind::InvalidContextTagEmpty => {
+                                    },
+                                    _ => {
+                                        return Err(error);
+                                    }
                                 }
                             }
-                        }
+                        };
                     };
-                };
+                }else{
+                    decode_calls = quote! {
+                        #decode_calls
+                        match self.#decoder_name(&raw[consumed_octets..]) {
+                            Ok(num_octets) => {
+                                consumed_octets += num_octets;
+                            },
+                            Err(error) => {
+                                match error.kind() {
+                                    Asn1ErrorKind::InvalidTagEmpty => {
+                                    },
+                                    _ => {
+                                        return Err(error);
+                                    }
+                                }
+                            }
+                        };
+                    };
+                }
+
+                
             } else {
                 encode_calls = quote! {
                     #encode_calls
