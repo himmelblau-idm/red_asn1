@@ -95,7 +95,7 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                     fn #decoder_name (&mut self, raw: &[u8]) -> Asn1Result<usize> {
                         let mut decoded_tag = Tag::new_empty();
                         let mut consumed_octets = 0;
-                        
+
                         match decoded_tag.decode(raw) {
                             Ok(octets_count) => {
                                 consumed_octets += octets_count;
@@ -223,7 +223,7 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
 
             new_fields = quote! {
                 #new_fields
-                #field_name: SequenceComponent2::new()
+                #field_name: SequenceComponent2::new(),
             }
 
         }
