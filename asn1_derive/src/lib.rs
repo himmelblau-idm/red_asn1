@@ -95,7 +95,7 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                     fn #decoder_name (&mut self, raw: &[u8]) -> Asn1Result<usize> {
                         let mut decoded_tag = Tag::new_empty();
                         let mut consumed_octets = 0;
-
+                        
                         match decoded_tag.decode(raw) {
                             Ok(octets_count) => {
                                 consumed_octets += octets_count;
@@ -123,7 +123,6 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
 
                         let (value_length, consumed_octets_by_length) = self.decode_length(raw_length)?;
                         consumed_octets += consumed_octets_by_length;
-
                         let (_, raw_value) = raw.split_at(consumed_octets);
 
                         if value_length > raw_value.len() {
