@@ -70,7 +70,7 @@ impl<'a, 'b> SequenceComponent<'a, 'b> {
     }
 
     pub fn set_ref(&mut self, value: Box<&'a mut (Asn1Object + 'b)>) -> Asn1Result<()> {
-        if value.tag() != &self.subtype_tag {
+        if value.tag() != self.subtype_tag {
             return Err(Asn1ErrorKind::InvalidTypeTag)?;
         }
 
@@ -133,10 +133,10 @@ impl<'a, 'b> SequenceComponent<'a, 'b> {
 }
 
 impl<'a, 'b> Asn1Object for SequenceComponent<'a, 'b> {
-    fn tag(&self) -> &Tag {
+    fn tag(&self) -> Tag {
         match self.context_tag {
-            Some(ref tag) => tag,
-            None => &self.subtype_tag
+            Some(tag) => tag.clone(),
+            None => self.subtype_tag.clone()
         }
     }
 

@@ -25,8 +25,8 @@ impl Asn1Tagged for BitSring {
 
 impl Asn1Object for BitSring {
 
-    fn tag(&self) -> &Tag {
-        return &self.tag;
+    fn tag(&self) -> Tag {
+        return self.tag.clone();
     }
 
     fn encode_value(&self) -> Asn1Result<Vec<u8>> {

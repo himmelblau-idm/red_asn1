@@ -54,8 +54,8 @@ impl Asn1Tagged for Boolean {
 
 impl Asn1Object for Boolean {
 
-    fn tag(&self) -> &Tag {
-        return &self.tag;
+    fn tag(&self) -> Tag {
+        return self.tag.clone();
     }
 
     fn encode_value(&self) -> Asn1Result<Vec<u8>> {

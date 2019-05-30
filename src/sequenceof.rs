@@ -31,8 +31,8 @@ impl<T: Asn1InstanciableObject> Asn1Tagged for SequenceOf<T> {
 
 impl <T: Asn1InstanciableObject> Asn1Object for SequenceOf<T> {
 
-    fn tag(&self) -> &Tag {
-        return &self.tag;
+    fn tag(&self) -> Tag {
+        return self.tag.clone();
     }
 
     fn encode_value(&self) -> Result<Vec<u8>,Asn1Error> {

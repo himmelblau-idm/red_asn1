@@ -19,8 +19,8 @@ impl Asn1Tagged for OctetString {
 
 impl Asn1Object for OctetString {
 
-    fn tag(&self) -> &Tag {
-        return &self.tag;
+    fn tag(&self) -> Tag {
+        return self.tag.clone();
     }
 
     fn encode_value(&self) -> Result<Vec<u8>,Asn1Error> {

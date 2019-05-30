@@ -159,7 +159,7 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
                     Err(error) => {
                         match error.kind() {
                             Asn1ErrorKind::NoValue => {
-                            }
+                            },
                             _ => {
                                 return Err(error);
                             }

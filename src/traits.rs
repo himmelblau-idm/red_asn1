@@ -9,7 +9,7 @@ pub trait Asn1Tagged {
 
 pub trait Asn1Object {
 
-    fn tag(&self) -> &Tag;
+    fn tag(&self) -> Tag;
 
     fn encode_tag(&self) -> Vec<u8> {
         return self.tag().encode();
@@ -19,7 +19,7 @@ pub trait Asn1Object {
         let mut decoded_tag = Tag::new_empty();
         let consumed_octets = decoded_tag.decode(raw_tag)?;
 
-        if &decoded_tag != self.tag() {
+        if decoded_tag != self.tag() {
             return Err(Asn1ErrorKind::InvalidTypeTag)?;
         }
         return Ok(consumed_octets);
@@ -141,8 +141,8 @@ mod tests {
     }
 
     impl Asn1Object for TestObject {
-        fn tag(&self) -> &Tag {
-            return &self.tag;
+        fn tag(&self) -> Tag {
+            return self.tag.clone();
         }
         fn encode_value(&self) -> Result<Vec<u8>, Asn1Error> {
             return Ok(vec![]);
