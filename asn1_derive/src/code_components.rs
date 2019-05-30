@@ -278,7 +278,7 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
         }
     };
 
-    let mut encode = quote! {
+    let inner_encode = quote! {
         fn _inner_encode(&self) -> Asn1Result<Vec<u8>> {
             let mut encoded = self.encode_tag();
             let mut encoded_value = self.encode_value()?;
@@ -291,7 +291,7 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
         }
     };
 
-    let mut decode = quote! {
+    let mut inner_decode = quote! {
         fn _inner_decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
             let mut consumed_octets = self.decode_tag(raw)?;
 
@@ -315,6 +315,9 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
         }
     };
 
+    let encode;
+    let decode;
+
     if let Some(application_tag_number) = sequence_definition.application_tag_number {
 
         encode = quote! {
@@ -329,11 +332,10 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
 
                 return Ok(encoded);
             }
-
-            #encode
         };
 
-        decode = quote! {
+        inner_decode = quote! {
+            #inner_decode
 
             fn _decode_application_tag(&self, raw_tag: &[u8]) -> Asn1Result<usize> {
                 let mut decoded_tag = Tag::new_empty();
@@ -345,6 +347,9 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
 
                 return Ok(consumed_octets);
             }
+        };
+
+        decode = quote! {
 
             fn decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
                 let mut consumed_octets = self._decode_application_tag(raw)?;
@@ -364,8 +369,6 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
 
                 return Ok(consumed_octets);
             }
-
-            #decode
         };
 
     } else {
@@ -373,95 +376,35 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
             fn encode(&self) -> Asn1Result<Vec<u8>> {
                 return self._inner_encode();
             }
-            #encode
         };
 
         decode = quote! {
             fn decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
                 return self._inner_decode(raw);
             }
-
-            #decode
         }
     }
 
-
     let total_exp = quote! {
-        impl #name {
+        impl Asn1Object for #name {
             fn tag(&self) -> Tag {
                 return Tag::new_constructed_universal(SEQUENCE_TAG_NUMBER);
-            } 
-
-            fn encode_tag(&self) -> Vec<u8> {
-                return self.tag().encode();
-            }
-
-            fn decode_tag(&self, raw_tag: &[u8]) -> Asn1Result<usize> {
-                let mut decoded_tag = Tag::new_empty();
-                let consumed_octets = decoded_tag.decode(raw_tag)?;
-
-                if decoded_tag != self.tag() {
-                    return Err(Asn1ErrorKind::InvalidTypeTag)?;
-                }
-                return Ok(consumed_octets);
             }
 
             #encode
-            
-            fn encode_length(&self, value_size: usize) -> Vec<u8> {
-                if value_size < 128 {
-                    return vec![value_size as u8];
-                }
-
-                let mut shifted_length = value_size;
-                let mut octets_count: u8 = 0;
-                let mut encoded_length : Vec<u8> = Vec::new();
-
-                while shifted_length > 0 {
-                    octets_count += 1;
-                    encoded_length.push(shifted_length as u8);
-                    shifted_length >>= 8;
-                }
-
-                encoded_length.push(octets_count | 0b10000000);
-                
-                encoded_length.reverse();
-
-                return encoded_length;
-            }
-
-            fn decode_length(&self, raw_length: &[u8]) -> Asn1Result<(usize, usize)> {
-                let raw_length_length = raw_length.len();
-                if raw_length_length == 0 {
-                    return Err(Asn1ErrorKind::InvalidLengthEmpty)?;
-                }
-
-                let mut consumed_octets: usize = 1;
-                let is_short_form = (raw_length[0] & 0x80) == 0;
-                if is_short_form {
-                    return Ok(((raw_length[0] & 0x7F) as usize, consumed_octets));
-                }
-
-                let length_of_length = (raw_length[0] & 0x7F) as usize;
-                if length_of_length >= raw_length_length {
-                    return Err(Asn1ErrorKind::InvalidLengthOfLength)?;
-                }
-
-                let mut length: usize = 0;
-                for i in 1..(length_of_length + 1) {
-                    length <<= 8;
-                    length += raw_length[i] as usize;
-                }
-                consumed_octets += length_of_length;
-
-                return Ok((length, consumed_octets));
-            }
-
             #decode
 
-            #components_unit_functions
             #encode_value
             #decode_value
+
+            fn unset_value(&mut self) {}
+
+        }
+
+        impl #name {
+            #components_unit_functions
+            #inner_encode
+            #inner_decode
         }
     };
 
