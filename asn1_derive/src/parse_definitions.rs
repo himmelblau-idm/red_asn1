@@ -57,3 +57,12 @@ pub struct ComponentCode {
     pub decoder: TokenStream
 }
 
+
+pub struct SequenceInnerCallsCode {
+    pub encode_calls: TokenStream,
+    pub decode_calls: TokenStream,
+    pub new_fields: TokenStream,
+    pub components_unit_functions: TokenStream
+}
+
+
