@@ -35,6 +35,16 @@ fn test_encode_empty() {
 }
 
 #[test]
+fn test_encode_empty_with_application_tag() {
+    #[derive(Asn1Sequence)]
+    #[seq(application_tag = 7)]
+    struct TestSequence {}
+
+    let seq = TestSequence{};
+    assert_eq!(vec![0x67, 0x2, 0x30, 0x0], seq.encode().unwrap());
+}
+
+#[test]
 fn test_encode() {
 
     #[derive(Asn1Sequence)]
@@ -117,13 +127,29 @@ fn test_encode_without_give_required_values() {
 }
 
 #[test]
-fn test_encode_empty_with_application_tag() {
+fn test_encode_with_inner_sequence() {
     #[derive(Asn1Sequence)]
     #[seq(application_tag = 7)]
     struct TestSequence {}
 
-    let seq = TestSequence{};
-    assert_eq!(vec![0x67, 0x2, 0x30, 0x0], seq.encode().unwrap());
+    impl Asn1InstanciableObject for TestSequence {
+        fn new_default() -> Self {
+            return TestSequence{};
+        }
+    }
+
+    #[derive(Asn1Sequence)]
+    struct SuperTestSequence {
+        inner: SequenceComponent2<TestSequence>
+    }
+
+    let mut seq = SuperTestSequence{
+        inner: SequenceComponent2::new()
+    };
+
+    seq.set_inner(TestSequence::new_default());
+
+    assert_eq!(vec![0x30, 0x4, 0x67, 0x2, 0x30, 0x0], seq.encode().unwrap());
 }
 
 #[test]
@@ -365,4 +391,30 @@ fn test_decode_with_optional_and_context_tag_and_bad_type_tag() {
     };
     seq.decode(&[0x30, 0x8, 
                  0xa0, 0x6, OCTET_STRING_TAG_NUMBER, 0x4, 0x1, 0x2, 0x3, 0x4]).unwrap();
+}
+
+
+#[test]
+fn test_decode_with_inner_sequence() {
+    #[derive(Asn1Sequence, Debug, PartialEq)]
+    #[seq(application_tag = 7)]
+    struct TestSequence {}
+
+    impl Asn1InstanciableObject for TestSequence {
+        fn new_default() -> Self {
+            return TestSequence{};
+        }
+    }
+
+    #[derive(Asn1Sequence)]
+    struct SuperTestSequence {
+        inner: SequenceComponent2<TestSequence>
+    }
+
+    let mut seq = SuperTestSequence{
+        inner: SequenceComponent2::new()
+    };
+
+    seq.decode(&[0x30, 0x4, 0x67, 0x2, 0x30, 0x0]).unwrap();
+    assert_eq!(&TestSequence{}, seq.get_inner().unwrap());
 }
