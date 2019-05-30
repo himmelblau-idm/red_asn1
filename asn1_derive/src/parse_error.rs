@@ -19,7 +19,9 @@ pub enum ParseComponentErrorKind {
     #[fail (display = "Unknown attribute")]
     UnknownAttribute,
     #[fail (display = "Invalid field type")]
-    InvalidFieldType
+    InvalidFieldType,
+    #[fail (display = "Sequence is not an struct")]
+    NotStruct
 }
 
 

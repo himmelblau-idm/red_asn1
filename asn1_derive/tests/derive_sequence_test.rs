@@ -104,6 +104,16 @@ fn test_encode_without_give_required_values() {
 }
 
 #[test]
+fn test_encode_empty_with_application_tag() {
+    #[derive(Asn1Sequence)]
+    #[seq(application_tag = 7)]
+    struct TestSequence {}
+
+    let seq = TestSequence::new();
+    assert_eq!(vec![0x67, 0x2, 0x30, 0x0], seq.encode().unwrap());
+}
+
+#[test]
 fn test_decode_empty() {
     #[derive(Asn1Sequence)]
     struct Person {

@@ -12,6 +12,12 @@ mod parse_error;
 
 use parse_error::*;
 
+struct SequenceDefinition {
+    name: Ident,
+    application_tag_number: Option<u8>,
+    components: Vec<ComponentDefinition>
+}
+
 struct ComponentDefinition {
     id: Ident,
     kind: Ident,
@@ -24,144 +30,161 @@ static ASN1_SEQ_COMP_ATTR: &str = "seq_comp";
 static OPTIONAL_ATTR: &str = "optional";
 static TAG_NUMBER_ATTR: &str = "tag_number";
 
-#[proc_macro_derive(Asn1Sequence, attributes(seq_comp))]
-pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
-    
+#[proc_macro_derive(Asn1Sequence, attributes(seq, seq_comp))]
+pub fn hello_macro_derive(input: TokenStream) -> TokenStream {    
     let ast = parse_macro_input!(input as DeriveInput);
-
-    let name = &ast.ident;
 
     let mut expanded_getters = quote! {};
     let mut encode_calls = quote! {};
     let mut decode_calls = quote! {};
     let mut new_fields = quote! {};
-    let components : Vec<ComponentDefinition>;
 
-    if let Data::Struct(data_struct) = &ast.data {
-        components = extract_components_definitions(data_struct).unwrap();
+    let sequence_definition = extract_sequence_definition(&ast).unwrap();
 
-        for component in components {
-            let field_name = component.id;
-            let inner_type = component.kind;
+    let name = &sequence_definition.name;
 
-            let concatenated = format!("get_{}", field_name);
-            let getter_name = Ident::new(&concatenated, field_name.span());
+    for component in sequence_definition.components {
+        let field_name = component.id;
+        let inner_type = component.kind;
 
-            let concatenated = format!("set_{}", field_name);
-            let setter_name = Ident::new(&concatenated, field_name.span());
+        let concatenated = format!("get_{}", field_name);
+        let getter_name = Ident::new(&concatenated, field_name.span());
 
-            let concatenated = format!("unset_{}", field_name);
-            let unsetter_name = Ident::new(&concatenated, field_name.span());
+        let concatenated = format!("set_{}", field_name);
+        let setter_name = Ident::new(&concatenated, field_name.span());
 
-            let concatenated = format!("decode_{}", field_name);
-            let decoder_name = Ident::new(&concatenated, field_name.span());
+        let concatenated = format!("unset_{}", field_name);
+        let unsetter_name = Ident::new(&concatenated, field_name.span());
 
-            let concatenated = format!("encode_{}", field_name);
-            let encoder_name = Ident::new(&concatenated, field_name.span());
+        let concatenated = format!("decode_{}", field_name);
+        let decoder_name = Ident::new(&concatenated, field_name.span());
 
-            expanded_getters = quote! {
-                #expanded_getters
+        let concatenated = format!("encode_{}", field_name);
+        let encoder_name = Ident::new(&concatenated, field_name.span());
 
-                fn #getter_name (&self) -> Option<&#inner_type> {
-                    return self.#field_name.get_inner_value();
-                }
-                
-                fn #setter_name (&mut self, value: #inner_type) {
-                    return self.#field_name.set_inner_value(value);
-                }
+        expanded_getters = quote! {
+            #expanded_getters
 
-                fn #unsetter_name (&mut self) {
-                    return self.#field_name.unset_inner_value();
-                }
-
-            };
-
-            if let Some(context_tag_number) = component.context_tag_number {
-                expanded_getters = quote! {
-                    #expanded_getters
-                    
-                    fn #encoder_name (&self) -> Asn1Result<Vec<u8>> {
-                        let tag = Tag::new(#context_tag_number, TagType::Constructed, TagClass::Context);
-                        let mut encoded = tag.encode();
-                        let mut encoded_value = self.#field_name.encode()?;
-                        let mut encoded_length = self.encode_length(encoded_value.len());
-
-                        encoded.append(&mut encoded_length);
-                        encoded.append(&mut encoded_value);
-
-                        return Ok(encoded);
-                    }
-
-                    fn #decoder_name (&mut self, raw: &[u8]) -> Asn1Result<usize> {
-                        let mut decoded_tag = Tag::new_empty();
-                        let mut consumed_octets = 0;
-
-                        match decoded_tag.decode(raw) {
-                            Ok(octets_count) => {
-                                consumed_octets += octets_count;
-                            },
-                            Err(error) => {
-                                match error.kind() {
-                                    Asn1ErrorKind::InvalidTagNumber => {
-                                        return Err(Asn1ErrorKind::InvalidContextTagNumber)?;
-                                    },
-                                    Asn1ErrorKind::InvalidTagEmpty => {
-                                        return Err(Asn1ErrorKind::InvalidContextTagEmpty)?;
-                                    },
-                                    _ => {
-                                        return Err(error);
-                                    }
-                                }
-                            }
-                        }
-
-                        if decoded_tag != Tag::new(#context_tag_number, TagType::Constructed, TagClass::Context) {
-                            return Err(Asn1ErrorKind::InvalidContextTag)?;
-                        }
-
-                        let (_, raw_length) = raw.split_at(consumed_octets);
-
-                        let (value_length, consumed_octets_by_length) = self.decode_length(raw_length)?;
-                        consumed_octets += consumed_octets_by_length;
-                        let (_, raw_value) = raw.split_at(consumed_octets);
-
-                        if value_length > raw_value.len() {
-                            return Err(Asn1ErrorKind::NoDataForLength)?;
-                        }
-
-                        let (raw_value, _) = raw_value.split_at(value_length);
-
-                        self.#field_name.decode(raw_value)?;
-                        consumed_octets += value_length;
-
-                        return Ok(consumed_octets);
-                    }
-                }
-            }else {
-                expanded_getters = quote! {
-                    #expanded_getters
-                    
-                    fn #encoder_name (&self) -> Asn1Result<Vec<u8>> {
-                        return self.#field_name.encode();
-                    }
-
-                    fn #decoder_name (&mut self, raw: &[u8]) -> Asn1Result<usize> {
-                        return self.#field_name.decode(raw);
-                    }
-                }
+            fn #getter_name (&self) -> Option<&#inner_type> {
+                return self.#field_name.get_inner_value();
+            }
+            
+            fn #setter_name (&mut self, value: #inner_type) {
+                return self.#field_name.set_inner_value(value);
             }
 
-            if component.optional {
-                encode_calls = quote! {
-                    #encode_calls
-                    match self.#encoder_name() {
-                        Ok(ref mut bytes) => {
-                            value.append(bytes);
+            fn #unsetter_name (&mut self) {
+                return self.#field_name.unset_inner_value();
+            }
+
+        };
+
+        if let Some(context_tag_number) = component.context_tag_number {
+            expanded_getters = quote! {
+                #expanded_getters
+                
+                fn #encoder_name (&self) -> Asn1Result<Vec<u8>> {
+                    let tag = Tag::new(#context_tag_number, TagType::Constructed, TagClass::Context);
+                    let mut encoded = tag.encode();
+                    let mut encoded_value = self.#field_name.encode()?;
+                    let mut encoded_length = self.encode_length(encoded_value.len());
+
+                    encoded.append(&mut encoded_length);
+                    encoded.append(&mut encoded_value);
+
+                    return Ok(encoded);
+                }
+
+                fn #decoder_name (&mut self, raw: &[u8]) -> Asn1Result<usize> {
+                    let mut decoded_tag = Tag::new_empty();
+                    let mut consumed_octets = 0;
+
+                    match decoded_tag.decode(raw) {
+                        Ok(octets_count) => {
+                            consumed_octets += octets_count;
                         },
                         Err(error) => {
                             match error.kind() {
-                                Asn1ErrorKind::NoValue => {
+                                Asn1ErrorKind::InvalidTagNumber => {
+                                    return Err(Asn1ErrorKind::InvalidContextTagNumber)?;
+                                },
+                                Asn1ErrorKind::InvalidTagEmpty => {
+                                    return Err(Asn1ErrorKind::InvalidContextTagEmpty)?;
+                                },
+                                _ => {
+                                    return Err(error);
                                 }
+                            }
+                        }
+                    }
+
+                    if decoded_tag != Tag::new(#context_tag_number, TagType::Constructed, TagClass::Context) {
+                        return Err(Asn1ErrorKind::InvalidContextTag)?;
+                    }
+
+                    let (_, raw_length) = raw.split_at(consumed_octets);
+
+                    let (value_length, consumed_octets_by_length) = self.decode_length(raw_length)?;
+                    consumed_octets += consumed_octets_by_length;
+                    let (_, raw_value) = raw.split_at(consumed_octets);
+
+                    if value_length > raw_value.len() {
+                        return Err(Asn1ErrorKind::NoDataForLength)?;
+                    }
+
+                    let (raw_value, _) = raw_value.split_at(value_length);
+
+                    self.#field_name.decode(raw_value)?;
+                    consumed_octets += value_length;
+
+                    return Ok(consumed_octets);
+                }
+            }
+        }else {
+            expanded_getters = quote! {
+                #expanded_getters
+                
+                fn #encoder_name (&self) -> Asn1Result<Vec<u8>> {
+                    return self.#field_name.encode();
+                }
+
+                fn #decoder_name (&mut self, raw: &[u8]) -> Asn1Result<usize> {
+                    return self.#field_name.decode(raw);
+                }
+            }
+        }
+
+        if component.optional {
+            encode_calls = quote! {
+                #encode_calls
+                match self.#encoder_name() {
+                    Ok(ref mut bytes) => {
+                        value.append(bytes);
+                    },
+                    Err(error) => {
+                        match error.kind() {
+                            Asn1ErrorKind::NoValue => {
+                            }
+                            _ => {
+                                return Err(error);
+                            }
+                        }
+                    }
+                };
+            };
+
+            if let Some(_) = component.context_tag_number {
+                decode_calls = quote! {
+                    #decode_calls
+                    match self.#decoder_name(&raw[consumed_octets..]) {
+                        Ok(num_octets) => {
+                            consumed_octets += num_octets;
+                        },
+                        Err(error) => {
+                            match error.kind() {
+                                Asn1ErrorKind::InvalidContextTagEmpty => {},
+                                Asn1ErrorKind::InvalidContextTagNumber => {},
+                                Asn1ErrorKind::InvalidContextTag => {},
                                 _ => {
                                     return Err(error);
                                 }
@@ -169,66 +192,45 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                         }
                     };
                 };
-
-                if let Some(_) = component.context_tag_number {
-                    decode_calls = quote! {
-                        #decode_calls
-                        match self.#decoder_name(&raw[consumed_octets..]) {
-                            Ok(num_octets) => {
-                                consumed_octets += num_octets;
-                            },
-                            Err(error) => {
-                                match error.kind() {
-                                    Asn1ErrorKind::InvalidContextTagEmpty => {},
-                                    Asn1ErrorKind::InvalidContextTagNumber => {},
-                                    Asn1ErrorKind::InvalidContextTag => {},
-                                    _ => {
-                                        return Err(error);
-                                    }
-                                }
-                            }
-                        };
-                    };
-                }else{
-                    decode_calls = quote! {
-                        #decode_calls
-                        match self.#decoder_name(&raw[consumed_octets..]) {
-                            Ok(num_octets) => {
-                                consumed_octets += num_octets;
-                            },
-                            Err(error) => {
-                                match error.kind() {
-                                    Asn1ErrorKind::InvalidTagEmpty => {},
-                                    Asn1ErrorKind::InvalidTypeTag => {},
-                                    Asn1ErrorKind::InvalidTagNumber => {},
-                                    _ => {
-                                        return Err(error);
-                                    }
-                                }
-                            }
-                        };
-                    };
-                }
-
-                
-            } else {
-                encode_calls = quote! {
-                    #encode_calls
-                    value.append(&mut self.#encoder_name()?);
-                };
-
+            }else{
                 decode_calls = quote! {
                     #decode_calls
-                    consumed_octets += self.#decoder_name(&raw[consumed_octets..])?;
+                    match self.#decoder_name(&raw[consumed_octets..]) {
+                        Ok(num_octets) => {
+                            consumed_octets += num_octets;
+                        },
+                        Err(error) => {
+                            match error.kind() {
+                                Asn1ErrorKind::InvalidTagEmpty => {},
+                                Asn1ErrorKind::InvalidTypeTag => {},
+                                Asn1ErrorKind::InvalidTagNumber => {},
+                                _ => {
+                                    return Err(error);
+                                }
+                            }
+                        }
+                    };
                 };
             }
 
-            new_fields = quote! {
-                #new_fields
-                #field_name: SequenceComponent2::new(),
-            }
+            
+        } else {
+            encode_calls = quote! {
+                #encode_calls
+                value.append(&mut self.#encoder_name()?);
+            };
 
+            decode_calls = quote! {
+                #decode_calls
+                consumed_octets += self.#decoder_name(&raw[consumed_octets..])?;
+            };
         }
+
+        new_fields = quote! {
+            #new_fields
+            #field_name: SequenceComponent2::new(),
+        }
+
     }
     
     let encode_value = quote! {
@@ -374,6 +376,22 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
 }
 
 
+fn extract_sequence_definition(ast: &DeriveInput) -> ParseComponentResult<SequenceDefinition> {
+    let name = &ast.ident;
+    let components : Vec<ComponentDefinition>;
+
+    if let Data::Struct(data_struct) = &ast.data {
+        components = extract_components_definitions(data_struct).unwrap();
+
+        return Ok(SequenceDefinition{
+            name: name.clone(),
+            application_tag_number: None,
+            components: components
+        });
+    } else {
+        return Err(ParseComponentErrorKind::NotStruct)?;
+    }
+}
 
 fn extract_components_definitions(data_struct : &DataStruct) -> ParseComponentResult<Vec<ComponentDefinition>> {
     if let Fields::Named(fields_named) = &data_struct.fields {
