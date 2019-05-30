@@ -12,6 +12,7 @@ syn = "0.15"
 quote = "0.6"
 failure = "0.1.5"
 failure_derive = "0.1.5"
+proc-macro2 = "0.4"
 
 
 [dependencies.asn1]

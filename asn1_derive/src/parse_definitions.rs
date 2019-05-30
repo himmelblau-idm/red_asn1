@@ -1,4 +1,5 @@
 use syn::*;
+use proc_macro2::TokenStream;
 
 pub static SEQUENCE_COMPONENT_TYPE_NAME: &str = "SequenceComponent2";
 pub static ASN1_SEQ_ATTR: &str = "seq";
@@ -19,3 +20,40 @@ pub struct ComponentDefinition {
     pub optional: bool,
     pub context_tag_number: Option<u8>
 }
+
+
+impl ComponentDefinition {
+    pub fn encoder_name(&self) -> Ident {
+        let concatenated = format!("encode_{}", self.id);
+        return Ident::new(&concatenated, self.id.span());
+    }
+
+    pub fn decoder_name(&self) -> Ident {
+        let concatenated = format!("decode_{}", self.id);
+        return Ident::new(&concatenated, self.id.span());
+    }
+
+    pub fn getter_name(&self) -> Ident {
+        let concatenated = format!("get_{}", self.id);
+        return Ident::new(&concatenated, self.id.span());
+    }
+
+    pub fn setter_name(&self) -> Ident {
+        let concatenated = format!("set_{}", self.id);
+        return Ident::new(&concatenated, self.id.span());
+    }
+
+    pub fn unsetter_name(&self) -> Ident {
+        let concatenated = format!("unset_{}", self.id);
+        return Ident::new(&concatenated, self.id.span());
+    }
+}
+
+pub struct ComponentCode {
+    pub getter: TokenStream,
+    pub setter: TokenStream,
+    pub unsetter: TokenStream,
+    pub encoder: TokenStream,
+    pub decoder: TokenStream
+}
+
