@@ -180,6 +180,8 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                             Err(error) => {
                                 match error.kind() {
                                     Asn1ErrorKind::InvalidContextTagEmpty => {},
+                                    Asn1ErrorKind::InvalidContextTagNumber => {},
+                                    Asn1ErrorKind::InvalidContextTag => {},
                                     _ => {
                                         return Err(error);
                                     }
@@ -195,7 +197,6 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                                 consumed_octets += num_octets;
                             },
                             Err(error) => {
-                                println!("aaa");
                                 match error.kind() {
                                     Asn1ErrorKind::InvalidTagEmpty => {},
                                     Asn1ErrorKind::InvalidTypeTag => {},
