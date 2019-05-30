@@ -10,13 +10,13 @@ fn test_simple_sequence_definition() {
 
     #[derive(Asn1Sequence)]
     struct TestSequence {
-        id: SequenceComponent2<Integer>,
-        data: SequenceComponent2<OctetString>
+        id: SeqField<Integer>,
+        data: SeqField<OctetString>
     }
 
     let mut seq = TestSequence{
-        id: SequenceComponent2::new(),
-        data: SequenceComponent2::new()
+        id: SeqField::new(),
+        data: SeqField::new()
     };
     seq.set_id(Integer::new(9));
     seq.set_data(OctetString::new(vec![1,2,3,4]));
@@ -49,11 +49,11 @@ fn test_encode() {
 
     #[derive(Asn1Sequence)]
     struct Person {
-        age: SequenceComponent2<Integer>
+        age: SeqField<Integer>
     }
 
     let mut p = Person{
-        age: SequenceComponent2::new(),
+        age: SeqField::new(),
     };
     p.set_age(Integer::new(9));
 
@@ -66,11 +66,11 @@ fn test_encode_with_context_tags() {
     #[derive(Asn1Sequence)]
     struct Person {
         #[seq_comp(context_tag = 0)]
-        age: SequenceComponent2<Integer>
+        age: SeqField<Integer>
     }
 
     let mut p = Person{
-        age: SequenceComponent2::new(),
+        age: SeqField::new(),
     };
     p.set_age(Integer::new(9));
 
@@ -84,11 +84,11 @@ fn test_encode_with_optional_component() {
     #[derive(Asn1Sequence)]
     struct Person {
         #[seq_comp(optional)]
-        age: SequenceComponent2<Integer>
+        age: SeqField<Integer>
     }
 
     let mut p = Person{
-        age: SequenceComponent2::new(),
+        age: SeqField::new(),
     };
     p.set_age(Integer::new(9));
 
@@ -101,11 +101,11 @@ fn test_encode_with_optional_without_value_component() {
     #[derive(Asn1Sequence)]
     struct Person {
         #[seq_comp(optional)]
-        age: SequenceComponent2<Integer>
+        age: SeqField<Integer>
     }
 
     let p = Person{
-        age: SequenceComponent2::new(),
+        age: SeqField::new(),
     };
 
     assert_eq!(vec![0x30, 0x0], p.encode().unwrap());
@@ -117,11 +117,11 @@ fn test_encode_without_give_required_values() {
 
     #[derive(Asn1Sequence)]
     struct Person {
-        age: SequenceComponent2<Integer>
+        age: SeqField<Integer>
     }
 
     let p = Person{
-        age: SequenceComponent2::new(),
+        age: SeqField::new(),
     };
     p.encode().unwrap();
 }
@@ -140,11 +140,11 @@ fn test_encode_with_inner_sequence() {
 
     #[derive(Asn1Sequence)]
     struct SuperTestSequence {
-        inner: SequenceComponent2<TestSequence>
+        inner: SeqField<TestSequence>
     }
 
     let mut seq = SuperTestSequence{
-        inner: SequenceComponent2::new()
+        inner: SeqField::new()
     };
 
     seq.set_inner(TestSequence::new_default());
@@ -200,11 +200,11 @@ fn test_decode_with_context_tags() {
     #[derive(Asn1Sequence)]
     struct Person {
         #[seq_comp(context_tag = 0)]
-        age: SequenceComponent2<Integer>
+        age: SeqField<Integer>
     }
 
     let mut p = Person{
-        age: SequenceComponent2::new(),
+        age: SeqField::new(),
     };
     p.decode(&[0x30, 0x5, 0xa0, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x9]).unwrap();
 
@@ -218,11 +218,11 @@ fn test_decode_with_optional_with_bad_type_tag() {
     #[derive(Asn1Sequence)]
     struct Person {
         #[seq_comp(optional)]
-        age: SequenceComponent2<Integer>
+        age: SeqField<Integer>
     }
 
     let mut p = Person{
-        age: SequenceComponent2::new(),
+        age: SeqField::new(),
     };
     p.decode(&[0x30, 0x1, 0xee]).unwrap();
 }
@@ -234,11 +234,11 @@ fn test_decode_with_optional_with_bad_number_type_tag() {
     #[derive(Asn1Sequence)]
     struct Person {
         #[seq_comp(optional)]
-        age: SequenceComponent2<Integer>
+        age: SeqField<Integer>
     }
 
     let mut p = Person{
-        age: SequenceComponent2::new(),
+        age: SeqField::new(),
     };
     p.decode(&[0x30, 0x1, 0xff]).unwrap();
 }
@@ -250,11 +250,11 @@ fn test_decode_with_optional_and_context_tag() {
     #[derive(Asn1Sequence)]
     struct Person {
         #[seq_comp(optional, context_tag = 0)]
-        age: SequenceComponent2<Integer>
+        age: SeqField<Integer>
     }
 
     let mut p = Person{
-        age: SequenceComponent2::new(),
+        age: SeqField::new(),
     };
     p.decode(&[0x30, 0x0]).unwrap();
 
@@ -268,11 +268,11 @@ fn test_decode_with_optional_and_context_tag_bad_context_length() {
     #[derive(Asn1Sequence)]
     struct Person {
         #[seq_comp(optional, context_tag = 0)]
-        age: SequenceComponent2<Integer>
+        age: SeqField<Integer>
     }
 
     let mut p = Person{
-        age: SequenceComponent2::new(),
+        age: SeqField::new(),
     };
     p.decode(&[0x30, 0x2, 0xa0, 0x0]).unwrap();
 }
@@ -284,11 +284,11 @@ fn test_bad_decode_optional_context_tag_bad_context_tag() {
     #[derive(Asn1Sequence)]
     struct Person {
         #[seq_comp(optional, context_tag = 0)]
-        age: SequenceComponent2<Integer>
+        age: SeqField<Integer>
     }
 
     let mut p = Person{
-        age: SequenceComponent2::new(),
+        age: SeqField::new(),
     };
     p.decode(&[0x30, 0x1, 0xee]).unwrap();
 }
@@ -300,11 +300,11 @@ fn test_bad_decode_optional_context_tag_bad_type_tag() {
     #[derive(Asn1Sequence)]
     struct Person {
         #[seq_comp(optional, context_tag = 0)]
-        age: SequenceComponent2<Integer>
+        age: SeqField<Integer>
     }
 
     let mut p = Person{
-        age: SequenceComponent2::new(),
+        age: SeqField::new(),
     };
     p.decode(&[0x30, 0x3, 0xa0, 0x1, 0xee]).unwrap();
 }
@@ -314,13 +314,13 @@ fn test_decode_without_context_tags() {
 
     #[derive(Asn1Sequence)]
     struct Person {
-        id: SequenceComponent2<Integer>,
-        data: SequenceComponent2<OctetString>
+        id: SeqField<Integer>,
+        data: SeqField<OctetString>
     }
 
     let mut p = Person{
-        id: SequenceComponent2::new(),
-        data: SequenceComponent2::new(),
+        id: SeqField::new(),
+        data: SeqField::new(),
     };
     p.decode(&[0x30, 0x9, 
                INTEGER_TAG_NUMBER, 0x1, 0x9, 
@@ -336,14 +336,14 @@ fn test_decode_with_optional() {
     #[derive(Asn1Sequence)]
     struct TestSequence {
         #[seq_comp(optional, context_tag = 0)]
-        id: SequenceComponent2<Integer>,
+        id: SeqField<Integer>,
         #[seq_comp(context_tag = 1)]
-        data: SequenceComponent2<OctetString>
+        data: SeqField<OctetString>
     }
 
     let mut seq = TestSequence{
-        id: SequenceComponent2::new(),
-        data: SequenceComponent2::new(),
+        id: SeqField::new(),
+        data: SeqField::new(),
     };
     seq.decode(&[0x30, 0x8, 
                  0xa1, 0x6, OCTET_STRING_TAG_NUMBER, 0x4, 0x1, 0x2, 0x3, 0x4]).unwrap();
@@ -359,13 +359,13 @@ fn test_decode_with_optional_without_context_tag() {
     #[derive(Asn1Sequence)]
     struct TestSequence {
         #[seq_comp(optional)]
-        id: SequenceComponent2<Integer>,
-        data: SequenceComponent2<OctetString>
+        id: SeqField<Integer>,
+        data: SeqField<OctetString>
     }
 
     let mut seq = TestSequence{
-        id: SequenceComponent2::new(),
-        data: SequenceComponent2::new(),
+        id: SeqField::new(),
+        data: SeqField::new(),
     };
 
     seq.decode(&[0x30, 0x6, 
@@ -383,11 +383,11 @@ fn test_decode_with_optional_and_context_tag_and_bad_type_tag() {
     #[derive(Asn1Sequence)]
     struct TestSequence {
         #[seq_comp(optional, context_tag = 0)]
-        id: SequenceComponent2<Integer>
+        id: SeqField<Integer>
     }
 
     let mut seq = TestSequence{
-        id: SequenceComponent2::new(),
+        id: SeqField::new(),
     };
     seq.decode(&[0x30, 0x8, 
                  0xa0, 0x6, OCTET_STRING_TAG_NUMBER, 0x4, 0x1, 0x2, 0x3, 0x4]).unwrap();
@@ -408,11 +408,11 @@ fn test_decode_with_inner_sequence() {
 
     #[derive(Asn1Sequence)]
     struct SuperTestSequence {
-        inner: SequenceComponent2<TestSequence>
+        inner: SeqField<TestSequence>
     }
 
     let mut seq = SuperTestSequence{
-        inner: SequenceComponent2::new()
+        inner: SeqField::new()
     };
 
     seq.decode(&[0x30, 0x4, 0x67, 0x2, 0x30, 0x0]).unwrap();

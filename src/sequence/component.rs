@@ -215,23 +215,23 @@ impl<'a, 'b> Asn1Object for SequenceComponent<'a, 'b> {
 }
 
 
-pub struct SequenceComponent2<T: Asn1InstanciableObject> {
-    subtype: Option<T>
+pub struct SeqField<T: Asn1InstanciableObject> {
+    value: Option<T>
 }
 
-impl<T: Asn1InstanciableObject> SequenceComponent2<T> {
+impl<T: Asn1InstanciableObject> SeqField<T> {
 
     pub fn new() 
-    -> SequenceComponent2<T> {
-        let sequence_component = SequenceComponent2{
-            subtype: None
+    -> SeqField<T> {
+        let sequence_field = SeqField{
+            value: None
         };
 
-        return sequence_component;
+        return sequence_field;
     }
 
     pub fn get_inner_value(&self) -> Option<&T> {
-        match self.subtype {
+        match self.value {
             Some(ref subtype) => {
                 return Some(&subtype);
             },
@@ -242,11 +242,11 @@ impl<T: Asn1InstanciableObject> SequenceComponent2<T> {
     }
 
     pub fn set_inner_value(&mut self, value: T) {
-        self.subtype = Some(value);
+        self.value = Some(value);
     }
 
     pub fn unset_inner_value(&mut self) {
-        self.subtype = None;
+        self.value = None;
     }
 
     pub fn encode(&self) -> Asn1Result<Vec<u8>> {
@@ -255,7 +255,7 @@ impl<T: Asn1InstanciableObject> SequenceComponent2<T> {
     }
 
     fn encode_value(&self) -> Asn1Result<Vec<u8>> {
-        match &self.subtype {
+        match &self.value {
             Some(value) => {
                 return value.encode();
             }
@@ -268,7 +268,7 @@ impl<T: Asn1InstanciableObject> SequenceComponent2<T> {
     pub fn decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
         let mut new_subtype = T::new_default();
         let size = new_subtype.decode(raw)?;
-        self.subtype = Some(new_subtype);
+        self.value = Some(new_subtype);
         return Ok(size);
     }
 

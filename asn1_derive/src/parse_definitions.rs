@@ -1,7 +1,7 @@
 use syn::*;
 use proc_macro2::TokenStream;
 
-pub static SEQUENCE_COMPONENT_TYPE_NAME: &str = "SequenceComponent2";
+pub static SEQUENCE_COMPONENT_TYPE_NAME: &str = "SeqField";
 pub static ASN1_SEQ_ATTR: &str = "seq";
 pub static ASN1_SEQ_COMP_ATTR: &str = "seq_comp";
 pub static OPTIONAL_ATTR: &str = "optional";
