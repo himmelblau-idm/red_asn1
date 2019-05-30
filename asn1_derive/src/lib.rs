@@ -239,6 +239,113 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
         }
     };
 
+    let mut encode = quote! {
+        fn _inner_encode(&self) -> Asn1Result<Vec<u8>> {
+            let mut encoded = self.encode_tag();
+            let mut encoded_value = self.encode_value()?;
+            let mut encoded_length = self.encode_length(encoded_value.len());
+
+            encoded.append(&mut encoded_length);
+            encoded.append(&mut encoded_value);
+
+            return Ok(encoded);
+        }
+    };
+
+    let mut decode = quote! {
+        fn _inner_decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
+            let mut consumed_octets = self.decode_tag(raw)?;
+
+            let (_, raw_length) = raw.split_at(consumed_octets);
+
+            let (value_length, consumed_octets_by_length) = self.decode_length(raw_length)?;
+            consumed_octets += consumed_octets_by_length;
+
+            let (_, raw_value) = raw.split_at(consumed_octets);
+
+            if value_length > raw_value.len() {
+                return Err(Asn1ErrorKind::NoDataForLength)?;
+            }
+
+            let (raw_value, _) = raw_value.split_at(value_length);
+
+            self.decode_value(raw_value)?;
+            consumed_octets += value_length;
+
+            return Ok(consumed_octets);
+        }
+    };
+
+    if let Some(application_tag_number) = sequence_definition.application_tag_number {
+
+        encode = quote! {
+            fn encode(&self) -> Asn1Result<Vec<u8>> {
+                let mut encoded = Tag::new(#application_tag_number, 
+                                            TagType::Constructed, TagClass::Application).encode();
+                let mut encoded_value = self._inner_encode()?;
+                let mut encoded_length = self.encode_length(encoded_value.len());
+
+                encoded.append(&mut encoded_length);
+                encoded.append(&mut encoded_value);
+
+                return Ok(encoded);
+            }
+
+            #encode
+        };
+
+        decode = quote! {
+
+            fn _decode_application_tag(&self, raw_tag: &[u8]) -> Asn1Result<usize> {
+                let mut decoded_tag = Tag::new_empty();
+                let consumed_octets = decoded_tag.decode(raw_tag)?;
+
+                if decoded_tag != Tag::new(#application_tag_number, TagType::Constructed, TagClass::Application) {
+                    return Err(Asn1ErrorKind::InvalidTypeTag)?;
+                }
+
+                return Ok(consumed_octets);
+            }
+
+            fn decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
+                let mut consumed_octets = self._decode_application_tag(raw)?;
+                let (_, raw_length) = raw.split_at(consumed_octets);
+                let (value_length, consumed_octets_by_length) = self.decode_length(raw_length)?;
+                consumed_octets += consumed_octets_by_length;
+                let (_, raw_value) = raw.split_at(consumed_octets);
+
+                if value_length > raw_value.len() {
+                    return Err(Asn1ErrorKind::NoDataForLength)?;
+                }
+
+                let (raw_value, _) = raw_value.split_at(value_length);
+
+                self._inner_decode(raw_value)?;
+                consumed_octets += value_length;
+
+                return Ok(consumed_octets);
+            }
+
+            #decode
+        };
+
+    } else {
+        encode = quote! {
+            fn encode(&self) -> Asn1Result<Vec<u8>> {
+                return self._inner_encode();
+            }
+            #encode
+        };
+
+        decode = quote! {
+            fn decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
+                return self._inner_decode(raw);
+            }
+
+            #decode
+        }
+    }
+
 
     let total_exp = quote! {
         impl #name {
@@ -246,17 +353,6 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                 return #name {
                     #new_fields
                 };
-            }
-
-            fn encode(&self) -> Asn1Result<Vec<u8>> {
-                let mut encoded = self.encode_tag();
-                let mut encoded_value = self.encode_value()?;
-                let mut encoded_length = self.encode_length(encoded_value.len());
-
-                encoded.append(&mut encoded_length);
-                encoded.append(&mut encoded_value);
-
-                return Ok(encoded);
             }
 
             fn tag(&self) -> Tag {
@@ -277,6 +373,7 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                 return Ok(consumed_octets);
             }
 
+            #encode
             
             fn encode_length(&self, value_size: usize) -> Vec<u8> {
                 if value_size < 128 {
@@ -327,27 +424,7 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                 return Ok((length, consumed_octets));
             }
 
-            fn decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
-                let mut consumed_octets = self.decode_tag(raw)?;
-
-                let (_, raw_length) = raw.split_at(consumed_octets);
-
-                let (value_length, consumed_octets_by_length) = self.decode_length(raw_length)?;
-                consumed_octets += consumed_octets_by_length;
-
-                let (_, raw_value) = raw.split_at(consumed_octets);
-
-                if value_length > raw_value.len() {
-                    return Err(Asn1ErrorKind::NoDataForLength)?;
-                }
-
-                let (raw_value, _) = raw_value.split_at(value_length);
-
-                self.decode_value(raw_value)?;
-                consumed_octets += value_length;
-
-                return Ok(consumed_octets);
-            }
+            #decode
 
             #expanded_getters
             #encode_value

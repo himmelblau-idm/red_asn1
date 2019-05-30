@@ -125,6 +125,17 @@ fn test_decode_empty() {
 }
 
 #[test]
+fn test_decode_empty_with_application_tag() {
+    #[derive(Asn1Sequence)]
+    #[seq(application_tag = 7)]
+    struct TestSequence { }
+
+    let mut seq = TestSequence::new();
+    let consumed_octets = seq.decode(&[0x67, 0x2, 0x30, 0x0]).unwrap();
+    assert_eq!(4, consumed_octets);
+}
+
+#[test]
 fn test_decode_empty_with_excesive_bytes() {
     #[derive(Asn1Sequence)]
     struct Person {
