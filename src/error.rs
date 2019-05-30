@@ -32,6 +32,8 @@ pub enum Asn1ErrorKind {
     NoDataForLength,
     #[fail (display = "Invalid value: Not enough data for type")]
     NoDataForType,
+    #[fail (display = "Invalid value: Not all octects were consumed")]
+    NoAllDataConsumed,
     #[fail (display = "No value provided")]
     NoValue,
     #[fail (display = "Invalid value: {}", _0)]

@@ -179,8 +179,7 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                             },
                             Err(error) => {
                                 match error.kind() {
-                                    Asn1ErrorKind::InvalidContextTagEmpty => {
-                                    },
+                                    Asn1ErrorKind::InvalidContextTagEmpty => {},
                                     _ => {
                                         return Err(error);
                                     }
@@ -196,9 +195,11 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
                                 consumed_octets += num_octets;
                             },
                             Err(error) => {
+                                println!("aaa");
                                 match error.kind() {
-                                    Asn1ErrorKind::InvalidTagEmpty => {
-                                    },
+                                    Asn1ErrorKind::InvalidTagEmpty => {},
+                                    Asn1ErrorKind::InvalidTypeTag => {},
+                                    Asn1ErrorKind::InvalidTagNumber => {},
                                     _ => {
                                         return Err(error);
                                     }
@@ -242,6 +243,11 @@ pub fn hello_macro_derive(input: TokenStream) -> TokenStream {
         fn decode_value(&mut self, raw: &[u8]) -> Asn1Result<()> {
             let mut consumed_octets = 0;
             #decode_calls
+
+            if consumed_octets < raw.len() {
+                return Err(Asn1ErrorKind::NoAllDataConsumed)?;
+            }
+
             return Ok(());
         }
     };
