@@ -3,15 +3,29 @@ use syn::*;
 use super::parse_definitions::*;
 
 pub fn extract_sequence_definition(ast: &DeriveInput) -> ParseComponentResult<SequenceDefinition> {
-    let name = &ast.ident;
-    let components : Vec<ComponentDefinition>;
-
     if let Data::Struct(data_struct) = &ast.data {
-        components = extract_components_definitions(data_struct).unwrap();
+        let name = &ast.ident;
+        let components = extract_components_definitions(data_struct)?;
+        let mut application_tag_number: Option<u8> = None;
+        
+        match parse_sequence_attrs(&ast.attrs) {
+            Ok(tag_number) => {
+                application_tag_number = tag_number;
+            },
+            Err(parse_error) => {
+                match parse_error.kind() {
+                    ParseComponentErrorKind::NotFoundAttributeTag => {
+                    },
+                    _ => {
+                        return Err(parse_error);
+                    }
+                }
+            }
+        }
 
         return Ok(SequenceDefinition{
             name: name.clone(),
-            application_tag_number: None,
+            application_tag_number: application_tag_number,
             components: components
         });
     } else {
@@ -141,4 +155,50 @@ fn parse_component_attr(attr: &Attribute) -> ParseComponentResult<(bool, Option<
     }
 
     return Ok((optional,tag_number));
+}
+
+fn parse_sequence_attrs(attrs: &Vec<Attribute>) -> ParseComponentResult<Option<u8>> {
+    for attr in attrs {
+        if attr.path.segments.len() > 0 && attr.path.segments[0].ident == ASN1_SEQ_ATTR {
+            return parse_seq_attr(attr);
+        }
+    }
+    return Err(ParseComponentErrorKind::NotFoundAttributeTag)?;
+}
+
+fn parse_seq_attr(attr: &Attribute) -> ParseComponentResult<Option<u8>> {
+    let mut tag_number = None;
+
+    if let Ok(Meta::List(ref meta)) = attr.parse_meta() {
+        let subattrs : Vec<syn::NestedMeta> = meta.nested.iter().cloned().collect();
+        for subattr in subattrs {
+            if let syn::NestedMeta::Meta(ref a) = subattr {
+                match a {
+                    Meta::NameValue(name_value) => {
+                        if name_value.ident == APPLICATION_TAG_ATTR {
+                            match name_value.lit {
+                                syn::Lit::Int(ref value) => {
+                                    let int_value = value.value();
+                                    if int_value >= 256 {
+                                        return Err(ParseComponentErrorKind::InvalidTagNumberValue)?;
+                                    }
+                                    tag_number = Some(int_value as u8);
+                                },
+                                _ => {
+                                    return Err(ParseComponentErrorKind::InvalidTagNumberValue)?;
+                                }
+                            }
+                        }else {
+                            return Err(ParseComponentErrorKind::UnknownAttribute)?;
+                        }
+                    },
+                    _ => {
+                        return Err(ParseComponentErrorKind::UnknownAttribute)?;
+                    }
+                };
+            }
+        }
+    }
+
+    return Ok(tag_number);
 }
