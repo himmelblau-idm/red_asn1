@@ -142,14 +142,12 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
     let mut components_unit_functions = quote! {};
     let mut encode_calls = quote! {};
     let mut decode_calls = quote! {};
-    let mut new_fields = quote! {};
     
     for component in &sequence_definition.components {
 
         let component_code = code_component(&component);
         let encoder_name = component.encoder_name();
         let decoder_name = component.decoder_name();
-        let field_name = &component.id;
 
         if component.optional {
             encode_calls = quote! {
@@ -223,12 +221,6 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
             };
         }
 
-        new_fields = quote! {
-            #new_fields
-            #field_name: SequenceComponent2::new(),
-        };
-
-
         let encoder = &component_code.encoder;
         let decoder = &component_code.decoder;
         let getter = &component_code.getter;
@@ -251,7 +243,6 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
     return SequenceInnerCallsCode{
         encode_calls,
         decode_calls,
-        new_fields,
         components_unit_functions
     };
 }
@@ -263,7 +254,6 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
     let name = &sequence_definition.name;
     let encode_calls = &sequence_inner_calls.encode_calls;
     let decode_calls = &sequence_inner_calls.decode_calls;
-    let new_fields = &sequence_inner_calls.new_fields;
     let components_unit_functions = &sequence_inner_calls.components_unit_functions;
 
     let encode_value = quote! {
@@ -398,12 +388,6 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
 
     let total_exp = quote! {
         impl #name {
-            fn new() -> #name {
-                return #name {
-                    #new_fields
-                };
-            }
-
             fn tag(&self) -> Tag {
                 return Tag::new_constructed_universal(SEQUENCE_TAG_NUMBER);
             } 
