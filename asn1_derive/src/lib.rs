@@ -10,27 +10,9 @@ use syn::*;
 
 mod parse_error;
 mod parser;
+mod parse_definitions;
 
-use parse_error::*;
 use parser::*;
-
-struct SequenceDefinition {
-    name: Ident,
-    application_tag_number: Option<u8>,
-    components: Vec<ComponentDefinition>
-}
-
-struct ComponentDefinition {
-    id: Ident,
-    kind: Ident,
-    optional: bool,
-    context_tag_number: Option<u8>
-}
-
-static SEQUENCE_COMPONENT_TYPE_NAME: &str = "SequenceComponent2";
-static ASN1_SEQ_COMP_ATTR: &str = "seq_comp";
-static OPTIONAL_ATTR: &str = "optional";
-static TAG_NUMBER_ATTR: &str = "tag_number";
 
 #[proc_macro_derive(Asn1Sequence, attributes(seq, seq_comp))]
 pub fn hello_macro_derive(input: TokenStream) -> TokenStream {    
