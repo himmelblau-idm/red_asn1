@@ -65,7 +65,7 @@ fn test_encode_with_context_tags() {
 
     #[derive(Asn1Sequence)]
     struct Person {
-        #[seq_comp(tag_number = 0)]
+        #[seq_comp(context_tag = 0)]
         age: SequenceComponent2<Integer>
     }
 
@@ -199,7 +199,7 @@ fn test_decode_with_context_tags() {
 
     #[derive(Asn1Sequence)]
     struct Person {
-        #[seq_comp(tag_number = 0)]
+        #[seq_comp(context_tag = 0)]
         age: SequenceComponent2<Integer>
     }
 
@@ -249,7 +249,7 @@ fn test_decode_with_optional_and_context_tag() {
 
     #[derive(Asn1Sequence)]
     struct Person {
-        #[seq_comp(optional, tag_number = 0)]
+        #[seq_comp(optional, context_tag = 0)]
         age: SequenceComponent2<Integer>
     }
 
@@ -267,7 +267,7 @@ fn test_decode_with_optional_and_context_tag_bad_context_length() {
 
     #[derive(Asn1Sequence)]
     struct Person {
-        #[seq_comp(optional, tag_number = 0)]
+        #[seq_comp(optional, context_tag = 0)]
         age: SequenceComponent2<Integer>
     }
 
@@ -283,7 +283,7 @@ fn test_bad_decode_optional_context_tag_bad_context_tag() {
 
     #[derive(Asn1Sequence)]
     struct Person {
-        #[seq_comp(optional, tag_number = 0)]
+        #[seq_comp(optional, context_tag = 0)]
         age: SequenceComponent2<Integer>
     }
 
@@ -299,7 +299,7 @@ fn test_bad_decode_optional_context_tag_bad_type_tag() {
 
     #[derive(Asn1Sequence)]
     struct Person {
-        #[seq_comp(optional, tag_number = 0)]
+        #[seq_comp(optional, context_tag = 0)]
         age: SequenceComponent2<Integer>
     }
 
@@ -335,9 +335,9 @@ fn test_decode_without_context_tags() {
 fn test_decode_with_optional() {
     #[derive(Asn1Sequence)]
     struct TestSequence {
-        #[seq_comp(optional, tag_number = 0)]
+        #[seq_comp(optional, context_tag = 0)]
         id: SequenceComponent2<Integer>,
-        #[seq_comp(tag_number = 1)]
+        #[seq_comp(context_tag = 1)]
         data: SequenceComponent2<OctetString>
     }
 
@@ -382,7 +382,7 @@ fn test_decode_with_optional_without_context_tag() {
 fn test_decode_with_optional_and_context_tag_and_bad_type_tag() {
     #[derive(Asn1Sequence)]
     struct TestSequence {
-        #[seq_comp(optional, tag_number = 0)]
+        #[seq_comp(optional, context_tag = 0)]
         id: SequenceComponent2<Integer>
     }
 
