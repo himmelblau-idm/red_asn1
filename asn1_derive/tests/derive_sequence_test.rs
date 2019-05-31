@@ -427,3 +427,22 @@ fn test_decode_with_inner_sequence() {
     seq.decode(&[0x30, 0x4, 0x67, 0x2, 0x30, 0x0]).unwrap();
     assert_eq!(&TestSequence{}, seq.get_inner().unwrap());
 }
+
+#[test]
+fn test_decode_unsetting_optional_value() {
+    #[derive(Asn1Sequence)]
+    struct TestSequence {
+        #[seq_comp(optional, context_tag = 0)]
+        id: SeqField<Integer>
+    }
+
+    let mut seq = TestSequence{
+        id: SeqField::new()
+    };
+
+    seq.set_id(Integer::new(9));
+    seq.decode(&[0x30, 0x0]).unwrap();
+
+    assert_eq!(None, seq.get_id());
+
+}

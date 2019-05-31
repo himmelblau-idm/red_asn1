@@ -148,6 +148,7 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
         let component_code = code_component(&component);
         let encoder_name = component.encoder_name();
         let decoder_name = component.decoder_name();
+        let unsetter_name = component.unsetter_name();
 
         if component.optional {
             encode_calls = quote! {
@@ -168,45 +169,40 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
                 };
             };
 
+            let invalid_tag_errors_handlers;
+
             if let Some(_) = component.context_tag_number {
-                decode_calls = quote! {
-                    #decode_calls
-                    match self.#decoder_name(&raw[consumed_octets..]) {
-                        Ok(num_octets) => {
-                            consumed_octets += num_octets;
-                        },
-                        Err(error) => {
-                            match error.kind() {
-                                Asn1ErrorKind::InvalidContextTagEmpty => {},
-                                Asn1ErrorKind::InvalidContextTagNumber => {},
-                                Asn1ErrorKind::InvalidContextTag => {},
-                                _ => {
-                                    return Err(error);
-                                }
-                            }
-                        }
-                    };
+                invalid_tag_errors_handlers = quote! {
+                    Asn1ErrorKind::InvalidContextTagEmpty => {self.#unsetter_name()},
+                    Asn1ErrorKind::InvalidContextTagNumber => {self.#unsetter_name()},
+                    Asn1ErrorKind::InvalidContextTag => {self.#unsetter_name()},
                 };
+
             }else{
-                decode_calls = quote! {
-                    #decode_calls
-                    match self.#decoder_name(&raw[consumed_octets..]) {
-                        Ok(num_octets) => {
-                            consumed_octets += num_octets;
-                        },
-                        Err(error) => {
-                            match error.kind() {
-                                Asn1ErrorKind::InvalidTagEmpty => {},
-                                Asn1ErrorKind::InvalidTypeTag => {},
-                                Asn1ErrorKind::InvalidTagNumber => {},
-                                _ => {
-                                    return Err(error);
-                                }
-                            }
-                        }
-                    };
+                invalid_tag_errors_handlers = quote! {
+                    Asn1ErrorKind::InvalidTagEmpty => {self.#unsetter_name()},
+                    Asn1ErrorKind::InvalidTypeTag => {self.#unsetter_name()},
+                    Asn1ErrorKind::InvalidTagNumber => {self.#unsetter_name()},
                 };
             }
+
+
+            decode_calls = quote! {
+                #decode_calls
+                match self.#decoder_name(&raw[consumed_octets..]) {
+                    Ok(num_octets) => {
+                        consumed_octets += num_octets;
+                    },
+                    Err(error) => {
+                        match error.kind() {
+                            #invalid_tag_errors_handlers
+                            _ => {
+                                return Err(error);
+                            }
+                        }
+                    }
+                };
+            };
 
             
         } else {
