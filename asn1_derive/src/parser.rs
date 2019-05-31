@@ -43,7 +43,17 @@ fn extract_components_definitions(data_struct : &DataStruct) -> ParseComponentRe
 fn parse_structure_fields(fields : &FieldsNamed) -> ParseComponentResult<Vec<ComponentDefinition>> {
     let mut components_definitions: Vec<ComponentDefinition> = Vec::new();
     for field in fields.named.iter() {
-        components_definitions.push(parse_structure_field(&field)?);
+        match parse_structure_field(&field) {
+            Ok(component_definition) => {
+                components_definitions.push(component_definition);
+            },
+            Err(parse_error) => {
+                match parse_error.kind() {
+                    ParseComponentErrorKind::InvalidFieldType => {},
+                    _ => {return Err(parse_error); }
+                };
+            }
+        };
     }
     return Ok(components_definitions);
 }

@@ -26,6 +26,15 @@ fn test_simple_sequence_definition() {
 }
 
 #[test]
+fn test_define_sequence_with_no_sequence_fields() {
+    #[derive(Asn1Sequence)]
+    struct TestSequence {
+        id: SeqField<Integer>,
+        _flag: u32
+    }
+}
+
+#[test]
 fn test_encode_empty() {
     #[derive(Asn1Sequence)]
     struct TestSequence {}
