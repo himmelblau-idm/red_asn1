@@ -16,7 +16,7 @@ pub struct SequenceDefinition {
 
 pub struct ComponentDefinition {
     pub id: Ident,
-    pub kind: Ident,
+    pub kind: PathSegment,
     pub optional: bool,
     pub context_tag_number: Option<u8>
 }

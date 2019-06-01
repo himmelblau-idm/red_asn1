@@ -67,7 +67,7 @@ fn parse_structure_field(field : &Field) -> ParseComponentResult<ComponentDefini
         unreachable!();
     }
  
-    let field_type = extract_component_type(&field.ty)?;
+    let field_type = extract_field_type(&field.ty)?;
     let mut context_tag_number = None;
     let mut optional = false;
 
@@ -96,13 +96,13 @@ fn parse_structure_field(field : &Field) -> ParseComponentResult<ComponentDefini
     });
 }
 
-fn extract_component_type(field_type: &Type) -> ParseComponentResult<Ident> {
+fn extract_field_type(field_type: &Type) -> ParseComponentResult<PathSegment> {
     if let Type::Path(path) = &field_type {
         if path.path.segments[0].ident == SEQUENCE_COMPONENT_TYPE_NAME {
             if let PathArguments::AngleBracketed(brack_argument) = &path.path.segments[0].arguments {
                 if let GenericArgument::Type(ty) = &brack_argument.args[0] {
                     if let Type::Path(path) = ty {
-                        return Ok(path.path.segments[0].ident.clone());
+                        return Ok(path.path.segments[0].clone());
                     }
                 }
             }
@@ -112,6 +112,9 @@ fn extract_component_type(field_type: &Type) -> ParseComponentResult<Ident> {
     }
     unreachable!();
 }
+
+
+
 
 fn parse_field_attrs(attrs: &Vec<Attribute>) -> ParseComponentResult<(bool, Option<u8>)> {
     for attr in attrs {

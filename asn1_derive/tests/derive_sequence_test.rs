@@ -6,7 +6,7 @@ use asn1::*;
 use asn1_derive::Asn1Sequence;
 
 #[test]
-fn test_simple_sequence_definition() {
+fn test_define_simple() {
 
     #[derive(Asn1Sequence)]
     struct TestSequence {
@@ -26,11 +26,20 @@ fn test_simple_sequence_definition() {
 }
 
 #[test]
-fn test_define_sequence_with_no_sequence_fields() {
+fn test_define_with_not_all_sequence_fields() {
     #[derive(Asn1Sequence)]
     struct TestSequence {
         id: SeqField<Integer>,
         _flag: u32
+    }
+}
+
+#[test]
+fn test_define_with_inner_sequenceof() {
+    #[derive(Asn1Sequence)]
+    struct TestSequence {
+        id: SeqField<Integer>,
+        attrs: SeqField<SequenceOf<Integer>>
     }
 }
 
@@ -159,6 +168,23 @@ fn test_encode_with_inner_sequence() {
     seq.set_inner(TestSequence::new_default());
 
     assert_eq!(vec![0x30, 0x4, 0x67, 0x2, 0x30, 0x0], seq.encode().unwrap());
+}
+
+#[test]
+fn test_encode_with_inner_sequenceof() {
+    #[derive(Asn1Sequence)]
+    struct TestSequence {
+        attrs: SeqField<SequenceOf<Integer>>
+    }
+
+    let mut seq = TestSequence{ attrs: SeqField::new()};
+    let mut seqof_ints: SequenceOf<Integer> = SequenceOf::new();
+    seqof_ints.push(Integer::new(1));
+
+    seq.set_attrs(seqof_ints);
+
+    assert_eq!(vec![0x30, 0x5, 0x30, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x1],
+               seq.encode().unwrap());
 }
 
 #[test]
@@ -445,4 +471,20 @@ fn test_decode_unsetting_optional_value() {
 
     assert_eq!(None, seq.get_id());
 
+}
+
+#[test]
+fn test_decode_with_inner_sequenceof() {
+    #[derive(Asn1Sequence)]
+    struct TestSequence {
+        attrs: SeqField<SequenceOf<Integer>>
+    }
+
+    let mut seq = TestSequence{ attrs: SeqField::new()};
+
+    seq.decode(&[0x30, 0x5, 0x30, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x1]).unwrap();
+
+    let seqof_ints = seq.get_attrs().unwrap();
+    assert_eq!(1, seqof_ints.len());
+    assert_eq!(&Integer::new(1), &seqof_ints[0]);
 }
