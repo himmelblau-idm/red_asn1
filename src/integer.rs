@@ -108,6 +108,10 @@ impl Integer {
         };
     }
 
+    pub fn set_value(&mut self, value: i64) {
+        self._value = Some(value);
+    }
+
     fn _encoded_value_size(&self) -> usize {
         if self._value.unwrap() >= 0 {
             return self._calculate_positive_integer_size() as usize;
@@ -162,6 +166,13 @@ mod tests {
     fn test_create_default() {
         let b = Integer::new_default();
         assert_eq!(None, b.value());
+    }
+
+    #[test]
+    fn test_set_value() {
+        let mut b = Integer::new_empty();
+        b.set_value(56);
+        assert_eq!(&56, b.value().unwrap());
     }
 
     #[test]
