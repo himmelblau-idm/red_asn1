@@ -10,7 +10,7 @@ pub struct Asn1Error {
     inner: Context<Asn1ErrorKind>
 }
 
-#[derive(Clone, Debug, Fail)]
+#[derive(Clone, Debug, PartialEq, Eq, Fail)]
 pub enum Asn1ErrorKind {
     #[fail (display = "Invalid tag: Empty")]
     InvalidTagEmpty,
