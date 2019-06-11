@@ -39,7 +39,9 @@ pub enum Asn1ErrorKind {
     #[fail (display = "Invalid value: {}", _0)]
     InvalidValue(String),
     #[fail (display = "No component with such identifier")]
-    NoComponent
+    NoComponent,
+    #[fail (display = "Error in {}::{} => {}", _0,_1,_2)]
+    SequenceFieldError(String, String, Box<Asn1ErrorKind>)
 }
 
 impl Asn1Error {

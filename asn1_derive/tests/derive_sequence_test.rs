@@ -129,7 +129,7 @@ fn test_encode_with_optional_without_value_component() {
     assert_eq!(vec![0x30, 0x0], p.encode().unwrap());
 }
 
-#[should_panic(expected = "No value provided")]
+#[should_panic(expected = "Error in Person::age => No value provided")]
 #[test]
 fn test_encode_without_give_required_values() {
 
@@ -328,7 +328,7 @@ fn test_bad_decode_optional_context_tag_bad_context_tag() {
     p.decode(&[0x30, 0x1, 0xee]).unwrap();
 }
 
-#[should_panic(expected =  "Invalid tag: Not valid tag for type")]
+#[should_panic(expected =  "Error in Person::age => Invalid tag: Not valid tag for type")]
 #[test]
 fn test_bad_decode_optional_context_tag_bad_type_tag() {
 
@@ -412,7 +412,7 @@ fn test_decode_with_optional_without_context_tag() {
 }
 
 
-#[should_panic (expected = "Invalid tag: Not valid tag for type")]
+#[should_panic (expected = "Error in TestSequence::id => Invalid tag: Not valid tag for type")]
 #[test]
 fn test_decode_with_optional_and_context_tag_and_bad_type_tag() {
     #[derive(Asn1Sequence)]

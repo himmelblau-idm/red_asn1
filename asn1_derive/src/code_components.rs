@@ -142,6 +142,7 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
     let mut components_unit_functions = quote! {};
     let mut encode_calls = quote! {};
     let mut decode_calls = quote! {};
+    let sequence_name = &sequence_definition.name;
     
     for component in &sequence_definition.components {
 
@@ -149,6 +150,7 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
         let encoder_name = component.encoder_name();
         let decoder_name = component.decoder_name();
         let unsetter_name = component.unsetter_name();
+        let component_name = &component.id;
 
         if component.optional {
             encode_calls = quote! {
@@ -197,7 +199,11 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
                         match error.kind() {
                             #invalid_tag_errors_handlers
                             _ => {
-                                return Err(error);
+                                return Err(Asn1ErrorKind::SequenceFieldError(
+                                    stringify!(#sequence_name).to_string(), 
+                                    stringify!(#component_name).to_string(),
+                                    Box::new(error.kind().clone())
+                                    ))?;
                             }
                         }
                     }
