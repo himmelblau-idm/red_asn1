@@ -488,3 +488,50 @@ fn test_decode_with_inner_sequenceof() {
     assert_eq!(1, seqof_ints.len());
     assert_eq!(&Integer::new(1), &seqof_ints[0]);
 }
+
+
+#[should_panic (expected = "Error in TestSequence::id => Invalid tag: Empty tag for context")]
+#[test]
+fn test_decode_without_required_value() {
+    #[derive(Asn1Sequence)]
+    struct TestSequence {
+        #[seq_comp(context_tag = 0)]
+        id: SeqField<Integer>
+    }
+
+    let mut seq = TestSequence{
+        id: SeqField::new(),
+    };
+    seq.decode(&[0x30, 0x0]).unwrap();
+
+}
+
+#[should_panic (expected = "Error in SuperTestSequence::inner => Error in TestSequence::id => Invalid tag: Empty tag for context")]
+
+#[test]
+fn test_decode_without_required_value_with_inner_sequence() {
+    #[derive(Asn1Sequence, Debug, PartialEq)]
+    struct TestSequence {
+        #[seq_comp(context_tag = 0)]
+        id: SeqField<Integer>
+    }
+
+    impl Asn1InstanciableObject for TestSequence {
+        fn new_default() -> Self {
+            return TestSequence{
+                id: SeqField::new()
+            };
+        }
+    }
+
+    #[derive(Asn1Sequence)]
+    struct SuperTestSequence {
+        inner: SeqField<TestSequence>
+    }
+
+    let mut seq = SuperTestSequence{
+        inner: SeqField::new()
+    };
+
+    seq.decode(&[0x30, 0x2, 0x30, 0x0]).unwrap();
+}

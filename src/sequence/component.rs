@@ -214,7 +214,7 @@ impl<'a, 'b> Asn1Object for SequenceComponent<'a, 'b> {
     }
 }
 
-
+#[derive(Debug, PartialEq)]
 pub struct SeqField<T: Asn1InstanciableObject> {
     value: Option<T>
 }

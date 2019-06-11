@@ -164,7 +164,11 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
                             Asn1ErrorKind::NoValue => {
                             },
                             _ => {
-                                return Err(error);
+                                return Err(Asn1ErrorKind::SequenceFieldError(
+                                    stringify!(#sequence_name).to_string(), 
+                                    stringify!(#component_name).to_string(),
+                                    Box::new(error.kind().clone())
+                                    ))?;
                             }
                         }
                     }
@@ -214,12 +218,23 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
         } else {
             encode_calls = quote! {
                 #encode_calls
-                value.append(&mut self.#encoder_name()?);
+                value.append(&mut self.#encoder_name().or_else(
+                    |error| Err(Asn1ErrorKind::SequenceFieldError(
+                                stringify!(#sequence_name).to_string(), 
+                                stringify!(#component_name).to_string(),
+                                Box::new(error.kind().clone())
+                                )))?
+                );
             };
 
             decode_calls = quote! {
                 #decode_calls
-                consumed_octets += self.#decoder_name(&raw[consumed_octets..])?;
+                consumed_octets += self.#decoder_name(&raw[consumed_octets..]).or_else(
+                    |error| Err(Asn1ErrorKind::SequenceFieldError(
+                                stringify!(#sequence_name).to_string(), 
+                                stringify!(#component_name).to_string(),
+                                Box::new(error.kind().clone())
+                                )))?;
             };
         }
 
