@@ -334,7 +334,10 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
             let (_, raw_value) = raw.split_at(consumed_octets);
 
             if value_length > raw_value.len() {
-                return Err(Asn1ErrorKind::NoDataForLength)?;
+                return Err(Asn1ErrorKind::SequenceError( 
+                    stringify!(#name).to_string(), 
+                    Box::new(Asn1ErrorKind::NoDataForLength)
+                ))?;
             }
 
             let (raw_value, _) = raw_value.split_at(value_length);
@@ -400,7 +403,10 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
                 let (_, raw_value) = raw.split_at(consumed_octets);
 
                 if value_length > raw_value.len() {
-                    return Err(Asn1ErrorKind::NoDataForLength)?;
+                    return Err(Asn1ErrorKind::SequenceError( 
+                        stringify!(#name).to_string(), 
+                        Box::new(Asn1ErrorKind::NoDataForLength)
+                    ))?;
                 }
 
                 let (raw_value, _) = raw_value.split_at(value_length);

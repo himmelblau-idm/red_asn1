@@ -394,6 +394,33 @@ fn test_bad_decode_optional_context_tag_bad_type_tag() {
     p.decode(&[0x30, 0x3, 0xa0, 0x1, 0xee]).unwrap();
 }
 
+#[should_panic(expected =  "Person => Invalid value: Not enough data for length")]
+#[test]
+fn test_bad_decode_not_enough_data_for_length () {
+
+    #[derive(Asn1Sequence)]
+    struct Person {
+    }
+
+    let mut p = Person{
+    };
+    p.decode(&[0x30, 0x1]).unwrap();
+}
+
+#[should_panic(expected =  "Person => Invalid value: Not enough data for length")]
+#[test]
+fn test_bad_decode_not_enough_data_for_length_with_application_tag () {
+
+    #[derive(Asn1Sequence)]
+    #[seq(application_tag = 0)]
+    struct Person {
+    }
+
+    let mut p = Person{
+    };
+    p.decode(&[0x60, 0x1]).unwrap();
+}
+
 #[test]
 fn test_decode_without_context_tags() {
 
