@@ -138,7 +138,7 @@ impl Tag {
             consumed_octets += 1;
         }
         if consumed_octets == raw.len() {
-            return Err(Asn1ErrorKind::InvalidTagNumber)?;
+            return Err(Asn1ErrorKind::InvalidTagHighFormNumberUnfinished)?;
         }
 
         return Ok((tag_number,consumed_octets));
@@ -208,14 +208,14 @@ mod tests {
         assert_eq!((Tag::new(198, TagType::Primitive, TagClass::Private), 3), _parse_tag_with_consumed_octets(vec![0xdf, 0xc6, 0x01, 0x01, 0x02]));
     }
 
-    #[should_panic (expected = "Invalid tag: Empty")]
+    #[should_panic (expected = "Invalid type tag: Empty")]
     #[test]
     fn test_decode_empty_tag() {
         _parse_tag(vec![]);
     }
     
 
-    #[should_panic (expected = "Invalid tag: Invalid tag number")]
+    #[should_panic (expected = "Invalid type tag: High form number unfinished")]
     #[test]
     fn test_decode_invalid_tag_with_unfinished_tag_number() {
         _parse_tag(vec![0x1F, 0x80, 0x81]);

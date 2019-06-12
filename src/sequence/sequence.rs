@@ -52,13 +52,13 @@ impl<'a, 'b> Asn1Object for Sequence<'a, 'b> {
                 },
                 Err(asn1_error) => {
                     match asn1_error.kind() {
-                        Asn1ErrorKind::InvalidContextTag => {
+                        Asn1ErrorKind::InvalidContextTagUnmatched => {
                             if component.is_optional() {
                                 continue;
                             }
                             return Err(asn1_error);
                         },
-                        Asn1ErrorKind::InvalidTypeTag => {
+                        Asn1ErrorKind::InvalidTypeTagUnmatched => {
                             if component.has_context_tag() {
                                 return Err(asn1_error);
                             }
@@ -175,7 +175,7 @@ impl<'a, 'b> Sequence<'a, 'b> {
         let consumed_octets = decoded_tag.decode(raw_tag)?;
 
         if &decoded_tag != &self.application_tag.unwrap() {
-            return Err(Asn1ErrorKind::InvalidTypeTag)?;
+            return Err(Asn1ErrorKind::InvalidTypeTagUnmatched)?;
         }
         return Ok(consumed_octets);
     }
@@ -252,7 +252,7 @@ mod tests {
         assert_eq!(vec![0x30, 0x0], sequence.encode().unwrap());
     }
 
-    #[should_panic(expected = "Invalid tag: Not valid tag for type")]
+    #[should_panic(expected = "Invalid type tag: Not match with expected tag")]
     #[test]
     fn test_set_component_value_of_incorrect_type() {
         let mut sequence = Sequence::new();
@@ -306,21 +306,21 @@ mod tests {
         assert_eq!(4, consumed_octets);
     }
 
-    #[should_panic (expected = "Invalid tag: Not valid tag for type")]
+    #[should_panic (expected = "Invalid type tag: Not match with expected tag")]
     #[test]
     fn test_decode_with_invalid_tag() {
         let mut sequence = Sequence::new();
         sequence.decode(&[0xff, 0x0]).unwrap();
     }
 
-    #[should_panic (expected = "Invalid tag: Not valid tag for type")]
+    #[should_panic (expected = "Invalid type tag: Not match with expected tag")]
     #[test]
     fn test_decode_with_invalid_application_tag() {
         let mut sequence = Sequence::new();
         sequence.decode(&[0xff, 0x2, 0x30, 0x0]).unwrap();
     }
 
-    #[should_panic (expected = "Invalid tag: Not valid tag for type")]
+    #[should_panic (expected = "Invalid type tag: Not match with expected tag")]
     #[test]
     fn test_decode_with_invalid_application_inner_tag() {
         let mut sequence = Sequence::new();
@@ -348,7 +348,7 @@ mod tests {
         assert_eq!(&vec![0x1, 0x2, 0x3, 0x4], octet_str.value().unwrap());
     }
 
-    #[should_panic (expected = "Invalid tag: Not valid tag for context")]
+    #[should_panic (expected = "Invalid context tag: Not match with expected tag")]
     #[test]
     fn test_bad_decode_without_expected_values() {
         let mut sequence = Sequence::new();
@@ -362,7 +362,7 @@ mod tests {
         
     }
 
-    #[should_panic (expected = "Invalid tag: Not valid tag for type")]
+    #[should_panic (expected = "Invalid type tag: Not match with expected tag")]
     #[test]
     fn test_bad_decode_without_expected_values_without_context_tag() {
         let mut sequence = Sequence::new();
@@ -433,7 +433,7 @@ mod tests {
         assert_eq!(None, inte.value());
     }
 
-    #[should_panic (expected = "Invalid tag: Not valid tag for type")]
+    #[should_panic (expected = "Invalid type tag: Not match with expected tag")]
     #[test]
     fn test_bad_decode_with_optional() {
         let mut sequence = Sequence::new();

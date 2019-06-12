@@ -288,7 +288,10 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
             #decode_calls
 
             if consumed_octets < raw.len() {
-                return Err(Asn1ErrorKind::NoAllDataConsumed)?;
+                return Err(Asn1ErrorKind::SequenceError(
+                                stringify!(#name).to_string(),
+                                Box::new(Asn1ErrorKind::NoAllDataConsumed)
+                        ))?;
             }
 
             return Ok(());
@@ -310,11 +313,22 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
 
     let mut inner_decode = quote! {
         fn _inner_decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
-            let mut consumed_octets = self.decode_tag(raw)?;
+            let mut consumed_octets = self.decode_tag(raw).or_else( |error| 
+                Err(Asn1ErrorKind::SequenceError( 
+                    stringify!(#name).to_string(), 
+                    Box::new(error.kind().clone())
+                ))
+            )?;
 
             let (_, raw_length) = raw.split_at(consumed_octets);
 
-            let (value_length, consumed_octets_by_length) = self.decode_length(raw_length)?;
+            let (value_length, consumed_octets_by_length) = self.decode_length(raw_length).or_else( |error| 
+                Err(Asn1ErrorKind::SequenceError( 
+                    stringify!(#name).to_string(), 
+                    Box::new(error.kind().clone())
+                ))
+            )?;
+
             consumed_octets += consumed_octets_by_length;
 
             let (_, raw_value) = raw.split_at(consumed_octets);
@@ -359,7 +373,7 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
                 let consumed_octets = decoded_tag.decode(raw_tag)?;
 
                 if decoded_tag != Tag::new(#application_tag_number, TagType::Constructed, TagClass::Application) {
-                    return Err(Asn1ErrorKind::InvalidTypeTag)?;
+                    return Err(Asn1ErrorKind::InvalidApplicationTag)?;
                 }
 
                 return Ok(consumed_octets);

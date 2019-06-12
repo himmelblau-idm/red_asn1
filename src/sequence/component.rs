@@ -71,7 +71,7 @@ impl<'a, 'b> SequenceComponent<'a, 'b> {
 
     pub fn set_ref(&mut self, value: Box<&'a mut (Asn1Object + 'b)>) -> Asn1Result<()> {
         if value.tag() != self.subtype_tag {
-            return Err(Asn1ErrorKind::InvalidTypeTag)?;
+            return Err(Asn1ErrorKind::InvalidTypeTagUnmatched)?;
         }
 
         self.subtype_ref = Some(value);
@@ -112,7 +112,7 @@ impl<'a, 'b> SequenceComponent<'a, 'b> {
         let consumed_octets = decoded_tag.decode(raw_tag)?;
 
         if &decoded_tag != &self.context_tag.unwrap() {
-            return Err(Asn1ErrorKind::InvalidContextTag)?;
+            return Err(Asn1ErrorKind::InvalidContextTagUnmatched)?;
         }
         return Ok(consumed_octets);
     }

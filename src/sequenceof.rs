@@ -162,14 +162,14 @@ mod tests {
         assert_eq!(Integer::new(1000), seq_of[1]);
     }
 
-    #[should_panic(expected = "Invalid tag: Not valid tag for type")]
+    #[should_panic(expected = "Invalid type tag: Not match with expected tag")]
     #[test]
     fn test_decode_with_invalid_sequence_of_tag() {
         let mut seq_of: SequenceOf<Integer> = SequenceOf::new();
         seq_of.decode(&[0xff, 0x0]).unwrap();
     }
 
-    #[should_panic(expected = "Invalid tag: Not valid tag for type")]
+    #[should_panic(expected = "Invalid type tag: Not match with expected tag")]
     #[test]
     fn test_decode_with_invalid_inner_type_tag() {
         let mut seq_of: SequenceOf<Integer> = SequenceOf::new();

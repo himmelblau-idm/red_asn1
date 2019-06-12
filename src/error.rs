@@ -12,18 +12,24 @@ pub struct Asn1Error {
 
 #[derive(Clone, Debug, PartialEq, Eq, Fail)]
 pub enum Asn1ErrorKind {
-    #[fail (display = "Invalid tag: Empty")]
+    #[fail (display = "Invalid type tag: Empty")]
     InvalidTagEmpty,
-    #[fail (display = "Invalid tag: Invalid tag number")]
-    InvalidTagNumber,
-    #[fail (display = "Invalid tag: Not valid tag for type")]
-    InvalidTypeTag,
-    #[fail (display = "Invalid tag: Not valid tag for context")]
-    InvalidContextTag,
-    #[fail (display = "Invalid tag: Invalid tag number for context")]
-    InvalidContextTagNumber,
-    #[fail (display = "Invalid tag: Empty tag for context")]
+    #[fail (display = "Invalid type tag: High form number unfinished")]
+    InvalidTagHighFormNumberUnfinished,
+    #[fail (display = "Invalid type tag: Not match with expected tag")]
+    InvalidTypeTagUnmatched,
+    #[fail (display = "Invalid context tag: Empty tag")]
     InvalidContextTagEmpty,
+    #[fail (display = "Invalid context tag: High form number unfinished")]
+    InvalidContextTagHighFormNumberUnfinished,
+    #[fail (display = "Invalid context tag: Not match with expected tag")]
+    InvalidContextTagUnmatched,
+    #[fail (display = "Invalid context tag: Empty tag")]
+    InvalidApplicationTagEmpty,
+    #[fail (display = "Invalid context tag: High form number unfinished")]
+    InvalidApplicationTagHighFormNumberUnfinished,
+    #[fail (display = "Invalid application tag: Not match with expected tag")]
+    InvalidApplicationTagUnmatched,
     #[fail (display = "Invalid length: Empty")]
     InvalidLengthEmpty,
     #[fail (display = "Invalid length: Invalid length of length")]
@@ -40,8 +46,10 @@ pub enum Asn1ErrorKind {
     InvalidValue(String),
     #[fail (display = "No component with such identifier")]
     NoComponent,
-    #[fail (display = "Error in {}::{} => {}", _0,_1,_2)]
-    SequenceFieldError(String, String, Box<Asn1ErrorKind>)
+    #[fail (display = "{}::{} => {}", _0,_1,_2)]
+    SequenceFieldError(String, String, Box<Asn1ErrorKind>),
+    #[fail (display = "{} => {}", _0,_1)]
+    SequenceError(String, Box<Asn1ErrorKind>)
 }
 
 impl Asn1Error {

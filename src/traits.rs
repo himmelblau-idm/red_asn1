@@ -20,7 +20,7 @@ pub trait Asn1Object {
         let consumed_octets = decoded_tag.decode(raw_tag)?;
 
         if decoded_tag != self.tag() {
-            return Err(Asn1ErrorKind::InvalidTypeTag)?;
+            return Err(Asn1ErrorKind::InvalidTypeTagUnmatched)?;
         }
         return Ok(consumed_octets);
     }
@@ -188,7 +188,7 @@ mod tests {
         assert_eq!(2, TestObject::new_tagged(Tag::new_primitive_universal(0x1F)).decode_tag(&[0x1F, 0x1F]).unwrap());
     }
 
-    #[should_panic(expected="Invalid tag: Not valid tag for type")]
+    #[should_panic(expected="Invalid type tag: Not match with expected tag")]
     #[test]
     fn test_decode_different_tag() {
         assert_eq!(1, TestObject::new().decode_tag(&[0x1]).unwrap());
