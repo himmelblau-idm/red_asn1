@@ -352,17 +352,30 @@ fn test_decode_bad_sequence_length() {
     p.decode(&[0x30, 0x81]).unwrap();
 }
 
-#[should_panic(expected =  "Persona => Invalid application tag: Not valid tag")]
+#[should_panic(expected =  "Person => Invalid application tag: Not match with expected tag")]
 #[test]
 fn test_decode_bad_sequence_application_tag() {
 
     #[derive(Asn1Sequence)]
-    #[seq_comp(application_tag = 0)]
+    #[seq(application_tag = 0)]
     struct Person {
     }
 
     let mut p = Person{};
     p.decode(&[0x61, 0x0]).unwrap();
+}
+
+#[should_panic(expected =  "Person => Invalid length: Invalid length of length")]
+#[test]
+fn test_decode_sequence_application_tag_bad_length() {
+
+    #[derive(Asn1Sequence)]
+    #[seq(application_tag = 0)]
+    struct Person {
+    }
+
+    let mut p = Person{};
+    p.decode(&[0x60, 0x81]).unwrap();
 }
 
 #[should_panic(expected =  "Person::age => Invalid type tag: Not match with expected tag")]

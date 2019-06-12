@@ -383,9 +383,19 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
         decode = quote! {
 
             fn decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
-                let mut consumed_octets = self._decode_application_tag(raw)?;
+                let mut consumed_octets = self._decode_application_tag(raw).or_else( |error| 
+                    Err(Asn1ErrorKind::SequenceError( 
+                        stringify!(#name).to_string(), 
+                        Box::new(error.kind().clone())
+                    ))
+                )?;
                 let (_, raw_length) = raw.split_at(consumed_octets);
-                let (value_length, consumed_octets_by_length) = self.decode_length(raw_length)?;
+                let (value_length, consumed_octets_by_length) = self.decode_length(raw_length).or_else( |error| 
+                    Err(Asn1ErrorKind::SequenceError( 
+                        stringify!(#name).to_string(), 
+                        Box::new(error.kind().clone())
+                    ))
+                )?;
                 consumed_octets += consumed_octets_by_length;
                 let (_, raw_value) = raw.split_at(consumed_octets);
 

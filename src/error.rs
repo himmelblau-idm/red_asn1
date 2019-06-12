@@ -24,9 +24,9 @@ pub enum Asn1ErrorKind {
     InvalidContextTagHighFormNumberUnfinished,
     #[fail (display = "Invalid context tag: Not match with expected tag")]
     InvalidContextTagUnmatched,
-    #[fail (display = "Invalid context tag: Empty tag")]
+    #[fail (display = "Invalid application tag: Empty tag")]
     InvalidApplicationTagEmpty,
-    #[fail (display = "Invalid context tag: High form number unfinished")]
+    #[fail (display = "Invalid application tag: High form number unfinished")]
     InvalidApplicationTagHighFormNumberUnfinished,
     #[fail (display = "Invalid application tag: Not match with expected tag")]
     InvalidApplicationTagUnmatched,
