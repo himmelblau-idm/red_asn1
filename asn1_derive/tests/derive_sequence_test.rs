@@ -330,7 +330,7 @@ fn test_bad_decode_optional_context_tag_bad_context_tag() {
 
 #[should_panic(expected =  "Person => Invalid type tag: Not match with expected tag")]
 #[test]
-fn test_bad_sequence_type_tag() {
+fn test_decode_bad_sequence_type_tag() {
 
     #[derive(Asn1Sequence)]
     struct Person {
@@ -342,7 +342,7 @@ fn test_bad_sequence_type_tag() {
 
 #[should_panic(expected =  "Person => Invalid length: Invalid length of length")]
 #[test]
-fn test_bad_sequence_length() {
+fn test_decode_bad_sequence_length() {
 
     #[derive(Asn1Sequence)]
     struct Person {
@@ -354,7 +354,7 @@ fn test_bad_sequence_length() {
 
 #[should_panic(expected =  "Persona => Invalid application tag: Not valid tag")]
 #[test]
-fn test_bad_sequence_context_tag() {
+fn test_decode_bad_sequence_application_tag() {
 
     #[derive(Asn1Sequence)]
     #[seq_comp(application_tag = 0)]
