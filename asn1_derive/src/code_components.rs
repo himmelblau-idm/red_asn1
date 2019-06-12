@@ -63,10 +63,10 @@ fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
                     },
                     Err(error) => {
                         match error.kind() {
-                            Asn1ErrorKind::InvalidTagNumber => {
-                                return Err(Asn1ErrorKind::InvalidContextTagNumber)?;
+                            Asn1ErrorKind::InvalidTypeTagHighFormNumberUnfinished => {
+                                return Err(Asn1ErrorKind::InvalidContextTagHighFormNumberUnfinished)?;
                             },
-                            Asn1ErrorKind::InvalidTagEmpty => {
+                            Asn1ErrorKind::InvalidTypeTagEmpty => {
                                 return Err(Asn1ErrorKind::InvalidContextTagEmpty)?;
                             },
                             _ => {
@@ -77,7 +77,7 @@ fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
                 }
 
                 if decoded_tag != Tag::new(#context_tag_number, TagType::Constructed, TagClass::Context) {
-                    return Err(Asn1ErrorKind::InvalidContextTag)?;
+                    return Err(Asn1ErrorKind::InvalidContextTagUnmatched)?;
                 }
 
                 let (_, raw_length) = raw.split_at(consumed_octets);
@@ -180,15 +180,15 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
             if let Some(_) = component.context_tag_number {
                 invalid_tag_errors_handlers = quote! {
                     Asn1ErrorKind::InvalidContextTagEmpty => {self.#unsetter_name()},
-                    Asn1ErrorKind::InvalidContextTagNumber => {self.#unsetter_name()},
-                    Asn1ErrorKind::InvalidContextTag => {self.#unsetter_name()},
+                    Asn1ErrorKind::InvalidContextTagHighFormNumberUnfinished => {self.#unsetter_name()},
+                    Asn1ErrorKind::InvalidContextTagUnmatched => {self.#unsetter_name()},
                 };
 
             }else{
                 invalid_tag_errors_handlers = quote! {
-                    Asn1ErrorKind::InvalidTagEmpty => {self.#unsetter_name()},
-                    Asn1ErrorKind::InvalidTypeTag => {self.#unsetter_name()},
-                    Asn1ErrorKind::InvalidTagNumber => {self.#unsetter_name()},
+                    Asn1ErrorKind::InvalidTypeTagEmpty => {self.#unsetter_name()},
+                    Asn1ErrorKind::InvalidTypeTagUnmatched => {self.#unsetter_name()},
+                    Asn1ErrorKind::InvalidTypeTagHighFormNumberUnfinished => {self.#unsetter_name()},
                 };
             }
 
@@ -373,7 +373,7 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
                 let consumed_octets = decoded_tag.decode(raw_tag)?;
 
                 if decoded_tag != Tag::new(#application_tag_number, TagType::Constructed, TagClass::Application) {
-                    return Err(Asn1ErrorKind::InvalidApplicationTag)?;
+                    return Err(Asn1ErrorKind::InvalidApplicationTagUnmatched)?;
                 }
 
                 return Ok(consumed_octets);

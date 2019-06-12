@@ -219,7 +219,7 @@ fn test_decode_empty_with_excesive_bytes() {
     assert_eq!(2, consumed_octets);
 }
 
-#[should_panic (expected = "Invalid tag: Not valid tag for type")]
+#[should_panic (expected = "Invalid type tag: Not match with expected tag")]
 #[test]
 fn test_decode_with_invalid_tag() {
     #[derive(Asn1Sequence)]
@@ -296,7 +296,7 @@ fn test_decode_with_optional_and_context_tag() {
     assert_eq!(None, p.get_age());
 }
 
-#[should_panic(expected = "Invalid tag: Empty")]
+#[should_panic(expected = "Invalid type tag: Empty")]
 #[test]
 fn test_decode_with_optional_and_context_tag_bad_context_length() {
 
@@ -328,7 +328,7 @@ fn test_bad_decode_optional_context_tag_bad_context_tag() {
     p.decode(&[0x30, 0x1, 0xee]).unwrap();
 }
 
-#[should_panic(expected =  "Person => Invalid tag: Not valid tag for type")]
+#[should_panic(expected =  "Person => Invalid type tag: Not match with expected tag")]
 #[test]
 fn test_bad_sequence_type_tag() {
 
@@ -352,7 +352,7 @@ fn test_bad_sequence_length() {
     p.decode(&[0x30, 0x81]).unwrap();
 }
 
-#[should_panic(expected =  "Persona => Invalid application tag: Not valid tag for typ")]
+#[should_panic(expected =  "Persona => Invalid application tag: Not valid tag")]
 #[test]
 fn test_bad_sequence_context_tag() {
 
@@ -365,7 +365,7 @@ fn test_bad_sequence_context_tag() {
     p.decode(&[0x61, 0x0]).unwrap();
 }
 
-#[should_panic(expected =  "Person::age => Invalid tag: Not valid tag for type")]
+#[should_panic(expected =  "Person::age => Invalid type tag: Not match with expected tag")]
 #[test]
 fn test_bad_decode_optional_context_tag_bad_type_tag() {
 
@@ -449,7 +449,7 @@ fn test_decode_with_optional_without_context_tag() {
 }
 
 
-#[should_panic (expected = "TestSequence::id => Invalid tag: Not valid tag for type")]
+#[should_panic (expected = "TestSequence::id => Invalid type tag: Not match with expected tag")]
 #[test]
 fn test_decode_with_optional_and_context_tag_and_bad_type_tag() {
     #[derive(Asn1Sequence)]
@@ -527,7 +527,7 @@ fn test_decode_with_inner_sequenceof() {
 }
 
 
-#[should_panic (expected = "TestSequence::id => Invalid tag: Empty tag for context")]
+#[should_panic (expected = "TestSequence::id => Invalid context tag: Empty")]
 #[test]
 fn test_decode_without_required_value() {
     #[derive(Asn1Sequence)]
@@ -543,7 +543,7 @@ fn test_decode_without_required_value() {
 
 }
 
-#[should_panic (expected = "SuperTestSequence::inner => TestSequence::id => Invalid tag: Empty tag for context")]
+#[should_panic (expected = "SuperTestSequence::inner => TestSequence::id => Invalid context tag: Empty")]
 #[test]
 fn test_decode_without_required_value_with_inner_sequence() {
     #[derive(Asn1Sequence, Debug, PartialEq)]

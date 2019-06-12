@@ -103,7 +103,7 @@ impl Tag {
     pub fn decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
         let raw_len = raw.len();
         if raw_len == 0 {
-            return Err(Asn1ErrorKind::InvalidTagEmpty)?;
+            return Err(Asn1ErrorKind::InvalidTypeTagEmpty)?;
         }
 
         let mut consumed_octets = 1;
@@ -138,7 +138,7 @@ impl Tag {
             consumed_octets += 1;
         }
         if consumed_octets == raw.len() {
-            return Err(Asn1ErrorKind::InvalidTagHighFormNumberUnfinished)?;
+            return Err(Asn1ErrorKind::InvalidTypeTagHighFormNumberUnfinished)?;
         }
 
         return Ok((tag_number,consumed_octets));

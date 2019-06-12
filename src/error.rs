@@ -13,9 +13,9 @@ pub struct Asn1Error {
 #[derive(Clone, Debug, PartialEq, Eq, Fail)]
 pub enum Asn1ErrorKind {
     #[fail (display = "Invalid type tag: Empty")]
-    InvalidTagEmpty,
+    InvalidTypeTagEmpty,
     #[fail (display = "Invalid type tag: High form number unfinished")]
-    InvalidTagHighFormNumberUnfinished,
+    InvalidTypeTagHighFormNumberUnfinished,
     #[fail (display = "Invalid type tag: Not match with expected tag")]
     InvalidTypeTagUnmatched,
     #[fail (display = "Invalid context tag: Empty tag")]
