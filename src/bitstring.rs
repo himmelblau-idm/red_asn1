@@ -17,6 +17,18 @@ pub struct BitSringValue {
     padding_length: u8
 }
 
+impl BitSringValue {
+
+    pub fn get_bytes(&self) -> &Vec<u8> {
+        return &self.bytes;
+    }
+
+    pub fn get_padding_length(&self) -> &u8 {
+        return &self.padding_length;
+    }
+
+}
+
 impl Asn1Tagged for BitSring {
     fn type_tag() -> Tag {
         return Tag::new_primitive_universal(BIT_STRING_TAG_NUMBER);
@@ -206,5 +218,18 @@ mod tests {
         let mut b = BitSring::new(vec![], 0);
         let consumed_octets = b.decode(raw).unwrap();
         return (b, consumed_octets);
+    }
+
+
+    #[test]
+    fn test_value_get_bytes() {
+        let b = BitSring::new(vec![0x0, 0x1, 0x2, 0x3], 0);
+        assert_eq!(&vec![0x0, 0x1, 0x2, 0x3], b.value().unwrap().get_bytes());
+    }
+
+    #[test]
+    fn test_value_padding_length() {
+        let b = BitSring::new(vec![0x0, 0x1, 0x2, 0x3], 7);
+        assert_eq!(&7, b.value().unwrap().get_padding_length());
     }
 }
