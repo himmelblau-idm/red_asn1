@@ -3,11 +3,11 @@ use failure::*;
 use failure_derive::Fail;
 use std::result;
 
-pub type Result<T> = result::Result<T, Error>;
+pub type Result<T> = result::Result<T, Errora>;
 
 
 #[derive(Debug)]
-pub struct Error {
+pub struct Errora {
     inner: Context<ErrorKind>
 }
 
@@ -53,7 +53,7 @@ pub enum ErrorKind {
     SequenceError(String, Box<ErrorKind>)
 }
 
-impl Error {
+impl Errora {
 
     pub fn kind(&self) -> &ErrorKind {
         return self.inner.get_context();
@@ -61,7 +61,7 @@ impl Error {
 
 }
 
-impl Fail for Error {
+impl Fail for Errora {
     fn cause(&self) -> Option<&Fail> {
         self.inner.cause()
     }
@@ -71,37 +71,37 @@ impl Fail for Error {
     }
 }
 
-impl fmt::Display for Error {
+impl fmt::Display for Errora {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(&self.inner, f)
     }
 }
 
-impl std::convert::From<ErrorKind> for Error {
-    fn from(kind: ErrorKind) -> Error {
-        return Error {
+impl std::convert::From<ErrorKind> for Errora {
+    fn from(kind: ErrorKind) -> Self {
+        return Self {
             inner: Context::new(kind)
         };
     }
 }
 
-impl std::convert::From<Context<ErrorKind>> for Error {
-    fn from(inner: Context<ErrorKind>) -> Error {
-        return Error { inner };
+impl std::convert::From<Context<ErrorKind>> for Errora {
+    fn from(inner: Context<ErrorKind>) -> Self {
+        return Self { inner };
     }
 }
 
-impl std::convert::From<std::str::Utf8Error> for Error {
-    fn from(_inner: std::str::Utf8Error) -> Error {
-        return Error {
+impl std::convert::From<std::str::Utf8Error> for Errora {
+    fn from(_inner: std::str::Utf8Error) -> Self {
+        return Self {
             inner: Context::new(ErrorKind::InvalidValue("Error formating non-utf8 characters".to_string()))
         };
     }
 }
 
-impl std::convert::From<std::num::ParseIntError> for Error {
-    fn from(_inner: std::num::ParseIntError) -> Error {
-        return Error {
+impl std::convert::From<std::num::ParseIntError> for Errora {
+    fn from(_inner: std::num::ParseIntError) -> Self {
+        return Self {
             inner: Context::new(ErrorKind::InvalidValue("Error parsing to int".to_string()))
         };
     }

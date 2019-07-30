@@ -37,7 +37,6 @@ mod tests {
         assert_eq!(vec![0x02], Integer::type_tag().encode());
         assert_eq!(vec![0x03], BitSring::type_tag().encode());
         assert_eq!(vec![0x04], OctetString::type_tag().encode());
-        assert_eq!(vec![0x30], Sequence::type_tag().encode());
         assert_eq!(vec![0x30], SequenceOf::<Integer>::type_tag().encode());
         assert_eq!(vec![0x16], IA5String::type_tag().encode());
         assert_eq!(vec![0x18], GeneralizedTime::type_tag().encode());

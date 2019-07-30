@@ -1,8 +1,9 @@
 use crate::tag::{Tag};
 use crate::traits::{Asn1Object, Asn1InstanciableObject, Asn1Tagged};
-use super::sequence::{SEQUENCE_TAG_NUMBER};
 use crate::error as asn1err;
 use std::ops::{Deref, DerefMut};
+
+pub static SEQUENCE_TAG_NUMBER: u8 = 0x10;
 
 #[derive(Debug)]
 pub struct SequenceOf<T: Asn1InstanciableObject> {
