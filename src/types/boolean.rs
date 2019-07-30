@@ -1,6 +1,6 @@
 use crate::tag::Tag;
 use crate::traits::*;
-use crate::error::*;
+use crate::error as asn1err;
 
 pub static BOOLEAN_TAG_NUMBER: u8 = 0x1;
 
@@ -58,21 +58,21 @@ impl Asn1Object for Boolean {
         return self.tag.clone();
     }
 
-    fn encode_value(&self) -> Asn1Result<Vec<u8>> {
+    fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
         match self._value {
             Some(value) => {
                 return Ok(vec![(value as u8) * 0xff]);
             },
             None => {
-                return Err(Asn1ErrorKind::NoValue)?;
+                return Err(asn1err::ErrorKind::NoValue)?;
             }
         }
         
     }
 
-    fn decode_value(&mut self, raw: &[u8]) -> Asn1Result<()> {
+    fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         if raw.len() == 0 {
-            return Err(Asn1ErrorKind::NoDataForType)?;
+            return Err(asn1err::ErrorKind::NoDataForType)?;
         }
 
         self._value = Some(raw[0] != 0);

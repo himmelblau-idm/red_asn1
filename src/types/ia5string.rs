@@ -1,8 +1,7 @@
 use ascii::{AsciiChar, AsciiString};
 use crate::tag::Tag;
 use crate::traits::*;
-use crate::error::*;
-use std::result::Result;
+use crate::error as asn1err;
 
 pub static IA5STRING_TAG_NUMBER: u8 = 0x16;
 
@@ -24,7 +23,7 @@ impl Asn1Object for IA5String {
         return self.tag.clone();
     }
 
-    fn encode_value(&self) -> Result<Vec<u8>,Asn1Error> {
+    fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
         let value;
 
         match &self._value {
@@ -32,7 +31,7 @@ impl Asn1Object for IA5String {
                 value = _value;
             },
             None => {
-                return Err(Asn1ErrorKind::NoValue)?;
+                return Err(asn1err::ErrorKind::NoValue)?;
             }
         }
 
@@ -45,7 +44,7 @@ impl Asn1Object for IA5String {
         return Ok(encoded_value);
     }
 
-    fn decode_value(&mut self, raw: &[u8]) -> Result<(), Asn1Error> {
+    fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         let mut value = AsciiString::with_capacity(raw.len());
 
         for byte in raw.iter() {
@@ -56,7 +55,7 @@ impl Asn1Object for IA5String {
                     ascii_char = value;
                 },
                 Err(_) => {
-                    return Err(Asn1ErrorKind::InvalidValue("Error formating non-ascii characters".to_string()))?;
+                    return Err(asn1err::ErrorKind::InvalidValue("Error formating non-ascii characters".to_string()))?;
                 }
             };
             value.push(ascii_char);

@@ -1,6 +1,6 @@
 use crate::tag::Tag;
 use crate::traits::{Asn1Object, Asn1InstanciableObject, Asn1Tagged};
-use crate::error::*;
+use crate::error as asn1err;
 
 pub static INTEGER_TAG_NUMBER: u8 = 0x2;
 
@@ -22,7 +22,7 @@ impl Asn1Object for Integer {
         return self.tag.clone();
     }
 
-    fn encode_value(&self) -> Asn1Result<Vec<u8>> {
+    fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
         let mut shifted_value;
 
         match self._value {
@@ -30,7 +30,7 @@ impl Asn1Object for Integer {
                 shifted_value = value;
             },
             None => {
-                return Err(Asn1ErrorKind::NoValue)?;
+                return Err(asn1err::ErrorKind::NoValue)?;
             }
         }
 
@@ -48,13 +48,13 @@ impl Asn1Object for Integer {
         return Ok(encoded_value);
     }
 
-    fn decode_value(&mut self, raw: &[u8]) -> Asn1Result<()> {
+    fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         if raw.len() == 0 {
-            return Err(Asn1ErrorKind::NoDataForType)?;
+            return Err(asn1err::ErrorKind::NoDataForType)?;
         }
 
         if raw.len() > 8 {
-            return Err(Asn1ErrorKind::InvalidValue("Too much data for implementation".to_string()))?;
+            return Err(asn1err::ErrorKind::InvalidValue("Too much data for implementation".to_string()))?;
         }
 
         let signed_bit = (raw[0] & 0x80) >> 7;

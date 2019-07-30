@@ -1,7 +1,7 @@
 use chrono::prelude::*;
 use crate::tag::Tag;
 use crate::traits::*;
-use crate::error::*;
+use crate::error as asn1err;
 use std::default::Default;
 use std::str;
 
@@ -64,20 +64,20 @@ impl Asn1Object for GeneralizedTime {
         return self.tag.clone();
     }
 
-    fn encode_value(&self) -> Asn1Result<Vec<u8>> {
+    fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
         match self._value {
             Some(value) => {
                 return Ok(self._format_datetime_as_string(&value).into_bytes());
             },
             None => {
-                return Err(Asn1ErrorKind::NoValue)?;
+                return Err(asn1err::ErrorKind::NoValue)?;
             }
         }
     }
 
-    fn decode_value(&mut self, raw: &[u8]) -> Asn1Result<()> {
+    fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         if raw.len() < 15 {
-            return Err(Asn1ErrorKind::NoDataForType)?;
+            return Err(asn1err::ErrorKind::NoDataForType)?;
         }
 
         let year_str = str::from_utf8(&raw[0..4])?;
@@ -105,7 +105,7 @@ impl Asn1Object for GeneralizedTime {
         if is_utc {
             self._value = Some(Utc.ymd(year, month, day).and_hms_nano(hour, minute, second, decisecond * 100000000));
         }else {
-            return Err(Asn1ErrorKind::InvalidValue("Local time decode is not implemented yet".to_string()))?;
+            return Err(asn1err::ErrorKind::InvalidValue("Local time decode is not implemented yet".to_string()))?;
         }
 
         return Ok(());

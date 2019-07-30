@@ -1,7 +1,7 @@
 
 use crate::tag::Tag;
 use crate::traits::*;
-use crate::error::*;
+use crate::error as asn1err;
 
 pub static BIT_STRING_TAG_NUMBER: u8 = 0x3;
 
@@ -41,7 +41,7 @@ impl Asn1Object for BitSring {
         return self.tag.clone();
     }
 
-    fn encode_value(&self) -> Asn1Result<Vec<u8>> {
+    fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
         let bitstring_value;
 
         match &self._value {
@@ -49,7 +49,7 @@ impl Asn1Object for BitSring {
                 bitstring_value = value;
             },
             None => {
-                return Err(Asn1ErrorKind::NoValue)?;
+                return Err(asn1err::ErrorKind::NoValue)?;
             }
         };
 
@@ -64,9 +64,9 @@ impl Asn1Object for BitSring {
         return Ok(encoded_value);
     }
 
-    fn decode_value(&mut self, raw: &[u8]) -> Asn1Result<()> {
+    fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         if raw.len() == 0 {
-            return Err(Asn1ErrorKind::NoDataForType)?;
+            return Err(asn1err::ErrorKind::NoDataForType)?;
         }
 
         let (padding_length, raw_value) = raw.split_at(1);

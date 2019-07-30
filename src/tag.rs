@@ -1,5 +1,4 @@
-use super::error::*;
-use std::result::Result;
+use super::error as asn1err;
 use std::convert::From;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -100,10 +99,10 @@ impl Tag {
         self.tag_class = tag_class;
     }
 
-    pub fn decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
+    pub fn decode(&mut self, raw: &[u8]) -> asn1err::Result<usize> {
         let raw_len = raw.len();
         if raw_len == 0 {
-            return Err(Asn1ErrorKind::InvalidTypeTagEmpty)?;
+            return Err(asn1err::ErrorKind::InvalidTypeTagEmpty)?;
         }
 
         let mut consumed_octets = 1;
@@ -126,7 +125,7 @@ impl Tag {
         return Ok(consumed_octets);
     }
 
-    fn _decode_tag_number_long_form(&self, raw: &[u8]) -> Result<(u8, usize), Asn1Error> {
+    fn _decode_tag_number_long_form(&self, raw: &[u8]) -> asn1err::Result<(u8, usize)> {
         let mut consumed_octets = 1;
         let mut tag_number: u8 = 0;
         while consumed_octets < raw.len() {
@@ -138,7 +137,7 @@ impl Tag {
             consumed_octets += 1;
         }
         if consumed_octets == raw.len() {
-            return Err(Asn1ErrorKind::InvalidTypeTagHighFormNumberUnfinished)?;
+            return Err(asn1err::ErrorKind::InvalidTypeTagHighFormNumberUnfinished)?;
         }
 
         return Ok((tag_number,consumed_octets));

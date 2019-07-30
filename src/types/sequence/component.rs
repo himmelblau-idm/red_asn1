@@ -1,6 +1,6 @@
 use crate::tag::{Tag, TagClass, TagType};
 use crate::traits::{Asn1Object, Asn1Tagged, Asn1InstanciableObject};
-use crate::error::*;
+use crate::error as asn1err;
 
 pub enum SeqCompOptionality {
     Required,
@@ -69,9 +69,9 @@ impl<'a, 'b> SequenceComponent<'a, 'b> {
         return self.context_tag != None;
     }
 
-    pub fn set_ref(&mut self, value: Box<&'a mut (Asn1Object + 'b)>) -> Asn1Result<()> {
+    pub fn set_ref(&mut self, value: Box<&'a mut (Asn1Object + 'b)>) -> asn1err::Result<()> {
         if value.tag() != self.subtype_tag {
-            return Err(Asn1ErrorKind::InvalidTypeTagUnmatched)?;
+            return Err(asn1err::ErrorKind::InvalidTypeTagUnmatched)?;
         }
 
         self.subtype_ref = Some(value);
@@ -88,7 +88,7 @@ impl<'a, 'b> SequenceComponent<'a, 'b> {
         };
     }
 
-    fn _decode_context(&mut self, raw: &[u8]) -> Asn1Result<usize> {
+    fn _decode_context(&mut self, raw: &[u8]) -> asn1err::Result<usize> {
         let mut consumed_octets = self._decode_context_tag(raw)?;
         let (_, raw_length) = raw.split_at(consumed_octets);
         let (value_length, consumed_octets_by_length) = self.decode_length(raw_length)?;
@@ -96,7 +96,7 @@ impl<'a, 'b> SequenceComponent<'a, 'b> {
         let (_, raw_value) = raw.split_at(consumed_octets);
 
         if value_length > raw_value.len() {
-            return Err(Asn1ErrorKind::NoDataForLength)?;
+            return Err(asn1err::ErrorKind::NoDataForLength)?;
         }
 
         let (raw_value, _) = raw_value.split_at(value_length);
@@ -107,25 +107,25 @@ impl<'a, 'b> SequenceComponent<'a, 'b> {
         return Ok(consumed_octets);
     }
 
-    fn _decode_context_tag(&self, raw_tag: &[u8]) -> Asn1Result<usize> {
+    fn _decode_context_tag(&self, raw_tag: &[u8]) -> asn1err::Result<usize> {
         let mut decoded_tag = Tag::new_empty();
         let consumed_octets = decoded_tag.decode(raw_tag)?;
 
         if &decoded_tag != &self.context_tag.unwrap() {
-            return Err(Asn1ErrorKind::InvalidContextTagUnmatched)?;
+            return Err(asn1err::ErrorKind::InvalidContextTagUnmatched)?;
         }
         return Ok(consumed_octets);
     }
 
 
-    fn _decode_inner(&mut self, raw: &[u8]) -> Asn1Result<usize> {
+    fn _decode_inner(&mut self, raw: &[u8]) -> asn1err::Result<usize> {
         match &mut self.subtype_ref {
             Some(value) => {
                 let consumed_octets = value.decode(raw)?;
                 return Ok(consumed_octets);
             },
             None => {
-                return Err(Asn1ErrorKind::NoValue)?;
+                return Err(asn1err::ErrorKind::NoValue)?;
             }
         };
     }
@@ -140,7 +140,7 @@ impl<'a, 'b> Asn1Object for SequenceComponent<'a, 'b> {
         }
     }
 
-    fn encode(&self) -> Asn1Result<Vec<u8>> {
+    fn encode(&self) -> asn1err::Result<Vec<u8>> {
         let mut encoded_value;
 
         match self.encode_value() {
@@ -173,22 +173,22 @@ impl<'a, 'b> Asn1Object for SequenceComponent<'a, 'b> {
         }
     }
 
-    fn encode_value(&self) -> Asn1Result<Vec<u8>> {
+    fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
         match &self.subtype_ref {
             Some(value) => {
                 return value.encode();
             }
             None => {
-                return Err(Asn1ErrorKind::NoValue)?;
+                return Err(asn1err::ErrorKind::NoValue)?;
             }
         }
     }
 
-    fn decode_value(&mut self, _raw: &[u8]) -> Asn1Result<()> {
+    fn decode_value(&mut self, _raw: &[u8]) -> asn1err::Result<()> {
         return Ok(());
     }
 
-    fn decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
+    fn decode(&mut self, raw: &[u8]) -> asn1err::Result<usize> {
         let result = match self.context_tag {
             Some(_) => {
                 self._decode_context(raw)
@@ -249,23 +249,23 @@ impl<T: Asn1InstanciableObject> SeqField<T> {
         self.value = None;
     }
 
-    pub fn encode(&self) -> Asn1Result<Vec<u8>> {
+    pub fn encode(&self) -> asn1err::Result<Vec<u8>> {
         let encoded_value = self.encode_value()?;
         return Ok(encoded_value);
     }
 
-    fn encode_value(&self) -> Asn1Result<Vec<u8>> {
+    fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
         match &self.value {
             Some(value) => {
                 return value.encode();
             }
             None => {
-                return Err(Asn1ErrorKind::NoValue)?;
+                return Err(asn1err::ErrorKind::NoValue)?;
             }
         };
     }
 
-    pub fn decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
+    pub fn decode(&mut self, raw: &[u8]) -> asn1err::Result<usize> {
         let mut new_subtype = T::new_default();
         let size = new_subtype.decode(raw)?;
         self.value = Some(new_subtype);

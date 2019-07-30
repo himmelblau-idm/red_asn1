@@ -1,6 +1,6 @@
 use crate::tag::Tag;
 use crate::traits::{Asn1Object, Asn1InstanciableObject, Asn1Tagged};
-use crate::error::*;
+use crate::error as asn1err;
 
 pub static OCTET_STRING_TAG_NUMBER: u8 = 0x4;
 
@@ -22,7 +22,7 @@ impl Asn1Object for OctetString {
         return self.tag.clone();
     }
 
-    fn encode_value(&self) -> Result<Vec<u8>,Asn1Error> {
+    fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
         let value;
 
         match &self._value {
@@ -30,7 +30,7 @@ impl Asn1Object for OctetString {
                 value = _value;
             },
             None => {
-                return Err(Asn1ErrorKind::NoValue)?;
+                return Err(asn1err::ErrorKind::NoValue)?;
             }
         }
 
@@ -43,7 +43,7 @@ impl Asn1Object for OctetString {
         return Ok(encoded_value);
     }
 
-    fn decode_value(&mut self, raw: &[u8]) -> Result<(), Asn1Error> {
+    fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         self._value = Some(raw.to_vec());
         return Ok(());
     }

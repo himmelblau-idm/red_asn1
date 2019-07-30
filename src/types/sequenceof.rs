@@ -1,7 +1,7 @@
 use crate::tag::{Tag};
 use crate::traits::{Asn1Object, Asn1InstanciableObject, Asn1Tagged};
 use super::sequence::{SEQUENCE_TAG_NUMBER};
-use crate::error::Asn1Error;
+use crate::error as asn1err;
 use std::ops::{Deref, DerefMut};
 
 #[derive(Debug)]
@@ -35,7 +35,7 @@ impl <T: Asn1InstanciableObject> Asn1Object for SequenceOf<T> {
         return self.tag.clone();
     }
 
-    fn encode_value(&self) -> Result<Vec<u8>,Asn1Error> {
+    fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
         let mut value: Vec<u8> = Vec::new();
         for item in self.components.iter() {
             value.append(&mut item.encode()?)
@@ -43,7 +43,7 @@ impl <T: Asn1InstanciableObject> Asn1Object for SequenceOf<T> {
         return Ok(value);
     }
 
-    fn decode_value(&mut self, raw: &[u8]) -> Result<(), Asn1Error> {
+    fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         let mut components: Vec<T> = Vec::new();
         let mut consumed_octets = 0;
 

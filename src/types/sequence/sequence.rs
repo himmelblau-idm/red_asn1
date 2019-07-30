@@ -1,6 +1,6 @@
 use crate::tag::{Tag, TagClass, TagType};
 use crate::traits::{Asn1Object, Asn1Tagged};
-use crate::error::*;
+use crate::error as asn1err;
 use super::component::{SequenceComponent, SeqCompOptionality};
 
 pub static SEQUENCE_TAG_NUMBER: u8 = 0x10;
@@ -23,7 +23,7 @@ impl<'a, 'b> Asn1Object for Sequence<'a, 'b> {
         return self.tag.clone();
     }
 
-    fn encode_value(&self) -> Asn1Result<Vec<u8>> {
+    fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
         let mut value: Vec<u8> = Vec::new();
         for component in self.components.iter() {
             value.append(&mut component.encode()?);
@@ -32,7 +32,7 @@ impl<'a, 'b> Asn1Object for Sequence<'a, 'b> {
         return Ok(value);
     }
 
-    fn encode(&self) -> Asn1Result<Vec<u8>> {
+    fn encode(&self) -> asn1err::Result<Vec<u8>> {
         match &self.application_tag {
             Some(_) => {
                 return self._application_encode();
@@ -43,7 +43,7 @@ impl<'a, 'b> Asn1Object for Sequence<'a, 'b> {
         };
     }
 
-    fn decode_value(&mut self, raw: &[u8]) -> Asn1Result<()> {
+    fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         let mut consumed_octets = 0;
         for component in self.components.iter_mut() { 
             match component.decode(&raw[consumed_octets..]) {
@@ -52,13 +52,13 @@ impl<'a, 'b> Asn1Object for Sequence<'a, 'b> {
                 },
                 Err(asn1_error) => {
                     match asn1_error.kind() {
-                        Asn1ErrorKind::InvalidContextTagUnmatched => {
+                        asn1err::ErrorKind::InvalidContextTagUnmatched => {
                             if component.is_optional() {
                                 continue;
                             }
                             return Err(asn1_error);
                         },
-                        Asn1ErrorKind::InvalidTypeTagUnmatched => {
+                        asn1err::ErrorKind::InvalidTypeTagUnmatched => {
                             if component.has_context_tag() {
                                 return Err(asn1_error);
                             }
@@ -77,7 +77,7 @@ impl<'a, 'b> Asn1Object for Sequence<'a, 'b> {
         return Ok(());
     }
 
-    fn decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
+    fn decode(&mut self, raw: &[u8]) -> asn1err::Result<usize> {
         match &self.application_tag {
             Some(_) => {
                 return self._application_decode(raw);
@@ -119,17 +119,17 @@ impl<'a, 'b> Sequence<'a, 'b> {
                              SeqCompOptionality::Optional));
     }
 
-    pub fn set_ref(&mut self, identifier: &str,  reference: Box<&'a mut (Asn1Object + 'b)>) -> Asn1Result<()> {
+    pub fn set_ref(&mut self, identifier: &str,  reference: Box<&'a mut (Asn1Object + 'b)>) -> asn1err::Result<()> {
         for component in self.components.iter_mut() {
             if identifier == component.identifier() {
                 return component.set_ref(reference);
             }
         }
 
-        return Err(Asn1ErrorKind::NoComponent)?;
+        return Err(asn1err::ErrorKind::NoComponent)?;
     }
     
-    fn _application_encode(&self) -> Asn1Result<Vec<u8>> {
+    fn _application_encode(&self) -> asn1err::Result<Vec<u8>> {
         let mut encoded = self.application_tag.unwrap().encode();
         let mut encoded_value = self._normal_encode()?;
         let mut encoded_length = self.encode_length(encoded_value.len());
@@ -140,7 +140,7 @@ impl<'a, 'b> Sequence<'a, 'b> {
         return Ok(encoded);
     }
 
-    fn _normal_encode(&self) -> Asn1Result<Vec<u8>> {
+    fn _normal_encode(&self) -> asn1err::Result<Vec<u8>> {
         let mut encoded = self.encode_tag();
         let mut encoded_value = self.encode_value()?;
         let mut encoded_length = self.encode_length(encoded_value.len());
@@ -151,7 +151,7 @@ impl<'a, 'b> Sequence<'a, 'b> {
         return Ok(encoded);
     }
 
-    fn _application_decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
+    fn _application_decode(&mut self, raw: &[u8]) -> asn1err::Result<usize> {
         let mut consumed_octets = self._decode_application_tag(raw)?;
         let (_, raw_length) = raw.split_at(consumed_octets);
         let (value_length, consumed_octets_by_length) = self.decode_length(raw_length)?;
@@ -159,7 +159,7 @@ impl<'a, 'b> Sequence<'a, 'b> {
         let (_, raw_value) = raw.split_at(consumed_octets);
 
         if value_length > raw_value.len() {
-            return Err(Asn1ErrorKind::NoDataForLength)?;
+            return Err(asn1err::ErrorKind::NoDataForLength)?;
         }
 
         let (raw_value, _) = raw_value.split_at(value_length);
@@ -170,18 +170,18 @@ impl<'a, 'b> Sequence<'a, 'b> {
         return Ok(consumed_octets);
     }
 
-    fn _decode_application_tag(&self, raw_tag: &[u8]) -> Asn1Result<usize> {
+    fn _decode_application_tag(&self, raw_tag: &[u8]) -> asn1err::Result<usize> {
         let mut decoded_tag = Tag::new_empty();
         let consumed_octets = decoded_tag.decode(raw_tag)?;
 
         if &decoded_tag != &self.application_tag.unwrap() {
-            return Err(Asn1ErrorKind::InvalidTypeTagUnmatched)?;
+            return Err(asn1err::ErrorKind::InvalidTypeTagUnmatched)?;
         }
         return Ok(consumed_octets);
     }
 
 
-    fn _normal_decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
+    fn _normal_decode(&mut self, raw: &[u8]) -> asn1err::Result<usize> {
         let mut consumed_octets = self.decode_tag(raw)?;
 
         let (_, raw_length) = raw.split_at(consumed_octets);
@@ -192,7 +192,7 @@ impl<'a, 'b> Sequence<'a, 'b> {
         let (_, raw_value) = raw.split_at(consumed_octets);
 
         if value_length > raw_value.len() {
-            return Err(Asn1ErrorKind::NoDataForLength)?;
+            return Err(asn1err::ErrorKind::NoDataForLength)?;
         }
 
         let (raw_value, _) = raw_value.split_at(value_length);
@@ -207,8 +207,8 @@ impl<'a, 'b> Sequence<'a, 'b> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::super::super::integer::{Integer, INTEGER_TAG_NUMBER};
-    use super::super::super::octetstring::{OctetString, OCTET_STRING_TAG_NUMBER};
+    use crate::types::integer::*;
+    use crate::types::octetstring::*;
 
     #[test]
     fn test_encode_sequence() {
