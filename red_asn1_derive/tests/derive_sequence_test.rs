@@ -1,5 +1,5 @@
-use asn1::*;
-use asn1_derive::Asn1Sequence;
+use red_asn1::*;
+use red_asn1_derive::Asn1Sequence;
 
 #[test]
 fn test_define_simple() {

@@ -15,7 +15,7 @@ failure_derive = "0.1.5"
 proc-macro2 = "0.4"
 
 
-[dependencies.asn1]
+[dependencies.red_asn1]
 version = "0.1.0"
 path = ".."
 
