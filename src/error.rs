@@ -3,11 +3,11 @@ use failure::*;
 use failure_derive::Fail;
 use std::result;
 
-pub type Result<T> = result::Result<T, Errora>;
+pub type Result<T> = result::Result<T, Error>;
 
 
 #[derive(Debug)]
-pub struct Errora {
+pub struct Error {
     inner: Context<ErrorKind>
 }
 
@@ -53,7 +53,7 @@ pub enum ErrorKind {
     SequenceError(String, Box<ErrorKind>)
 }
 
-impl Errora {
+impl Error {
 
     pub fn kind(&self) -> &ErrorKind {
         return self.inner.get_context();
@@ -61,7 +61,7 @@ impl Errora {
 
 }
 
-impl Fail for Errora {
+impl Fail for Error {
     fn cause(&self) -> Option<&Fail> {
         self.inner.cause()
     }
@@ -71,13 +71,13 @@ impl Fail for Errora {
     }
 }
 
-impl fmt::Display for Errora {
+impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(&self.inner, f)
     }
 }
 
-impl std::convert::From<ErrorKind> for Errora {
+impl std::convert::From<ErrorKind> for Error {
     fn from(kind: ErrorKind) -> Self {
         return Self {
             inner: Context::new(kind)
@@ -85,13 +85,13 @@ impl std::convert::From<ErrorKind> for Errora {
     }
 }
 
-impl std::convert::From<Context<ErrorKind>> for Errora {
+impl std::convert::From<Context<ErrorKind>> for Error {
     fn from(inner: Context<ErrorKind>) -> Self {
         return Self { inner };
     }
 }
 
-impl std::convert::From<std::str::Utf8Error> for Errora {
+impl std::convert::From<std::str::Utf8Error> for Error {
     fn from(_inner: std::str::Utf8Error) -> Self {
         return Self {
             inner: Context::new(ErrorKind::InvalidValue("Error formating non-utf8 characters".to_string()))
@@ -99,7 +99,7 @@ impl std::convert::From<std::str::Utf8Error> for Errora {
     }
 }
 
-impl std::convert::From<std::num::ParseIntError> for Errora {
+impl std::convert::From<std::num::ParseIntError> for Error {
     fn from(_inner: std::num::ParseIntError) -> Self {
         return Self {
             inner: Context::new(ErrorKind::InvalidValue("Error parsing to int".to_string()))
