@@ -53,7 +53,7 @@ fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
 
     if let Some(context_tag_number) = comp_def.context_tag_number {
         return quote! {
-            fn #decoder_name (&mut self, raw: &[u8]) -> Asn1Result<usize> {
+            fn #decoder_name (&mut self, raw: &[u8]) -> asn1::Result<usize> {
                 let mut decoded_tag = Tag::new_empty();
                 let mut consumed_octets = 0;
 
@@ -63,11 +63,11 @@ fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
                     },
                     Err(error) => {
                         match error.kind() {
-                            Asn1ErrorKind::InvalidTypeTagHighFormNumberUnfinished => {
-                                return Err(Asn1ErrorKind::InvalidContextTagHighFormNumberUnfinished)?;
+                            asn1::ErrorKind::InvalidTypeTagHighFormNumberUnfinished => {
+                                return Err(asn1::ErrorKind::InvalidContextTagHighFormNumberUnfinished)?;
                             },
-                            Asn1ErrorKind::InvalidTypeTagEmpty => {
-                                return Err(Asn1ErrorKind::InvalidContextTagEmpty)?;
+                            asn1::ErrorKind::InvalidTypeTagEmpty => {
+                                return Err(asn1::ErrorKind::InvalidContextTagEmpty)?;
                             },
                             _ => {
                                 return Err(error);
@@ -77,7 +77,7 @@ fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
                 }
 
                 if decoded_tag != Tag::new(#context_tag_number, TagType::Constructed, TagClass::Context) {
-                    return Err(Asn1ErrorKind::InvalidContextTagUnmatched)?;
+                    return Err(asn1::ErrorKind::InvalidContextTagUnmatched)?;
                 }
 
                 let (_, raw_length) = raw.split_at(consumed_octets);
@@ -87,7 +87,7 @@ fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
                 let (_, raw_value) = raw.split_at(consumed_octets);
 
                 if value_length > raw_value.len() {
-                    return Err(Asn1ErrorKind::NoDataForLength)?;
+                    return Err(asn1::ErrorKind::NoDataForLength)?;
                 }
 
                 let (raw_value, _) = raw_value.split_at(value_length);
@@ -101,7 +101,7 @@ fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
 
     }else {
         return quote! {
-            fn #decoder_name (&mut self, raw: &[u8]) -> Asn1Result<usize> {
+            fn #decoder_name (&mut self, raw: &[u8]) -> asn1::Result<usize> {
                 return self.#field_name.decode(raw);
             }
         }
@@ -114,7 +114,7 @@ fn code_encoder(comp_def: &ComponentDefinition) -> TokenStream {
 
     if let Some(context_tag_number) = comp_def.context_tag_number {
         return quote! {
-            fn #encoder_name (&self) -> Asn1Result<Vec<u8>> {
+            fn #encoder_name (&self) -> asn1::Result<Vec<u8>> {
                 let tag = Tag::new(#context_tag_number, TagType::Constructed, TagClass::Context);
                 let mut encoded = tag.encode();
                 let mut encoded_value = self.#field_name.encode()?;
@@ -128,7 +128,7 @@ fn code_encoder(comp_def: &ComponentDefinition) -> TokenStream {
         }
     }else {
         return quote! {
-            fn #encoder_name (&self) -> Asn1Result<Vec<u8>> {
+            fn #encoder_name (&self) -> asn1::Result<Vec<u8>> {
                 return self.#field_name.encode();
             }
         }
@@ -161,10 +161,10 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
                     },
                     Err(error) => {
                         match error.kind() {
-                            Asn1ErrorKind::NoValue => {
+                            asn1::ErrorKind::NoValue => {
                             },
                             _ => {
-                                return Err(Asn1ErrorKind::SequenceFieldError(
+                                return Err(asn1::ErrorKind::SequenceFieldError(
                                     stringify!(#sequence_name).to_string(), 
                                     stringify!(#component_name).to_string(),
                                     Box::new(error.kind().clone())
@@ -179,16 +179,16 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
 
             if let Some(_) = component.context_tag_number {
                 invalid_tag_errors_handlers = quote! {
-                    Asn1ErrorKind::InvalidContextTagEmpty => {self.#unsetter_name()},
-                    Asn1ErrorKind::InvalidContextTagHighFormNumberUnfinished => {self.#unsetter_name()},
-                    Asn1ErrorKind::InvalidContextTagUnmatched => {self.#unsetter_name()},
+                    asn1::ErrorKind::InvalidContextTagEmpty => {self.#unsetter_name()},
+                    asn1::ErrorKind::InvalidContextTagHighFormNumberUnfinished => {self.#unsetter_name()},
+                    asn1::ErrorKind::InvalidContextTagUnmatched => {self.#unsetter_name()},
                 };
 
             }else{
                 invalid_tag_errors_handlers = quote! {
-                    Asn1ErrorKind::InvalidTypeTagEmpty => {self.#unsetter_name()},
-                    Asn1ErrorKind::InvalidTypeTagUnmatched => {self.#unsetter_name()},
-                    Asn1ErrorKind::InvalidTypeTagHighFormNumberUnfinished => {self.#unsetter_name()},
+                    asn1::ErrorKind::InvalidTypeTagEmpty => {self.#unsetter_name()},
+                    asn1::ErrorKind::InvalidTypeTagUnmatched => {self.#unsetter_name()},
+                    asn1::ErrorKind::InvalidTypeTagHighFormNumberUnfinished => {self.#unsetter_name()},
                 };
             }
 
@@ -203,7 +203,7 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
                         match error.kind() {
                             #invalid_tag_errors_handlers
                             _ => {
-                                return Err(Asn1ErrorKind::SequenceFieldError(
+                                return Err(asn1::ErrorKind::SequenceFieldError(
                                     stringify!(#sequence_name).to_string(), 
                                     stringify!(#component_name).to_string(),
                                     Box::new(error.kind().clone())
@@ -219,7 +219,7 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
             encode_calls = quote! {
                 #encode_calls
                 value.append(&mut self.#encoder_name().or_else(
-                    |error| Err(Asn1ErrorKind::SequenceFieldError(
+                    |error| Err(asn1::ErrorKind::SequenceFieldError(
                                 stringify!(#sequence_name).to_string(), 
                                 stringify!(#component_name).to_string(),
                                 Box::new(error.kind().clone())
@@ -230,7 +230,7 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
             decode_calls = quote! {
                 #decode_calls
                 consumed_octets += self.#decoder_name(&raw[consumed_octets..]).or_else(
-                    |error| Err(Asn1ErrorKind::SequenceFieldError(
+                    |error| Err(asn1::ErrorKind::SequenceFieldError(
                                 stringify!(#sequence_name).to_string(), 
                                 stringify!(#component_name).to_string(),
                                 Box::new(error.kind().clone())
@@ -274,7 +274,7 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
     let components_unit_functions = &sequence_inner_calls.components_unit_functions;
 
     let encode_value = quote! {
-        fn encode_value(&self) -> Asn1Result<Vec<u8>> {
+        fn encode_value(&self) -> asn1::Result<Vec<u8>> {
             let mut value: Vec<u8> = Vec::new();
             #encode_calls
             return Ok(value);
@@ -283,14 +283,14 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
 
     
     let decode_value = quote! {
-        fn decode_value(&mut self, raw: &[u8]) -> Asn1Result<()> {
+        fn decode_value(&mut self, raw: &[u8]) -> asn1::Result<()> {
             let mut consumed_octets = 0;
             #decode_calls
 
             if consumed_octets < raw.len() {
-                return Err(Asn1ErrorKind::SequenceError(
+                return Err(asn1::ErrorKind::SequenceError(
                                 stringify!(#name).to_string(),
-                                Box::new(Asn1ErrorKind::NoAllDataConsumed)
+                                Box::new(asn1::ErrorKind::NoAllDataConsumed)
                         ))?;
             }
 
@@ -299,7 +299,7 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
     };
 
     let inner_encode = quote! {
-        fn _inner_encode(&self) -> Asn1Result<Vec<u8>> {
+        fn _inner_encode(&self) -> asn1::Result<Vec<u8>> {
             let mut encoded = self.encode_tag();
             let mut encoded_value = self.encode_value()?;
             let mut encoded_length = self.encode_length(encoded_value.len());
@@ -312,9 +312,9 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
     };
 
     let mut inner_decode = quote! {
-        fn _inner_decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
+        fn _inner_decode(&mut self, raw: &[u8]) -> asn1::Result<usize> {
             let mut consumed_octets = self.decode_tag(raw).or_else( |error| 
-                Err(Asn1ErrorKind::SequenceError( 
+                Err(asn1::ErrorKind::SequenceError( 
                     stringify!(#name).to_string(), 
                     Box::new(error.kind().clone())
                 ))
@@ -323,7 +323,7 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
             let (_, raw_length) = raw.split_at(consumed_octets);
 
             let (value_length, consumed_octets_by_length) = self.decode_length(raw_length).or_else( |error| 
-                Err(Asn1ErrorKind::SequenceError( 
+                Err(asn1::ErrorKind::SequenceError( 
                     stringify!(#name).to_string(), 
                     Box::new(error.kind().clone())
                 ))
@@ -334,9 +334,9 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
             let (_, raw_value) = raw.split_at(consumed_octets);
 
             if value_length > raw_value.len() {
-                return Err(Asn1ErrorKind::SequenceError( 
+                return Err(asn1::ErrorKind::SequenceError( 
                     stringify!(#name).to_string(), 
-                    Box::new(Asn1ErrorKind::NoDataForLength)
+                    Box::new(asn1::ErrorKind::NoDataForLength)
                 ))?;
             }
 
@@ -355,7 +355,7 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
     if let Some(application_tag_number) = sequence_definition.application_tag_number {
 
         encode = quote! {
-            fn encode(&self) -> Asn1Result<Vec<u8>> {
+            fn encode(&self) -> asn1::Result<Vec<u8>> {
                 let mut encoded = Tag::new(#application_tag_number, 
                                             TagType::Constructed, TagClass::Application).encode();
                 let mut encoded_value = self._inner_encode()?;
@@ -371,12 +371,12 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
         inner_decode = quote! {
             #inner_decode
 
-            fn _decode_application_tag(&self, raw_tag: &[u8]) -> Asn1Result<usize> {
+            fn _decode_application_tag(&self, raw_tag: &[u8]) -> asn1::Result<usize> {
                 let mut decoded_tag = Tag::new_empty();
                 let consumed_octets = decoded_tag.decode(raw_tag)?;
 
                 if decoded_tag != Tag::new(#application_tag_number, TagType::Constructed, TagClass::Application) {
-                    return Err(Asn1ErrorKind::InvalidApplicationTagUnmatched)?;
+                    return Err(asn1::ErrorKind::InvalidApplicationTagUnmatched)?;
                 }
 
                 return Ok(consumed_octets);
@@ -385,16 +385,16 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
 
         decode = quote! {
 
-            fn decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
+            fn decode(&mut self, raw: &[u8]) -> asn1::Result<usize> {
                 let mut consumed_octets = self._decode_application_tag(raw).or_else( |error| 
-                    Err(Asn1ErrorKind::SequenceError( 
+                    Err(asn1::ErrorKind::SequenceError( 
                         stringify!(#name).to_string(), 
                         Box::new(error.kind().clone())
                     ))
                 )?;
                 let (_, raw_length) = raw.split_at(consumed_octets);
                 let (value_length, consumed_octets_by_length) = self.decode_length(raw_length).or_else( |error| 
-                    Err(Asn1ErrorKind::SequenceError( 
+                    Err(asn1::ErrorKind::SequenceError( 
                         stringify!(#name).to_string(), 
                         Box::new(error.kind().clone())
                     ))
@@ -403,9 +403,9 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
                 let (_, raw_value) = raw.split_at(consumed_octets);
 
                 if value_length > raw_value.len() {
-                    return Err(Asn1ErrorKind::SequenceError( 
+                    return Err(asn1::ErrorKind::SequenceError( 
                         stringify!(#name).to_string(), 
-                        Box::new(Asn1ErrorKind::NoDataForLength)
+                        Box::new(asn1::ErrorKind::NoDataForLength)
                     ))?;
                 }
 
@@ -420,13 +420,13 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
 
     } else {
         encode = quote! {
-            fn encode(&self) -> Asn1Result<Vec<u8>> {
+            fn encode(&self) -> asn1::Result<Vec<u8>> {
                 return self._inner_encode();
             }
         };
 
         decode = quote! {
-            fn decode(&mut self, raw: &[u8]) -> Asn1Result<usize> {
+            fn decode(&mut self, raw: &[u8]) -> asn1::Result<usize> {
                 return self._inner_decode(raw);
             }
         }

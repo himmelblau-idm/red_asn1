@@ -1,7 +1,3 @@
-extern crate asn1;
-extern crate asn1_derive;
-
-
 use asn1::*;
 use asn1_derive::Asn1Sequence;
 
