@@ -1,7 +1,6 @@
 use crate::tag::Tag;
 use crate::traits::{Asn1Object, Asn1InstanciableObject, Asn1Tagged};
 use crate::error::*;
-use std::result::Result;
 
 pub static OCTET_STRING_TAG_NUMBER: u8 = 0x4;
 
