@@ -1,0 +1,21 @@
+[package]
+name = "red_asn1_derive"
+version = "0.1.0"
+authors = ["Zer1t0 <Zer1t0@mail.com>"]
+edition = "2018"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = "0.15"
+quote = "0.6"
+failure = "0.1.5"
+failure_derive = "0.1.5"
+proc-macro2 = "0.4"
+
+
+[dependencies.asn1]
+version = "0.1.0"
+path = ".."
+
