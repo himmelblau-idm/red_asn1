@@ -118,7 +118,7 @@ fn extract_field_type(field_type: &Type) -> ParseComponentResult<PathSegment> {
 
 fn parse_field_attrs(attrs: &Vec<Attribute>) -> ParseComponentResult<(bool, Option<u8>)> {
     for attr in attrs {
-        if attr.path.segments.len() > 0 && attr.path.segments[0].ident == ASN1_SEQ_COMP_ATTR {
+        if attr.path.segments.len() > 0 && attr.path.segments[0].ident == ASN1_SEQ_FIELD_ATTR {
             return parse_component_attr(attr);
         }
     }

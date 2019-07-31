@@ -3,7 +3,7 @@ use proc_macro2::TokenStream;
 
 pub static SEQUENCE_COMPONENT_TYPE_NAME: &str = "SeqField";
 pub static ASN1_SEQ_ATTR: &str = "seq";
-pub static ASN1_SEQ_COMP_ATTR: &str = "seq_comp";
+pub static ASN1_SEQ_FIELD_ATTR: &str = "seq_field";
 pub static OPTIONAL_ATTR: &str = "optional";
 pub static TAG_NUMBER_ATTR: &str = "context_tag";
 pub static APPLICATION_TAG_ATTR: &str = "application_tag";

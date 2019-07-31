@@ -16,7 +16,7 @@ mod code_components;
 use parser::*;
 use code_components::*;
 
-#[proc_macro_derive(Asn1Sequence, attributes(seq, seq_comp))]
+#[proc_macro_derive(Sequence, attributes(seq, seq_field))]
 pub fn sequence_macro_derive(input: TokenStream) -> TokenStream {    
     let ast = parse_macro_input!(input as DeriveInput);
 

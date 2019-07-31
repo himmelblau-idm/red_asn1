@@ -16,3 +16,4 @@ mod types;
 pub use types::*;
 
 
+pub use red_asn1_derive::*;
