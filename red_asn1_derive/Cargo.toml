@@ -17,5 +17,5 @@ proc-macro2 = "0.4"
 
 [dependencies.red_asn1]
 version = "0.1.0"
-path = ".."
+path = "../red_asn1"
 
