@@ -1,7 +1,13 @@
 use crate::error as asn1err;
 use super::{TagClass, TagType};
 
-/// Class to represent DER-ASN1 tags of the different types
+/// Class to represent DER-ASN1 tags of the different types.
+/// 
+/// Each tag is divided into 3 parts:
+/// * Class: If tag is of an Primitive or Constructed object
+/// * Type: The scope of the object
+/// * Number: A distinguished number between objects of the same type and class
+/// 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Tag {
     tag_number: u8,
@@ -11,18 +17,23 @@ pub struct Tag {
 
 impl Tag {
 
+    /// Creates a new tag from a given number, type and class
     pub fn new(tag_number: u8, tag_type: TagType, tag_class: TagClass) -> Tag {
         return Tag{tag_number, tag_type, tag_class};
     }
 
+    /// Shorcut of: `Tag::new(tag_number, TagType::Primitive, TagClass::Universal)`
     pub fn new_primitive_universal(tag_number: u8) -> Tag {
         return Tag::new(tag_number, TagType::Primitive, TagClass::Universal);
     }
 
+    /// Shorcut of: `Tag::new(tag_number, TagType::Constructed, TagClass::Universal)`
     pub fn new_constructed_universal(tag_number: u8) -> Tag {
         return Tag::new(tag_number, TagType::Constructed, TagClass::Universal);
     }
 
+
+    /// Produces an DER version of the tag in bytes
     pub fn encode(&self) -> Vec<u8> {
         let mut encoded_tag: u8 = 0;
 
@@ -59,6 +70,7 @@ impl Tag {
         self.tag_class = tag_class;
     }
 
+    /// Set the Tag values from a array of bytes
     pub fn decode(&mut self, raw: &[u8]) -> asn1err::Result<usize> {
         let raw_len = raw.len();
         if raw_len == 0 {
