@@ -1,6 +1,7 @@
 use crate::error as asn1err;
 use super::{TagClass, TagType};
 
+/// Class to represent DER-ASN1 tags of the different types
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct Tag {
     tag_number: u8,
@@ -9,11 +10,6 @@ pub struct Tag {
 }
 
 impl Tag {
-
-    
-    pub fn new_empty() -> Tag {
-        return Tag::new(0, TagType::Primitive, TagClass::Universal);
-    }
 
     pub fn new(tag_number: u8, tag_type: TagType, tag_class: TagClass) -> Tag {
         return Tag{tag_number, tag_type, tag_class};

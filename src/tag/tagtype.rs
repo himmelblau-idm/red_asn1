@@ -1,5 +1,9 @@
 use std::convert::From;
 
+/// Enum with the different tag types
+/// * Primitive: Object which are not composed by other objects. For example, basic types like Integer, Boolean, ...
+/// * Constructed: Object composed by other objects, such as Sequences.
+/// 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum TagType {
     Primitive = 0b0,
