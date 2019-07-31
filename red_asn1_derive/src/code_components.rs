@@ -54,7 +54,7 @@ fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
     if let Some(context_tag_number) = comp_def.context_tag_number {
         return quote! {
             fn #decoder_name (&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
-                let mut decoded_tag = Tag::new_empty();
+                let mut decoded_tag = Tag::new(0, TagType::Primitive, TagClass::Universal);
                 let mut consumed_octets = 0;
 
                 match decoded_tag.decode(raw) {
@@ -372,7 +372,7 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
             #inner_decode
 
             fn _decode_application_tag(&self, raw_tag: &[u8]) -> red_asn1::Result<usize> {
-                let mut decoded_tag = Tag::new_empty();
+                let mut decoded_tag = Tag::new(0, TagType::Primitive, TagClass::Universal);
                 let consumed_octets = decoded_tag.decode(raw_tag)?;
 
                 if decoded_tag != Tag::new(#application_tag_number, TagType::Constructed, TagClass::Application) {

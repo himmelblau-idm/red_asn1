@@ -10,6 +10,7 @@ pub struct Tag {
 
 impl Tag {
 
+    
     pub fn new_empty() -> Tag {
         return Tag::new(0, TagType::Primitive, TagClass::Universal);
     }
@@ -184,13 +185,13 @@ mod tests {
     }
 
     fn _parse_tag(raw: Vec<u8>) -> Tag {
-        let mut tag = Tag::new_empty();
+        let mut tag = Tag::new(0, TagType::Primitive, TagClass::Universal);
         tag.decode(&raw).unwrap();
         return tag;
     }
 
     fn _parse_tag_with_consumed_octets(raw: Vec<u8>) -> (Tag, usize) {
-        let mut tag = Tag::new_empty();
+        let mut tag = Tag::new(0, TagType::Primitive, TagClass::Universal);
         let consumed_octets = tag.decode(&raw).unwrap();
         return (tag, consumed_octets);
     }

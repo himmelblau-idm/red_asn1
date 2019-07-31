@@ -1,4 +1,4 @@
-use crate::tag::Tag;
+use crate::tag::*;
 use crate::error as asn1err;
 
 /// A trait to allow objects to be encoded/decoded from ASN1-DER
@@ -14,7 +14,7 @@ pub trait Asn1Object {
 
     /// To decode the tag from DER, should not be overwritten
     fn decode_tag(&self, raw_tag: &[u8]) -> asn1err::Result<usize> {
-        let mut decoded_tag = Tag::new_empty();
+        let mut decoded_tag = Tag::new(0, TagType::Primitive, TagClass::Universal);
         let consumed_octets = decoded_tag.decode(raw_tag)?;
 
         if decoded_tag != self.tag() {
@@ -136,7 +136,6 @@ pub trait Asn1InstanciableObject: Asn1Object {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tag::*;
 
     struct TestObject {
         tag: Tag
@@ -144,7 +143,7 @@ mod tests {
 
     impl TestObject {
         fn new() -> TestObject{
-            return TestObject{ tag: Tag::new_empty()};
+            return TestObject{ tag: Tag::new(0, TagType::Primitive, TagClass::Universal)};
         }
 
         fn new_tagged(tag: Tag) -> TestObject {
