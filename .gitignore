@@ -1,6 +1,3 @@
 /target
 **/*.rs.bk
 Cargo.lock
-
-red_asn1_derive/target
-red_asn1_derive/Cargo.lock
