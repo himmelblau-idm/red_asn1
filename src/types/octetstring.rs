@@ -16,24 +16,14 @@ impl Asn1Object for OctetString {
     }
 
     fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
-        let value;
-
         match &self._value {
             Some(_value) => {
-                value = _value;
+                return Ok(_value.clone());
             },
             None => {
                 return Err(asn1err::ErrorKind::NoValue)?;
             }
         }
-
-        let mut encoded_value = Vec::with_capacity(value.len());
-
-        for i in 0..value.len() {
-            encoded_value.push(value[i])
-        }
-
-        return Ok(encoded_value);
     }
 
     fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
