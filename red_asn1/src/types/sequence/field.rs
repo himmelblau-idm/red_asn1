@@ -8,15 +8,6 @@ pub struct SeqField<T: Asn1Object + Default> {
 
 impl<T: Asn1Object + Default> SeqField<T> {
 
-    pub fn new() 
-    -> SeqField<T> {
-        let sequence_field = SeqField{
-            value: None
-        };
-
-        return sequence_field;
-    }
-
     pub fn get_inner_value(&self) -> Option<&T> {
         match self.value {
             Some(ref subtype) => {
@@ -58,5 +49,23 @@ impl<T: Asn1Object + Default> SeqField<T> {
         self.value = Some(new_subtype);
         return Ok(size);
     }
+
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use super::super::super::Integer;
+
+    #[test]
+    fn create_seq_field() {
+        let seq_field_integer = SeqField{value: None};
+
+        assert_eq!(
+            seq_field_integer,
+            SeqField::<Integer>::default()
+        );
+    }
+
 
 }

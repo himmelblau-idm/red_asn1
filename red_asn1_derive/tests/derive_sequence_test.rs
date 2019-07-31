@@ -10,8 +10,8 @@ fn test_define_simple() {
     }
 
     let mut seq = TestSequence{
-        id: SeqField::new(),
-        data: SeqField::new()
+        id: SeqField::default(),
+        data: SeqField::default()
     };
     seq.set_id(Integer::new(9));
     seq.set_data(OctetString::new(vec![1,2,3,4]));
@@ -66,7 +66,7 @@ fn test_encode() {
     }
 
     let mut p = Person{
-        age: SeqField::new(),
+        age: SeqField::default(),
     };
     p.set_age(Integer::new(9));
 
@@ -83,7 +83,7 @@ fn test_encode_with_context_tags() {
     }
 
     let mut p = Person{
-        age: SeqField::new(),
+        age: SeqField::default(),
     };
     p.set_age(Integer::new(9));
 
@@ -101,7 +101,7 @@ fn test_encode_with_optional_component() {
     }
 
     let mut p = Person{
-        age: SeqField::new(),
+        age: SeqField::default(),
     };
     p.set_age(Integer::new(9));
 
@@ -118,7 +118,7 @@ fn test_encode_with_optional_without_value_component() {
     }
 
     let p = Person{
-        age: SeqField::new(),
+        age: SeqField::default(),
     };
 
     assert_eq!(vec![0x30, 0x0], p.encode().unwrap());
@@ -134,7 +134,7 @@ fn test_encode_without_give_required_values() {
     }
 
     let p = Person{
-        age: SeqField::new(),
+        age: SeqField::default(),
     };
     p.encode().unwrap();
 }
@@ -151,7 +151,7 @@ fn test_encode_with_inner_sequence() {
     }
 
     let mut seq = SuperTestSequence{
-        inner: SeqField::new()
+        inner: SeqField::default()
     };
 
     seq.set_inner(TestSequence::default());
@@ -166,7 +166,7 @@ fn test_encode_with_inner_sequenceof() {
         attrs: SeqField<SequenceOf<Integer>>
     }
 
-    let mut seq = TestSequence{ attrs: SeqField::new()};
+    let mut seq = TestSequence{ attrs: SeqField::default()};
     let mut seqof_ints: SequenceOf<Integer> = SequenceOf::new();
     seqof_ints.push(Integer::new(1));
 
@@ -228,7 +228,7 @@ fn test_decode_with_context_tags() {
     }
 
     let mut p = Person{
-        age: SeqField::new(),
+        age: SeqField::default(),
     };
     p.decode(&[0x30, 0x5, 0xa0, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x9]).unwrap();
 
@@ -246,7 +246,7 @@ fn test_decode_with_optional_with_bad_type_tag() {
     }
 
     let mut p = Person{
-        age: SeqField::new(),
+        age: SeqField::default(),
     };
     p.decode(&[0x30, 0x1, 0xee]).unwrap();
 }
@@ -262,7 +262,7 @@ fn test_decode_with_optional_with_bad_number_type_tag() {
     }
 
     let mut p = Person{
-        age: SeqField::new(),
+        age: SeqField::default(),
     };
     p.decode(&[0x30, 0x1, 0xff]).unwrap();
 }
@@ -278,7 +278,7 @@ fn test_decode_with_optional_and_context_tag() {
     }
 
     let mut p = Person{
-        age: SeqField::new(),
+        age: SeqField::default(),
     };
     p.decode(&[0x30, 0x0]).unwrap();
 
@@ -296,7 +296,7 @@ fn test_decode_with_optional_and_context_tag_bad_context_length() {
     }
 
     let mut p = Person{
-        age: SeqField::new(),
+        age: SeqField::default(),
     };
     p.decode(&[0x30, 0x2, 0xa0, 0x0]).unwrap();
 }
@@ -312,7 +312,7 @@ fn test_bad_decode_optional_context_tag_bad_context_tag() {
     }
 
     let mut p = Person{
-        age: SeqField::new(),
+        age: SeqField::default(),
     };
     p.decode(&[0x30, 0x1, 0xee]).unwrap();
 }
@@ -378,7 +378,7 @@ fn test_bad_decode_optional_context_tag_bad_type_tag() {
     }
 
     let mut p = Person{
-        age: SeqField::new(),
+        age: SeqField::default(),
     };
     p.decode(&[0x30, 0x3, 0xa0, 0x1, 0xee]).unwrap();
 }
@@ -420,8 +420,8 @@ fn test_decode_without_context_tags() {
     }
 
     let mut p = Person{
-        id: SeqField::new(),
-        data: SeqField::new(),
+        id: SeqField::default(),
+        data: SeqField::default(),
     };
     p.decode(&[0x30, 0x9, 
                INTEGER_TAG_NUMBER, 0x1, 0x9, 
@@ -443,8 +443,8 @@ fn test_decode_with_optional() {
     }
 
     let mut seq = TestSequence{
-        id: SeqField::new(),
-        data: SeqField::new(),
+        id: SeqField::default(),
+        data: SeqField::default(),
     };
     seq.decode(&[0x30, 0x8, 
                  0xa1, 0x6, OCTET_STRING_TAG_NUMBER, 0x4, 0x1, 0x2, 0x3, 0x4]).unwrap();
@@ -465,8 +465,8 @@ fn test_decode_with_optional_without_context_tag() {
     }
 
     let mut seq = TestSequence{
-        id: SeqField::new(),
-        data: SeqField::new(),
+        id: SeqField::default(),
+        data: SeqField::default(),
     };
 
     seq.decode(&[0x30, 0x6, 
@@ -488,7 +488,7 @@ fn test_decode_with_optional_and_context_tag_and_bad_type_tag() {
     }
 
     let mut seq = TestSequence{
-        id: SeqField::new(),
+        id: SeqField::default(),
     };
     seq.decode(&[0x30, 0x8, 
                  0xa0, 0x6, OCTET_STRING_TAG_NUMBER, 0x4, 0x1, 0x2, 0x3, 0x4]).unwrap();
@@ -507,7 +507,7 @@ fn test_decode_with_inner_sequence() {
     }
 
     let mut seq = SuperTestSequence{
-        inner: SeqField::new()
+        inner: SeqField::default()
     };
 
     seq.decode(&[0x30, 0x4, 0x67, 0x2, 0x30, 0x0]).unwrap();
@@ -523,7 +523,7 @@ fn test_decode_unsetting_optional_value() {
     }
 
     let mut seq = TestSequence{
-        id: SeqField::new()
+        id: SeqField::default()
     };
 
     seq.set_id(Integer::new(9));
@@ -540,7 +540,7 @@ fn test_decode_with_inner_sequenceof() {
         attrs: SeqField<SequenceOf<Integer>>
     }
 
-    let mut seq = TestSequence{ attrs: SeqField::new()};
+    let mut seq = TestSequence{ attrs: SeqField::default()};
 
     seq.decode(&[0x30, 0x5, 0x30, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x1]).unwrap();
 
@@ -560,7 +560,7 @@ fn test_decode_without_required_value() {
     }
 
     let mut seq = TestSequence{
-        id: SeqField::new(),
+        id: SeqField::default(),
     };
     seq.decode(&[0x30, 0x0]).unwrap();
 
@@ -581,7 +581,7 @@ fn test_decode_without_required_value_with_inner_sequence() {
     }
 
     let mut seq = SuperTestSequence{
-        inner: SeqField::new()
+        inner: SeqField::default()
     };
 
     seq.decode(&[0x30, 0x2, 0x30, 0x0]).unwrap();
