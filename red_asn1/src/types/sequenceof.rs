@@ -7,7 +7,7 @@ pub static SEQUENCE_TAG_NUMBER: u8 = 0x10;
 
 
 /// Class to encode/decode SequenceOf ASN1
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub struct SequenceOf<T: Asn1Object + Default> {
     components: Vec<T>
 }
