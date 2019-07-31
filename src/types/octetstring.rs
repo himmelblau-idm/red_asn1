@@ -4,6 +4,8 @@ use crate::error as asn1err;
 
 pub static OCTET_STRING_TAG_NUMBER: u8 = 0x4;
 
+
+/// Class to encode/decode OctetString ASN1
 #[derive(Debug, PartialEq)]
 pub struct OctetString {
     _value: Option<Vec<u8>>

@@ -1,15 +1,18 @@
 use crate::tag::Tag;
 use crate::error as asn1err;
 
-
+/// A trait to allow objects to be encoded/decoded from ASN1-DER
 pub trait Asn1Object {
 
+    /// Method to retrieve the tag of the object, used to identify each object in ASN1
     fn tag(&self) -> Tag;
 
+    /// To encode the tag to DER, should not be overwritten
     fn encode_tag(&self) -> Vec<u8> {
         return self.tag().encode();
     }
 
+    /// To decode the tag from DER, should not be overwritten
     fn decode_tag(&self, raw_tag: &[u8]) -> asn1err::Result<usize> {
         let mut decoded_tag = Tag::new_empty();
         let consumed_octets = decoded_tag.decode(raw_tag)?;
@@ -20,6 +23,7 @@ pub trait Asn1Object {
         return Ok(consumed_octets);
     }
 
+    /// To encode the object value length to DER, should not be overwritten
     fn encode_length(&self, value_size: usize) -> Vec<u8> {
         if value_size < 128 {
             return vec![value_size as u8];
@@ -43,6 +47,7 @@ pub trait Asn1Object {
         return encoded_length;
     }
 
+    /// To decode the object value length from DER, should not be overwritten
     fn decode_length(&self, raw_length: &[u8]) -> asn1err::Result<(usize, usize)> {
         let raw_length_length = raw_length.len();
         if raw_length_length == 0 {
@@ -70,10 +75,15 @@ pub trait Asn1Object {
         return Ok((length, consumed_octets));
     }
     
+    /// Method which indicates how object value must be encoded
     fn encode_value(&self) -> asn1err::Result<Vec<u8>>;
 
+    /// Method which indicates how object value must be decoded
     fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()>;
 
+
+    /// To encode the object to DER, generally does not need to be overwritten.
+    /// Usually, just encode_value should be overwritten
     fn encode(&self) -> asn1err::Result<Vec<u8>> {
         let mut encoded = self.encode_tag();
         let mut encoded_value = self.encode_value()?;
@@ -85,6 +95,8 @@ pub trait Asn1Object {
         return Ok(encoded);
     }
 
+    /// To decode the object from DER, generally does not need to be overwritten.
+    /// Usually, just decode_value should be overwritten
     fn decode(&mut self, raw: &[u8]) -> asn1err::Result<usize> {
         let mut consumed_octets = self.decode_tag(raw)?;
 
@@ -107,10 +119,16 @@ pub trait Asn1Object {
         return Ok(consumed_octets);
     }
 
+    /// Method to reset the object value
     fn unset_value(&mut self);
 }
 
+
+/// A trait to allow objects to be used in a Sequence/SequenceOf as fields
 pub trait Asn1InstanciableObject: Asn1Object {
+
+    /// Provide a default way to create an instance of object.
+    /// Used to create instance before decode an object an set its value.
     fn new_default() -> Self;
 }
 

@@ -5,6 +5,7 @@ use crate::error as asn1err;
 
 pub static BIT_STRING_TAG_NUMBER: u8 = 0x3;
 
+/// Class to encode/decode BitSring ASN1
 #[derive(Debug, PartialEq)]
 pub struct BitSring {
     _value: Option<BitSringValue>

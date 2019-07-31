@@ -1,3 +1,7 @@
+//! A little library to encode/decode ASN1 DER, still in alpha version
+//! 
+
+
 mod error;
 pub use error::*;
 pub use error::Error;

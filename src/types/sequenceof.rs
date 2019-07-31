@@ -5,6 +5,8 @@ use std::ops::{Deref, DerefMut};
 
 pub static SEQUENCE_TAG_NUMBER: u8 = 0x10;
 
+
+/// Class to encode/decode SequenceOf ASN1
 #[derive(Debug)]
 pub struct SequenceOf<T: Asn1InstanciableObject> {
     components: Vec<T>

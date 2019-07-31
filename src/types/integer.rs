@@ -4,6 +4,8 @@ use crate::error as asn1err;
 
 pub static INTEGER_TAG_NUMBER: u8 = 0x2;
 
+
+/// Class to encode/decode Integer ASN1
 #[derive(Debug, PartialEq)]
 pub struct Integer {
     _value: Option<i64>

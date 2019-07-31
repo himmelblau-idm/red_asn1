@@ -4,6 +4,8 @@ use crate::error as asn1err;
 
 pub static BOOLEAN_TAG_NUMBER: u8 = 0x1;
 
+
+/// Class to encode/decode Boolean ASN1
 #[derive(Debug, PartialEq)]
 pub struct Boolean {
     _value: Option<bool>

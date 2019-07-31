@@ -5,6 +5,7 @@ use crate::error as asn1err;
 
 pub static IA5STRING_TAG_NUMBER: u8 = 0x16;
 
+/// Class to encode/decode IA5String ASN1
 #[derive(Debug, PartialEq)]
 pub struct IA5String {
     _value: Option<AsciiString>

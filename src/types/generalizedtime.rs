@@ -7,6 +7,7 @@ use std::str;
 
 pub static GENERALIZED_TIME_TAG_NUMBER: u8 = 0x18;
 
+/// Class to encode/decode GeneralizedTime ASN1
 #[derive(Debug, PartialEq)]
 pub struct GeneralizedTime {
     _value: Option<DateTime<Utc>>,

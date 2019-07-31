@@ -4,6 +4,7 @@ use crate::error as asn1err;
 
 pub static GENERALSTRING_TAG_NUMBER: u8 = 0x1b;
 
+/// Class to encode/decode GeneralString ASN1
 #[derive(Debug, PartialEq)]
 pub struct GeneralString {
     _value: Option<String>
