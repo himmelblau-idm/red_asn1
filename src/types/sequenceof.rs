@@ -1,5 +1,5 @@
 use crate::tag::{Tag};
-use crate::traits::{Asn1Object, Asn1InstanciableObject, Asn1Tagged};
+use crate::traits::*;
 use crate::error as asn1err;
 use std::ops::{Deref, DerefMut};
 
@@ -7,7 +7,6 @@ pub static SEQUENCE_TAG_NUMBER: u8 = 0x10;
 
 #[derive(Debug)]
 pub struct SequenceOf<T: Asn1InstanciableObject> {
-    tag: Tag,
     components: Vec<T>
 }
 
@@ -24,16 +23,24 @@ impl<T: Asn1InstanciableObject> DerefMut for SequenceOf<T> {
     }
 }
 
-impl<T: Asn1InstanciableObject> Asn1Tagged for SequenceOf<T> {
-    fn type_tag() -> Tag {
-        return Tag::new_constructed_universal(SEQUENCE_TAG_NUMBER);
+impl<T: Asn1InstanciableObject> SequenceOf<T> {
+
+    pub fn new() -> SequenceOf<T> {
+        return SequenceOf{
+            components: Vec::<T>::new()
+        };
     }
+
+    pub fn value(&self) -> &Vec<T> {
+        return &self.components;
+    }
+
 }
 
 impl <T: Asn1InstanciableObject> Asn1Object for SequenceOf<T> {
 
     fn tag(&self) -> Tag {
-        return self.tag.clone();
+        return Tag::new_constructed_universal(SEQUENCE_TAG_NUMBER);
     }
 
     fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
@@ -62,21 +69,6 @@ impl <T: Asn1InstanciableObject> Asn1Object for SequenceOf<T> {
 
     fn unset_value(&mut self) {
         self.components = Vec::new();
-    }
-
-}
-
-impl<T: Asn1InstanciableObject> SequenceOf<T> {
-
-    pub fn new() -> SequenceOf<T> {
-        return SequenceOf{
-            tag: SequenceOf::<T>::type_tag(),
-            components: Vec::<T>::new()
-        };
-    }
-
-    pub fn value(&self) -> &Vec<T> {
-        return &self.components;
     }
 
 }

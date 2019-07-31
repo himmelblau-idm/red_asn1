@@ -1,25 +1,18 @@
 use crate::tag::Tag;
-use crate::traits::{Asn1Object, Asn1InstanciableObject, Asn1Tagged};
+use crate::traits::*;
 use crate::error as asn1err;
 
 pub static INTEGER_TAG_NUMBER: u8 = 0x2;
 
 #[derive(Debug, PartialEq)]
 pub struct Integer {
-    tag: Tag,
     _value: Option<i64>
-}
-
-impl Asn1Tagged for Integer {
-    fn type_tag() -> Tag {
-        return Tag::new_primitive_universal(INTEGER_TAG_NUMBER);
-    }
 }
 
 impl Asn1Object for Integer {    
 
     fn tag(&self) -> Tag {
-        return self.tag.clone();
+        return Tag::new_primitive_universal(INTEGER_TAG_NUMBER);
     }
 
     fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
@@ -85,14 +78,12 @@ impl Asn1InstanciableObject for Integer {
 impl Integer {
     pub fn new(value: i64) -> Integer{
         return Integer{
-            tag: Integer::type_tag(),
             _value: Some(value)
         };
     }
 
     pub fn new_empty() -> Integer {
         return Integer {
-            tag: Integer::type_tag(),
             _value: None
         }
     }

@@ -2,11 +2,6 @@ use crate::tag::Tag;
 use crate::error as asn1err;
 
 
-pub trait Asn1Tagged {
-    fn type_tag() -> Tag;
-}
-
-
 pub trait Asn1Object {
 
     fn tag(&self) -> Tag;
@@ -116,7 +111,6 @@ pub trait Asn1Object {
 }
 
 pub trait Asn1InstanciableObject: Asn1Object {
-
     fn new_default() -> Self;
 }
 
@@ -124,7 +118,7 @@ pub trait Asn1InstanciableObject: Asn1Object {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::super::tag::*;
+    use crate::tag::*;
 
     struct TestObject {
         tag: Tag

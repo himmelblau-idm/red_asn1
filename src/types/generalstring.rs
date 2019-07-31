@@ -6,28 +6,19 @@ pub static GENERALSTRING_TAG_NUMBER: u8 = 0x1b;
 
 #[derive(Debug, PartialEq)]
 pub struct GeneralString {
-    tag: Tag,
     _value: Option<String>
-}
-
-impl Asn1Tagged for GeneralString {
-    fn type_tag() -> Tag {
-        return Tag::new_primitive_universal(GENERALSTRING_TAG_NUMBER);
-    }
 }
 
 
 impl GeneralString {
     pub fn new(value: String) -> Self {
         return Self {
-            tag: Self::type_tag(),
             _value: Some(value)
         }
     }
 
     pub fn new_empty() -> Self {
         return Self {
-            tag: Self::type_tag(),
             _value: None
         }
     }
@@ -47,7 +38,7 @@ impl GeneralString {
 impl Asn1Object for GeneralString {
     
     fn tag(&self) -> Tag {
-        return self.tag.clone();
+        return Tag::new_primitive_universal(GENERALSTRING_TAG_NUMBER);
     }
 
     fn encode_value(&self) -> asn1err::Result<Vec<u8>> {

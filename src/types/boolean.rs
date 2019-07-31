@@ -6,7 +6,6 @@ pub static BOOLEAN_TAG_NUMBER: u8 = 0x1;
 
 #[derive(Debug, PartialEq)]
 pub struct Boolean {
-    tag: Tag,
     _value: Option<bool>
 }
 
@@ -14,14 +13,12 @@ impl Boolean {
 
     pub fn new(value: bool) -> Boolean {
         return Boolean {
-            tag: Boolean::type_tag(),
             _value: Some(value)
         };
     }
 
     pub fn new_empty() -> Boolean {
         return Boolean {
-            tag: Boolean::type_tag(),
             _value: None
         };
     }
@@ -45,17 +42,10 @@ impl Asn1InstanciableObject for Boolean {
     }
 }
 
-
-impl Asn1Tagged for Boolean {
-    fn type_tag() -> Tag {
-        return Tag::new_primitive_universal(BOOLEAN_TAG_NUMBER);
-    }
-}
-
 impl Asn1Object for Boolean {
 
     fn tag(&self) -> Tag {
-        return self.tag.clone();
+        return Tag::new_primitive_universal(BOOLEAN_TAG_NUMBER);
     }
 
     fn encode_value(&self) -> asn1err::Result<Vec<u8>> {

@@ -7,7 +7,6 @@ pub static BIT_STRING_TAG_NUMBER: u8 = 0x3;
 
 #[derive(Debug, PartialEq)]
 pub struct BitSring {
-    tag: Tag,
     _value: Option<BitSringValue>
 }
 
@@ -29,16 +28,10 @@ impl BitSringValue {
 
 }
 
-impl Asn1Tagged for BitSring {
-    fn type_tag() -> Tag {
-        return Tag::new_primitive_universal(BIT_STRING_TAG_NUMBER);
-    }
-}
-
 impl Asn1Object for BitSring {
 
     fn tag(&self) -> Tag {
-        return self.tag.clone();
+        return Tag::new_primitive_universal(BIT_STRING_TAG_NUMBER);
     }
 
     fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
@@ -94,7 +87,6 @@ impl Asn1InstanciableObject for BitSring {
 impl BitSring {
     pub fn new(bytes: Vec<u8>, padding_length: u8) -> BitSring{
         let mut bs = BitSring {
-            tag: BitSring::type_tag(),
             _value: Some(BitSringValue{
                             bytes,
                             padding_length: padding_length % 8
@@ -106,7 +98,6 @@ impl BitSring {
 
     pub fn new_empty() -> BitSring {
         return BitSring {
-            tag: BitSring::type_tag(),
             _value: None
         };
     }

@@ -7,20 +7,13 @@ pub static IA5STRING_TAG_NUMBER: u8 = 0x16;
 
 #[derive(Debug, PartialEq)]
 pub struct IA5String {
-    tag: Tag,
     _value: Option<AsciiString>
-}
-
-impl Asn1Tagged for IA5String {
-    fn type_tag() -> Tag {
-        return Tag::new_primitive_universal(IA5STRING_TAG_NUMBER);
-    }
 }
 
 impl Asn1Object for IA5String {
     
     fn tag(&self) -> Tag {
-        return self.tag.clone();
+        return Tag::new_primitive_universal(IA5STRING_TAG_NUMBER);
     }
 
     fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
@@ -74,14 +67,12 @@ impl Asn1Object for IA5String {
 impl IA5String {
     pub fn new(value: AsciiString) -> IA5String {
         return IA5String {
-            tag: IA5String::type_tag(),
             _value: Some(value)
         }
     }
 
     pub fn new_empty() -> IA5String {
         return IA5String {
-            tag: IA5String::type_tag(),
             _value: None
         }
     }

@@ -9,7 +9,6 @@ pub static GENERALIZED_TIME_TAG_NUMBER: u8 = 0x18;
 
 #[derive(Debug, PartialEq)]
 pub struct GeneralizedTime {
-    tag: Tag,
     _value: Option<DateTime<Utc>>,
     format: TimeFormat
 }
@@ -17,7 +16,6 @@ pub struct GeneralizedTime {
 impl GeneralizedTime {
     pub fn new(value: DateTime<Utc>) -> GeneralizedTime {
         return GeneralizedTime {
-            tag: GeneralizedTime::type_tag(),
             _value: Some(value),
             format: TimeFormat::default()
         };
@@ -25,7 +23,6 @@ impl GeneralizedTime {
 
     pub fn new_empty() -> GeneralizedTime {
         return GeneralizedTime {
-            tag: GeneralizedTime::type_tag(),
             _value: None,
             format: TimeFormat::default()
         };
@@ -52,16 +49,10 @@ impl GeneralizedTime {
 
 }
 
-impl Asn1Tagged for GeneralizedTime {
-    fn type_tag() -> Tag {
-        return Tag::new_primitive_universal(GENERALIZED_TIME_TAG_NUMBER);
-    }
-}
-
 impl Asn1Object for GeneralizedTime {
 
     fn tag(&self) -> Tag {
-        return self.tag.clone();
+        return Tag::new_primitive_universal(GENERALIZED_TIME_TAG_NUMBER);
     }
 
     fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
