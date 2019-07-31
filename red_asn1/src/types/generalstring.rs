@@ -5,7 +5,7 @@ use crate::error as asn1err;
 pub static GENERALSTRING_TAG_NUMBER: u8 = 0x1b;
 
 /// Class to encode/decode GeneralString ASN1
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct GeneralString {
     _value: Option<String>
 }
@@ -72,12 +72,6 @@ impl Asn1Object for GeneralString {
     }
 }
 
-impl Asn1InstanciableObject for GeneralString {
-    fn new_default() -> Self {
-        return Self::new_empty();
-    }
-}
-
 
 #[cfg(test)]
 mod tests {
@@ -97,7 +91,7 @@ mod tests {
 
     #[test]
     fn test_create_default() {
-        let b = GeneralString::new_default();
+        let b = GeneralString::default();
         assert_eq!(None, b.value());
     }
 

@@ -124,15 +124,6 @@ pub trait Asn1Object {
 }
 
 
-/// A trait to allow objects to be used in a Sequence/SequenceOf as fields
-pub trait Asn1InstanciableObject: Asn1Object {
-
-    /// Provide a default way to create an instance of object.
-    /// Used to create instance before decode an object an set its value.
-    fn new_default() -> Self;
-}
-
-
 #[cfg(test)]
 mod tests {
     use super::*;

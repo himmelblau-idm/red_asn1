@@ -6,7 +6,7 @@ use crate::error as asn1err;
 pub static IA5STRING_TAG_NUMBER: u8 = 0x16;
 
 /// Class to encode/decode IA5String ASN1
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct IA5String {
     _value: Option<AsciiString>
 }
@@ -90,12 +90,6 @@ impl IA5String {
     }
 }
 
-impl Asn1InstanciableObject for IA5String {
-    fn new_default() -> IA5String {
-        return IA5String::new_empty();
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -114,7 +108,7 @@ mod tests {
 
     #[test]
     fn test_create_default() {
-        let b = IA5String::new_default();
+        let b = IA5String::default();
         assert_eq!(None, b.value());
     }
 

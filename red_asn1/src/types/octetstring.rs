@@ -6,7 +6,7 @@ pub static OCTET_STRING_TAG_NUMBER: u8 = 0x4;
 
 
 /// Class to encode/decode OctetString ASN1
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct OctetString {
     _value: Option<Vec<u8>>
 }
@@ -36,14 +36,6 @@ impl Asn1Object for OctetString {
     fn unset_value(&mut self) {
         self._value = None;
     }
-}
-
-impl Asn1InstanciableObject for OctetString {
-
-    fn new_default() -> OctetString {
-        return OctetString::new_empty();
-    }
-
 }
 
 impl OctetString {
@@ -91,7 +83,7 @@ mod tests {
 
     #[test]
     fn test_create_default() {
-        let b = OctetString::new_default();
+        let b = OctetString::default();
         assert_eq!(None, b.value());
     }
 

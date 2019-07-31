@@ -6,7 +6,7 @@ use crate::error as asn1err;
 pub static BIT_STRING_TAG_NUMBER: u8 = 0x3;
 
 /// Class to encode/decode BitSring ASN1
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct BitSring {
     _value: Option<BitSringValue>
 }
@@ -79,12 +79,6 @@ impl Asn1Object for BitSring {
     }
 }
 
-impl Asn1InstanciableObject for BitSring {
-    fn new_default() -> BitSring {
-        return BitSring::new_empty();
-    }
-}
-
 impl BitSring {
     pub fn new(bytes: Vec<u8>, padding_length: u8) -> BitSring{
         let mut bs = BitSring {
@@ -151,7 +145,7 @@ mod tests {
 
     #[test]
     fn test_create_default() {
-        let b = BitSring::new_default();
+        let b = BitSring::default();
         assert_eq!(None, b.value());
     }
 

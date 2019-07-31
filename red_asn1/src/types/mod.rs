@@ -33,12 +33,12 @@ mod tests {
 
     #[test]
     fn test_encode_common_tags() {
-        assert_eq!(vec![0x01], Boolean::new_default().tag().encode());
-        assert_eq!(vec![0x02], Integer::new_default().tag().encode());
-        assert_eq!(vec![0x03], BitSring::new_default().tag().encode());
-        assert_eq!(vec![0x04], OctetString::new_default().tag().encode());
-        assert_eq!(vec![0x30], SequenceOf::<Integer>::new_default().tag().encode());
-        assert_eq!(vec![0x16], IA5String::new_default().tag().encode());
-        assert_eq!(vec![0x18], GeneralizedTime::new_default().tag().encode());
+        assert_eq!(vec![0x01], Boolean::default().tag().encode());
+        assert_eq!(vec![0x02], Integer::default().tag().encode());
+        assert_eq!(vec![0x03], BitSring::default().tag().encode());
+        assert_eq!(vec![0x04], OctetString::default().tag().encode());
+        assert_eq!(vec![0x30], SequenceOf::<Integer>::default().tag().encode());
+        assert_eq!(vec![0x16], IA5String::default().tag().encode());
+        assert_eq!(vec![0x18], GeneralizedTime::default().tag().encode());
     }
 }

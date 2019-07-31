@@ -1,12 +1,12 @@
 use crate::traits::*;
 use crate::error as asn1err;
 
-#[derive(Debug, PartialEq)]
-pub struct SeqField<T: Asn1InstanciableObject> {
+#[derive(Debug, PartialEq, Default)]
+pub struct SeqField<T: Asn1Object + Default> {
     value: Option<T>
 }
 
-impl<T: Asn1InstanciableObject> SeqField<T> {
+impl<T: Asn1Object + Default> SeqField<T> {
 
     pub fn new() 
     -> SeqField<T> {
@@ -53,7 +53,7 @@ impl<T: Asn1InstanciableObject> SeqField<T> {
     }
 
     pub fn decode(&mut self, raw: &[u8]) -> asn1err::Result<usize> {
-        let mut new_subtype = T::new_default();
+        let mut new_subtype = T::default();
         let size = new_subtype.decode(raw)?;
         self.value = Some(new_subtype);
         return Ok(size);

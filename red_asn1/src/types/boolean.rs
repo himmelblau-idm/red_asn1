@@ -6,7 +6,7 @@ pub static BOOLEAN_TAG_NUMBER: u8 = 0x1;
 
 
 /// Class to encode/decode Boolean ASN1
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct Boolean {
     _value: Option<bool>
 }
@@ -36,12 +36,6 @@ impl Boolean {
         };
     }
 
-}
-
-impl Asn1InstanciableObject for Boolean {
-    fn new_default() -> Boolean {
-        return Boolean::new_empty();
-    }
 }
 
 impl Asn1Object for Boolean {
@@ -94,7 +88,7 @@ mod tests {
 
     #[test]
     fn test_create_default() {
-        let b = Boolean::new_default();
+        let b = Boolean::default();
         assert_eq!(None, b.value());
     }
 

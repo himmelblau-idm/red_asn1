@@ -8,7 +8,7 @@ use std::str;
 pub static GENERALIZED_TIME_TAG_NUMBER: u8 = 0x18;
 
 /// Class to encode/decode GeneralizedTime ASN1
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct GeneralizedTime {
     _value: Option<DateTime<Utc>>,
     format: TimeFormat
@@ -138,12 +138,6 @@ impl TimeFormat {
     }
 }
 
-impl Asn1InstanciableObject for GeneralizedTime {
-    fn new_default() -> GeneralizedTime {
-        return GeneralizedTime::new_empty();
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -162,7 +156,7 @@ mod tests {
 
     #[test]
     fn test_create_default() {
-        let b = GeneralizedTime::new_default();
+        let b = GeneralizedTime::default();
         assert_eq!(None, b.value());
     }
 

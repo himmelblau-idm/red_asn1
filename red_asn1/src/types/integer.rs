@@ -6,7 +6,7 @@ pub static INTEGER_TAG_NUMBER: u8 = 0x2;
 
 
 /// Class to encode/decode Integer ASN1
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct Integer {
     _value: Option<i64>
 }
@@ -67,12 +67,6 @@ impl Asn1Object for Integer {
 
     fn unset_value(&mut self) {
         self._value = None;
-    }
-}
-
-impl Asn1InstanciableObject for Integer {
-    fn new_default() -> Integer {
-        return Integer::new_empty();
     }
 }
 
@@ -157,7 +151,7 @@ mod tests {
 
     #[test]
     fn test_create_default() {
-        let b = Integer::new_default();
+        let b = Integer::default();
         assert_eq!(None, b.value());
     }
 

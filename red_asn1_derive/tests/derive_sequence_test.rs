@@ -141,15 +141,9 @@ fn test_encode_without_give_required_values() {
 
 #[test]
 fn test_encode_with_inner_sequence() {
-    #[derive(Sequence)]
+    #[derive(Sequence, Default)]
     #[seq(application_tag = 7)]
     struct TestSequence {}
-
-    impl Asn1InstanciableObject for TestSequence {
-        fn new_default() -> Self {
-            return TestSequence{};
-        }
-    }
 
     #[derive(Sequence)]
     struct SuperTestSequence {
@@ -160,7 +154,7 @@ fn test_encode_with_inner_sequence() {
         inner: SeqField::new()
     };
 
-    seq.set_inner(TestSequence::new_default());
+    seq.set_inner(TestSequence::default());
 
     assert_eq!(vec![0x30, 0x4, 0x67, 0x2, 0x30, 0x0], seq.encode().unwrap());
 }
@@ -503,15 +497,9 @@ fn test_decode_with_optional_and_context_tag_and_bad_type_tag() {
 
 #[test]
 fn test_decode_with_inner_sequence() {
-    #[derive(Sequence, Debug, PartialEq)]
+    #[derive(Sequence, Debug, PartialEq, Default)]
     #[seq(application_tag = 7)]
     struct TestSequence {}
-
-    impl Asn1InstanciableObject for TestSequence {
-        fn new_default() -> Self {
-            return TestSequence{};
-        }
-    }
 
     #[derive(Sequence)]
     struct SuperTestSequence {
@@ -581,18 +569,10 @@ fn test_decode_without_required_value() {
 #[should_panic (expected = "SuperTestSequence::inner => TestSequence::id => Invalid context tag: Empty")]
 #[test]
 fn test_decode_without_required_value_with_inner_sequence() {
-    #[derive(Sequence, Debug, PartialEq)]
+    #[derive(Sequence, Debug, PartialEq, Default)]
     struct TestSequence {
         #[seq_field(context_tag = 0)]
         id: SeqField<Integer>
-    }
-
-    impl Asn1InstanciableObject for TestSequence {
-        fn new_default() -> Self {
-            return TestSequence{
-                id: SeqField::new()
-            };
-        }
     }
 
     #[derive(Sequence)]

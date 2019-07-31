@@ -7,25 +7,25 @@ pub static SEQUENCE_TAG_NUMBER: u8 = 0x10;
 
 
 /// Class to encode/decode SequenceOf ASN1
-#[derive(Debug)]
-pub struct SequenceOf<T: Asn1InstanciableObject> {
+#[derive(Debug, Default)]
+pub struct SequenceOf<T: Asn1Object + Default> {
     components: Vec<T>
 }
 
-impl<T: Asn1InstanciableObject> Deref for SequenceOf<T> {
+impl<T: Asn1Object + Default> Deref for SequenceOf<T> {
     type Target = Vec<T>;
     fn deref(&self) -> &Vec<T> {
         &self.components
     }
 }
 
-impl<T: Asn1InstanciableObject> DerefMut for SequenceOf<T> {
+impl<T: Asn1Object + Default> DerefMut for SequenceOf<T> {
     fn deref_mut(&mut self) -> &mut Vec<T> {
         &mut self.components
     }
 }
 
-impl<T: Asn1InstanciableObject> SequenceOf<T> {
+impl<T: Asn1Object + Default> SequenceOf<T> {
 
     pub fn new() -> SequenceOf<T> {
         return SequenceOf{
@@ -39,7 +39,7 @@ impl<T: Asn1InstanciableObject> SequenceOf<T> {
 
 }
 
-impl <T: Asn1InstanciableObject> Asn1Object for SequenceOf<T> {
+impl <T: Asn1Object + Default> Asn1Object for SequenceOf<T> {
 
     fn tag(&self) -> Tag {
         return Tag::new_constructed_universal(SEQUENCE_TAG_NUMBER);
@@ -58,7 +58,7 @@ impl <T: Asn1InstanciableObject> Asn1Object for SequenceOf<T> {
         let mut consumed_octets = 0;
 
         while consumed_octets < raw.len() {
-            let mut component = T::new_default();
+            let mut component = T::default();
             let component_consumed_octets = component.decode(&raw[consumed_octets..])?;
 
             consumed_octets += component_consumed_octets;
@@ -75,11 +75,6 @@ impl <T: Asn1InstanciableObject> Asn1Object for SequenceOf<T> {
 
 }
 
-impl<T: Asn1InstanciableObject> Asn1InstanciableObject for SequenceOf<T> {
-    fn new_default() -> SequenceOf<T> {
-        return SequenceOf::new();
-    }
-}
 
 #[cfg(test)]
 mod tests {
@@ -94,7 +89,7 @@ mod tests {
 
     #[test]
     fn test_create_default() {
-        let seq_of: SequenceOf<Integer> = SequenceOf::new_default();
+        let seq_of: SequenceOf<Integer> = SequenceOf::default();
         assert_eq!(&Vec::<Integer>::new(), seq_of.value());
     }
 
