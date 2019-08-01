@@ -46,12 +46,6 @@ impl OctetString {
         }
     }
 
-    pub fn new_empty() -> OctetString {
-        return OctetString {
-            _value: None
-        }
-    }
-
     pub fn value(&self) -> Option<&Vec<u8>> {
         match &self._value {
             Some(ref value) => {
@@ -76,15 +70,13 @@ mod tests {
     }
 
     #[test]
-    fn test_create_empty() {
-        let b = OctetString::new_empty();
-        assert_eq!(None, b.value());
-    }
-
-    #[test]
     fn test_create_default() {
-        let b = OctetString::default();
-        assert_eq!(None, b.value());
+        assert_eq!(
+            OctetString {
+                _value: None
+            },
+            OctetString::default()
+        )
     }
 
     #[test]
