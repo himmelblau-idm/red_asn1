@@ -78,12 +78,6 @@ impl Integer {
         };
     }
 
-    pub fn new_empty() -> Integer {
-        return Integer {
-            _value: None
-        }
-    }
-
     pub fn value(&self) -> Option<&i64> {
         match &self._value {
             Some(ref value) => {
@@ -144,20 +138,18 @@ mod tests {
     }
 
     #[test]
-    fn test_create_empty() {
-        let b = Integer::new_empty();
-        assert_eq!(None, b.value());
-    }
-
-    #[test]
     fn test_create_default() {
-        let b = Integer::default();
-        assert_eq!(None, b.value());
+        assert_eq!(
+            Integer {
+                _value: None
+            },
+            Integer::default()
+        )
     }
 
     #[test]
     fn test_set_value() {
-        let mut b = Integer::new_empty();
+        let mut b = Integer::default();
         b.set_value(56);
         assert_eq!(&56, b.value().unwrap());
     }
@@ -171,7 +163,7 @@ mod tests {
 
     #[test]
     fn test_empty_integer() {
-        let integer1 = Integer::new_empty();
+        let integer1 = Integer::default();
         assert_eq!(None, integer1.value());
     }
 
