@@ -22,13 +22,6 @@ impl GeneralizedTime {
         };
     }
 
-    pub fn new_empty() -> GeneralizedTime {
-        return GeneralizedTime {
-            _value: None,
-            format: TimeFormat::default()
-        };
-    }
-
     pub fn set_format(&mut self, format: TimeFormat) {
         self.format = format;
     }
@@ -149,15 +142,14 @@ mod tests {
     }
 
     #[test]
-    fn test_create_empty() {
-        let b = GeneralizedTime::new_empty();
-        assert_eq!(None, b.value());
-    }
-
-    #[test]
     fn test_create_default() {
-        let b = GeneralizedTime::default();
-        assert_eq!(None, b.value());
+        assert_eq!(
+            GeneralizedTime {
+                _value: None,
+                format: TimeFormat::default()
+            },
+            GeneralizedTime::default()
+        )
     }
 
     #[test]
