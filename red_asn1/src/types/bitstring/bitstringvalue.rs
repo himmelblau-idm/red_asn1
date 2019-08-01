@@ -1,4 +1,5 @@
 
+/// Data type for representing the value of a BitString
 #[derive(Debug, PartialEq)]
 pub struct BitSringValue {
     bytes: Vec<u8>,

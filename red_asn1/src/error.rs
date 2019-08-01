@@ -3,9 +3,10 @@ use failure::*;
 use failure_derive::Fail;
 use std::result;
 
+/// Result that encapsulates the Error type of this library
 pub type Result<T> = result::Result<T, Error>;
 
-
+/// Error in ASN1-DER decode/encode operations
 #[derive(Debug)]
 pub struct Error {
     inner: Context<ErrorKind>
