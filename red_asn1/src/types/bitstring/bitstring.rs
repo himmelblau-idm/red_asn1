@@ -67,12 +67,6 @@ impl BitSring {
         return bs;
     }
 
-    pub fn new_empty() -> BitSring {
-        return BitSring {
-            _value: None
-        };
-    }
-
     pub fn value(&self) -> Option<&BitSringValue> {
         match &self._value {
             Some(ref value) => {
@@ -94,12 +88,6 @@ mod tests {
     fn test_create() {
         let b = BitSring::new(vec![0x0], 0);
         assert_eq!(&BitSringValue::new(vec![0x0], 0), b.value().unwrap());
-    }
-
-    #[test]
-    fn test_create_empty() {
-        let b = BitSring::new_empty();
-        assert_eq!(None, b.value());
     }
 
     #[test]
