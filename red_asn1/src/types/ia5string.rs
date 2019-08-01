@@ -72,12 +72,6 @@ impl IA5String {
         }
     }
 
-    pub fn new_empty() -> IA5String {
-        return IA5String {
-            _value: None
-        }
-    }
-
     pub fn value(&self) -> Option<&AsciiString> {
         match &self._value {
             Some(ref value) => {
@@ -101,15 +95,13 @@ mod tests {
     }
 
     #[test]
-    fn test_create_empty() {
-        let b = IA5String::new_empty();
-        assert_eq!(None, b.value());
-    }
-
-    #[test]
     fn test_create_default() {
-        let b = IA5String::default();
-        assert_eq!(None, b.value());
+        assert_eq!(
+            IA5String {
+                _value: None
+            },
+            IA5String::default()
+        )
     }
 
     #[test]
