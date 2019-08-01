@@ -18,12 +18,6 @@ impl GeneralString {
         }
     }
 
-    pub fn new_empty() -> Self {
-        return Self {
-            _value: None
-        }
-    }
-
     pub fn value(&self) -> Option<&String> {
         match &self._value {
             Some(ref value) => {
@@ -84,15 +78,13 @@ mod tests {
     }
 
     #[test]
-    fn test_create_empty() {
-        let b = GeneralString::new_empty();
-        assert_eq!(None, b.value());
-    }
-
-    #[test]
     fn test_create_default() {
-        let b = GeneralString::default();
-        assert_eq!(None, b.value());
+        assert_eq!(
+            GeneralString {
+                _value: None
+            },
+            GeneralString::default()
+        )
     }
 
     #[test]
