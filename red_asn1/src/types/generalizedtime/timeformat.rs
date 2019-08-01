@@ -5,10 +5,10 @@ use chrono::prelude::*;
 #[derive(Debug, PartialEq)]
 #[allow(non_camel_case_types)]
 pub enum TimeFormat {
-    /// Format YYYYmmddHHMMSS.DZ
+    /// Format YYYYmmddHHMMSS.DZ (Eg. "19851106210627.3Z")
     YYYYmmddHHMMSS_DZ,
 
-    /// Format YYYYmmddHHMMSSZ
+    /// Format YYYYmmddHHMMSSZ (Eg. "19851106210627Z")
     YYYYmmddHHMMSSZ
 }
 
@@ -18,28 +18,7 @@ impl Default for TimeFormat {
 
 impl TimeFormat {
 
-    /// Transforms a DateTime into a String with the specified format
-    /// 
-    /// # Example
-    /// ```
-    /// use chrono::prelude::*;
-    /// use red_asn1::TimeFormat;
-    /// 
-    /// assert_eq!(
-    ///     "19851106210627.3Z",
-    ///     TimeFormat::YYYYmmddHHMMSS_DZ.format_to_string(
-    ///         &Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)
-    ///     )
-    /// );
-    /// 
-    /// assert_eq!(
-    ///     "19851106210627Z",
-    ///     TimeFormat::YYYYmmddHHMMSSZ.format_to_string(
-    ///         &Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)
-    ///     )
-    /// );
-    /// ```
-    pub fn format_to_string(&self, datetime: &DateTime<Utc>) -> String {
+    pub(crate) fn format_to_string(&self, datetime: &DateTime<Utc>) -> String {
         match *self {
             TimeFormat::YYYYmmddHHMMSS_DZ => TimeFormat::_format_YYYYmmddHHMMSS_DZ(datetime),
             TimeFormat::YYYYmmddHHMMSSZ => datetime.format("%Y%m%d%H%M%SZ").to_string()
