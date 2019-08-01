@@ -28,9 +28,7 @@ impl<T: Asn1Object + Default> DerefMut for SequenceOf<T> {
 impl<T: Asn1Object + Default> SequenceOf<T> {
 
     pub fn new() -> SequenceOf<T> {
-        return SequenceOf{
-            components: Vec::<T>::new()
-        };
+        return Self::default();
     }
 
     pub fn value(&self) -> &Vec<T> {
