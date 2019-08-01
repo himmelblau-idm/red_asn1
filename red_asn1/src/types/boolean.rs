@@ -19,12 +19,6 @@ impl Boolean {
         };
     }
 
-    pub fn new_empty() -> Boolean {
-        return Boolean {
-            _value: None
-        };
-    }
-
     pub fn value(&self) -> Option<&bool> {
         match &self._value {
             Some(ref value) => {
@@ -78,12 +72,6 @@ mod tests {
     fn test_create() {
         let b = Boolean::new(true);
         assert_eq!(&true, b.value().unwrap());
-    }
-
-    #[test]
-    fn test_create_empty() {
-        let b = Boolean::new_empty();
-        assert_eq!(None, b.value());
     }
 
     #[test]
