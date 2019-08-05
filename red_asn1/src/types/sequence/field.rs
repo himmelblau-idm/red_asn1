@@ -1,6 +1,7 @@
 use crate::traits::*;
 use crate::error as asn1err;
 
+/// Class to represent a field of a Sequence
 #[derive(Debug, PartialEq, Default)]
 pub struct SeqField<T: Asn1Object + Default> {
     value: Option<T>
