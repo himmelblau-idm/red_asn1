@@ -8,13 +8,7 @@ pub struct SeqField<T: Asn1Object + Default> {
 
 impl<T: Asn1Object + Default> SeqField<T> {
 
-    pub fn new(value: T) -> Self {
-        return Self {
-            value: Some(value)
-        }
-    }
-
-    pub fn get_inner_value(&self) -> Option<&T> {
+    pub fn get_value(&self) -> Option<&T> {
         match self.value {
             Some(ref subtype) => {
                 return Some(&subtype);
@@ -25,7 +19,7 @@ impl<T: Asn1Object + Default> SeqField<T> {
         }
     }
 
-    pub fn set_inner_value(&mut self, value: T) {
+    pub fn set_value(&mut self, value: T) {
         self.value = Some(value);
     }
 
@@ -58,6 +52,13 @@ impl<T: Asn1Object + Default> SeqField<T> {
 
 }
 
+impl<T: Asn1Object + Default> From<T> for SeqField<T> {
+    fn from(value: T) -> Self {
+        Self { value: Some(value)}
+    }
+}
+
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -75,14 +76,50 @@ mod test {
     fn create_seq_field() {
         assert_eq!(
             SeqField{value: Some(Integer::new(1))},
-            SeqField::new(Integer::new(1))
+            SeqField::from(Integer::new(1))
         );
 
         assert_eq!(
             SeqField{value: Some(OctetString::new(vec![1,2,3,4]))},
-            SeqField::new(OctetString::new(vec![1,2,3,4]))
+            SeqField::from(OctetString::new(vec![1,2,3,4]))
         );
     }
 
+
+    #[test]
+    fn get_value() {
+        assert_eq!(
+            Some(&Integer::new(1)),
+            SeqField::from(Integer::new(1)).get_value()
+        );
+
+        assert_eq!(
+            Some(&OctetString::new(vec![1,2,3,4])),
+            SeqField::from(OctetString::new(vec![1,2,3,4])).get_value()
+        );
+
+        assert_eq!(
+            None,
+            SeqField::<Integer>::default().get_value()
+        );
+    }
+
+    #[test]
+    fn set_value() {
+        let mut field = SeqField::default();
+
+        field.set_value(Integer::new(1));
+        assert_eq!(
+            Some(&Integer::new(1)),
+            field.get_value()
+        );
+
+        let mut field = SeqField::default();
+        field.set_value(OctetString::new(vec![1,2,3,4]));
+        assert_eq!(
+            Some(&OctetString::new(vec![1,2,3,4])),
+            field.get_value()
+        );
+    }
 
 }

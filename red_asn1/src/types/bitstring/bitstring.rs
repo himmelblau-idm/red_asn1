@@ -12,6 +12,30 @@ pub struct BitSring {
     _value: Option<BitSringValue>
 }
 
+
+impl BitSring {
+
+    pub fn new(bytes: Vec<u8>, padding_length: u8) -> BitSring{
+        let bs = BitSring {
+            _value: Some(BitSringValue::new(bytes, padding_length % 8))
+        };
+        return bs;
+    }
+
+    pub fn value(&self) -> Option<&BitSringValue> {
+        match &self._value {
+            Some(ref value) => {
+                return Some(value);
+            }
+            None => {
+                return None;
+            }
+        };
+    }
+
+}
+
+
 impl Asn1Object for BitSring {
 
     fn tag(&self) -> Tag {
@@ -59,26 +83,6 @@ impl Asn1Object for BitSring {
     }
 }
 
-impl BitSring {
-    pub fn new(bytes: Vec<u8>, padding_length: u8) -> BitSring{
-        let bs = BitSring {
-            _value: Some(BitSringValue::new(bytes, padding_length % 8))
-        };
-        return bs;
-    }
-
-    pub fn value(&self) -> Option<&BitSringValue> {
-        match &self._value {
-            Some(ref value) => {
-                return Some(value);
-            }
-            None => {
-                return None;
-            }
-        };
-    }
-
-}
 
 #[cfg(test)]
 mod tests {

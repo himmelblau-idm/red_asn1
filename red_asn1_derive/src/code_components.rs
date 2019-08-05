@@ -19,7 +19,7 @@ fn code_getter(comp_def: &ComponentDefinition) -> TokenStream {
 
     return quote! {
         fn #getter_name (&self) -> Option<&#inner_type> {
-            return self.#field_name.get_inner_value();
+            return self.#field_name.get_value();
         }
     };
 }
@@ -31,7 +31,7 @@ fn code_setter(comp_def: &ComponentDefinition) -> TokenStream {
 
     return quote! {
         fn #setter_name (&mut self, value: #inner_type) {
-            return self.#field_name.set_inner_value(value);
+            return self.#field_name.set_value(value);
         }
     };
 }
