@@ -46,6 +46,12 @@ pub enum ErrorKind {
     SequenceError(String, Box<ErrorKind>)
 }
 
+impl From<ValueErrorKind> for ErrorKind {
+    fn from(kind: ValueErrorKind) -> Self {
+        return ErrorKind::InvalidValue(Box::new(kind));
+    }
+}
+
 #[derive(Clone, PartialEq, Debug, Fail)]
 pub enum TagErrorKind {
     /// Tag cannot be decoded because there are no data
@@ -155,15 +161,11 @@ impl From<ValueErrorKind> for Error {
     }
 }
 
-impl From<LengthErrorKind> for ErrorKind {
+impl From<LengthErrorKind> for Error {
     fn from(kind: LengthErrorKind) -> Self {
-        return ErrorKind::InvalidLength(Box::new(kind));
-    }
-}
-
-impl From<ValueErrorKind> for ErrorKind {
-    fn from(kind: ValueErrorKind) -> Self {
-        return ErrorKind::InvalidValue(Box::new(kind));
+        return Self {
+            inner: Context::new(ErrorKind::InvalidLength(Box::new(kind)))
+        };
     }
 }
 
