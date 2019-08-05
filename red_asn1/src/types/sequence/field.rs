@@ -8,6 +8,12 @@ pub struct SeqField<T: Asn1Object + Default> {
 
 impl<T: Asn1Object + Default> SeqField<T> {
 
+    pub fn new(value: T) -> Self {
+        return Self {
+            value: Some(value)
+        }
+    }
+
     pub fn get_inner_value(&self) -> Option<&T> {
         match self.value {
             Some(ref subtype) => {
@@ -55,15 +61,26 @@ impl<T: Asn1Object + Default> SeqField<T> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use super::super::super::Integer;
+    use super::super::super::*;
+
+    #[test]
+    fn create_default_seq_field() {
+        assert_eq!(
+            SeqField{value: None},
+            SeqField::<Integer>::default()
+        );
+    }
 
     #[test]
     fn create_seq_field() {
-        let seq_field_integer = SeqField{value: None};
+        assert_eq!(
+            SeqField{value: Some(Integer::new(1))},
+            SeqField::new(Integer::new(1))
+        );
 
         assert_eq!(
-            seq_field_integer,
-            SeqField::<Integer>::default()
+            SeqField{value: Some(OctetString::new(vec![1,2,3,4]))},
+            SeqField::new(OctetString::new(vec![1,2,3,4]))
         );
     }
 
