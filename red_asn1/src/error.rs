@@ -34,10 +34,15 @@ pub enum ErrorKind {
     #[fail (display = "Invalid length: Invalid length of length")]
     InvalidLengthOfLength,
 
+    /// No found component with the identifier specified
     #[fail (display = "No component with such identifier")]
     NoComponent,
+
+    /// Error in a field of a sequence
     #[fail (display = "{}::{} => {}", _0,_1,_2)]
     SequenceFieldError(String, String, Box<ErrorKind>),
+
+    /// Error while processing a sequence
     #[fail (display = "{} => {}", _0,_1)]
     SequenceError(String, Box<ErrorKind>)
 }
