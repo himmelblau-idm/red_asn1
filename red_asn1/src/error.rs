@@ -21,6 +21,10 @@ pub enum ErrorKind {
     #[fail (display = "{}", _0)]
     InvalidTag(Box<TagErrorKind>),
     
+    /// Error decoding length
+    #[fail (display = "{}", _0)]
+    InvalidLength(Box<LengthErrorKind>),
+
     /// Error decoding value
     #[fail (display = "{}", _0)]
     InvalidValue(Box<ValueErrorKind>),
@@ -28,11 +32,6 @@ pub enum ErrorKind {
     /// No value was provided to encode
     #[fail (display = "No value provided")]
     NoValue,
-
-    #[fail (display = "Invalid length: Empty")]
-    InvalidLengthEmpty,
-    #[fail (display = "Invalid length: Invalid length of length")]
-    InvalidLengthOfLength,
 
     /// No found component with the identifier specified
     #[fail (display = "No component with such identifier")]
@@ -60,6 +59,18 @@ pub enum TagErrorKind {
     /// Tag decoded is not the expected for the type
     #[fail (display = "Invalid {} tag: Not match with expected tag", _0)]
     Unmatched(TagClass),
+}
+
+#[derive(Clone, PartialEq, Debug, Fail)]
+pub enum LengthErrorKind {
+
+    /// No length was provided
+    #[fail (display = "Invalid length: Empty")]
+    InvalidLengthEmpty,
+
+    /// The size of the length octets (in long form) is incorrect
+    #[fail (display = "Invalid length: Invalid length of length")]
+    InvalidLengthOfLength,
 }
 
 #[derive(Clone, PartialEq, Debug, Fail)]
@@ -141,6 +152,12 @@ impl From<ValueErrorKind> for Error {
         return Self {
             inner: Context::new(ErrorKind::InvalidValue(Box::new(kind)))
         };
+    }
+}
+
+impl From<LengthErrorKind> for ErrorKind {
+    fn from(kind: LengthErrorKind) -> Self {
+        return ErrorKind::InvalidLength(Box::new(kind));
     }
 }
 
