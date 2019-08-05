@@ -167,7 +167,7 @@ fn test_encode_with_inner_sequenceof() {
     }
 
     let mut seq = TestSequence{ attrs: SeqField::default()};
-    let mut seqof_ints: SequenceOf<Integer> = SequenceOf::new();
+    let mut seqof_ints: SequenceOf<Integer> = SequenceOf::default();
     seqof_ints.push(Integer::new(1));
 
     seq.set_attrs(seqof_ints);

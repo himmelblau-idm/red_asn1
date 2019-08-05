@@ -27,10 +27,6 @@ impl<T: Asn1Object + Default> DerefMut for SequenceOf<T> {
 
 impl<T: Asn1Object + Default> SequenceOf<T> {
 
-    pub fn new() -> SequenceOf<T> {
-        return Self::default();
-    }
-
     pub fn value(&self) -> &Vec<T> {
         return &self.components;
     }
@@ -80,12 +76,6 @@ mod tests {
     use super::super::integer::{Integer, INTEGER_TAG_NUMBER};
 
     #[test]
-    fn test_create() {
-        let seq_of: SequenceOf<Integer> = SequenceOf::new();
-        assert_eq!(&Vec::<Integer>::new(), seq_of.value());
-    }
-
-    #[test]
     fn test_create_default() {
         let seq_of: SequenceOf<Integer> = SequenceOf::default();
         assert_eq!(&Vec::<Integer>::new(), seq_of.value());
@@ -93,7 +83,7 @@ mod tests {
 
     #[test]
     fn test_unset_value() {
-        let mut seq_of: SequenceOf<Integer> = SequenceOf::new();
+        let mut seq_of: SequenceOf<Integer> = SequenceOf::default();
         seq_of.push(Integer::new(9));
         seq_of.unset_value();
         assert_eq!(&Vec::<Integer>::new(), seq_of.value());
@@ -101,7 +91,7 @@ mod tests {
 
     #[test]
     fn test_encode_sequence_of_integers(){
-        let mut seq_of: SequenceOf<Integer> = SequenceOf::new();
+        let mut seq_of: SequenceOf<Integer> = SequenceOf::default();
         seq_of.push(Integer::new(9));
         seq_of.push(Integer::new(1000));
 
@@ -113,14 +103,14 @@ mod tests {
 
     #[test]
     fn test_encode_empty_sequence_of(){
-        let seq_of: SequenceOf<Integer> = SequenceOf::new();
+        let seq_of: SequenceOf<Integer> = SequenceOf::default();
 
         assert_eq!(vec![0x30, 0x0], seq_of.encode().unwrap());
     }
 
     #[test]
     fn test_decode_sequence_of_integers() {
-        let mut seq_of: SequenceOf<Integer> = SequenceOf::new();
+        let mut seq_of: SequenceOf<Integer> = SequenceOf::default();
         seq_of.decode(&[0x30, 0x7, 
                         INTEGER_TAG_NUMBER, 0x1, 0x9, 
                         INTEGER_TAG_NUMBER, 0x2, 0x3, 0xe8]).unwrap();
@@ -132,14 +122,14 @@ mod tests {
 
     #[test]
     fn test_decode_empty_sequence() {
-        let mut seq_of: SequenceOf<Integer> = SequenceOf::new();
+        let mut seq_of: SequenceOf<Integer> = SequenceOf::default();
         seq_of.decode(&[0x30, 0x0]).unwrap();
         assert_eq!(0, seq_of.len());
     }
 
     #[test]
     fn test_decode_integers_with_excesive_bytes() {
-        let mut seq_of: SequenceOf<Integer> = SequenceOf::new();
+        let mut seq_of: SequenceOf<Integer> = SequenceOf::default();
         let consumed_octets = seq_of.decode(&[0x30, 0x7, 
                                             INTEGER_TAG_NUMBER, 0x1, 0x9, 
                                             INTEGER_TAG_NUMBER, 0x2, 0x3, 0xe8, 
@@ -153,14 +143,14 @@ mod tests {
     #[should_panic(expected = "Invalid type tag: Not match with expected tag")]
     #[test]
     fn test_decode_with_invalid_sequence_of_tag() {
-        let mut seq_of: SequenceOf<Integer> = SequenceOf::new();
+        let mut seq_of: SequenceOf<Integer> = SequenceOf::default();
         seq_of.decode(&[0xff, 0x0]).unwrap();
     }
 
     #[should_panic(expected = "Invalid type tag: Not match with expected tag")]
     #[test]
     fn test_decode_with_invalid_inner_type_tag() {
-        let mut seq_of: SequenceOf<Integer> = SequenceOf::new();
+        let mut seq_of: SequenceOf<Integer> = SequenceOf::default();
         seq_of.decode(&[0x30, 0x3, 0xff, 0x1, 0x9]).unwrap();
     }
 
