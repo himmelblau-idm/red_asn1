@@ -68,7 +68,7 @@ impl Asn1Object for BitSring {
 
     fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         if raw.len() == 0 {
-            return Err(asn1err::ErrorKind::NoDataForType)?;
+            return Err(asn1err::ValueErrorKind::NoDataForType)?;
         }
 
         let (padding_length, raw_value) = raw.split_at(1);

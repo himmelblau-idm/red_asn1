@@ -52,7 +52,7 @@ impl Asn1Object for Boolean {
 
     fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         if raw.len() == 0 {
-            return Err(asn1err::ErrorKind::NoDataForType)?;
+            return Err(asn1err::ValueErrorKind::NoDataForType)?;
         }
 
         self._value = Some(raw[0] != 0);

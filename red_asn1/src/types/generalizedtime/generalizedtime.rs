@@ -62,7 +62,7 @@ impl Asn1Object for GeneralizedTime {
 
     fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         if raw.len() < 15 {
-            return Err(asn1err::ErrorKind::NoDataForType)?;
+            return Err(asn1err::ValueErrorKind::NoDataForType)?;
         }
 
         let year_str = str::from_utf8(&raw[0..4])?;
@@ -90,7 +90,7 @@ impl Asn1Object for GeneralizedTime {
         if is_utc {
             self._value = Some(Utc.ymd(year, month, day).and_hms_nano(hour, minute, second, decisecond * 100000000));
         }else {
-            return Err(asn1err::ErrorKind::InvalidValue("Local time decode is not implemented yet".to_string()))?;
+            return Err(asn1err::ValueErrorKind::ImplementationError("Local time decode is not implemented yet".to_string()))?;
         }
 
         return Ok(());

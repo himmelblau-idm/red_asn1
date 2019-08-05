@@ -52,9 +52,7 @@ impl Asn1Object for GeneralString {
     }
 
     fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
-        let value = String::from_utf8(raw.to_vec()).map_err(|_|
-            asn1err::ErrorKind::InvalidValue("Error formating non-utf8 characters".to_string())
-        )?;
+        let value = String::from_utf8(raw.to_vec())?;
 
         self._value = Some(value);
 

@@ -108,7 +108,7 @@ pub trait Asn1Object {
         let (_, raw_value) = raw.split_at(consumed_octets);
 
         if value_length > raw_value.len() {
-            return Err(asn1err::ErrorKind::NoDataForLength)?;
+            return Err(asn1err::ValueErrorKind::NoDataForLength)?;
         }
 
         let (raw_value, _) = raw_value.split_at(value_length);

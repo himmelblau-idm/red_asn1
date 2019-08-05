@@ -45,11 +45,11 @@ impl Asn1Object for Integer {
 
     fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         if raw.len() == 0 {
-            return Err(asn1err::ErrorKind::NoDataForType)?;
+            return Err(asn1err::ValueErrorKind::NoDataForType)?;
         }
 
         if raw.len() > 8 {
-            return Err(asn1err::ErrorKind::InvalidValue("Too much data for implementation".to_string()))?;
+            return Err(asn1err::ValueErrorKind::ImplementationError("Too much data for implementation".to_string()))?;
         }
 
         let signed_bit = (raw[0] & 0x80) >> 7;

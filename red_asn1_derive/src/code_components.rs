@@ -94,7 +94,7 @@ fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
                 let (_, raw_value) = raw.split_at(consumed_octets);
 
                 if value_length > raw_value.len() {
-                    return Err(red_asn1::ErrorKind::NoDataForLength)?;
+                    return Err(red_asn1::ValueErrorKind::NoDataForLength)?;
                 }
 
                 let (raw_value, _) = raw_value.split_at(value_length);
@@ -321,7 +321,7 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
             if consumed_octets < raw.len() {
                 return Err(red_asn1::ErrorKind::SequenceError(
                                 stringify!(#name).to_string(),
-                                Box::new(red_asn1::ErrorKind::NoAllDataConsumed)
+                                Box::new(red_asn1::ErrorKind::from(red_asn1::ValueErrorKind::NoAllDataConsumed))
                         ))?;
             }
 
@@ -367,7 +367,7 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
             if value_length > raw_value.len() {
                 return Err(red_asn1::ErrorKind::SequenceError( 
                     stringify!(#name).to_string(), 
-                    Box::new(red_asn1::ErrorKind::NoDataForLength)
+                    Box::new(red_asn1::ErrorKind::from(red_asn1::ValueErrorKind::NoDataForLength))
                 ))?;
             }
 
@@ -436,7 +436,7 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
                 if value_length > raw_value.len() {
                     return Err(red_asn1::ErrorKind::SequenceError( 
                         stringify!(#name).to_string(), 
-                        Box::new(red_asn1::ErrorKind::NoDataForLength)
+                        Box::new(red_asn1::ErrorKind::from(red_asn1::ValueErrorKind::NoDataForLength))
                     ))?;
                 }
 

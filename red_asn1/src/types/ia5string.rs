@@ -42,17 +42,7 @@ impl Asn1Object for IA5String {
         let mut value = AsciiString::with_capacity(raw.len());
 
         for byte in raw.iter() {
-            let ascii_char;
-            
-            match AsciiChar::from(*byte as char) {
-                Ok(value) => {
-                    ascii_char = value;
-                },
-                Err(_) => {
-                    return Err(asn1err::ErrorKind::InvalidValue("Error formating non-ascii characters".to_string()))?;
-                }
-            };
-            value.push(ascii_char);
+            value.push(AsciiChar::from(*byte as char)?);
         }
 
         self._value = Some(value);
