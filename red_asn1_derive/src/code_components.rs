@@ -63,11 +63,18 @@ fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
                     },
                     Err(error) => {
                         match error.kind() {
-                            red_asn1::ErrorKind::InvalidTypeTagHighFormNumberUnfinished => {
-                                return Err(red_asn1::ErrorKind::InvalidContextTagHighFormNumberUnfinished)?;
-                            },
-                            red_asn1::ErrorKind::InvalidTypeTagEmpty => {
-                                return Err(red_asn1::ErrorKind::InvalidContextTagEmpty)?;
+                            red_asn1::ErrorKind::InvalidTag(tag_error_kind) => {
+                                match **tag_error_kind {
+                                    red_asn1::TagErrorKind::HighFormNumberUnfinished(_) => {
+                                        return Err(red_asn1::TagErrorKind::HighFormNumberUnfinished(TagClass::Context))?;
+                                    }
+                                    red_asn1::TagErrorKind::Empty(_) => {
+                                        return Err(red_asn1::TagErrorKind::Empty(TagClass::Context))?;
+                                    }
+                                    _ => {
+                                        return Err(error);
+                                    }
+                                }
                             },
                             _ => {
                                 return Err(error);
@@ -77,7 +84,7 @@ fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
                 }
 
                 if decoded_tag != Tag::new(#context_tag_number, TagType::Constructed, TagClass::Context) {
-                    return Err(red_asn1::ErrorKind::InvalidContextTagUnmatched)?;
+                    return Err(red_asn1::TagErrorKind::Unmatched(TagClass::Context))?;
                 }
 
                 let (_, raw_length) = raw.split_at(consumed_octets);
@@ -179,16 +186,28 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
 
             if let Some(_) = component.context_tag_number {
                 invalid_tag_errors_handlers = quote! {
-                    red_asn1::ErrorKind::InvalidContextTagEmpty => {self.#unsetter_name()},
-                    red_asn1::ErrorKind::InvalidContextTagHighFormNumberUnfinished => {self.#unsetter_name()},
-                    red_asn1::ErrorKind::InvalidContextTagUnmatched => {self.#unsetter_name()},
+                    if tag_class == red_asn1::TagClass::Context {
+                        self.#unsetter_name();
+                    } else {
+                        return Err(red_asn1::ErrorKind::SequenceFieldError(
+                            stringify!(#sequence_name).to_string(), 
+                            stringify!(#component_name).to_string(),
+                            Box::new(error.kind().clone())
+                        ))?;
+                    }
                 };
 
             }else{
                 invalid_tag_errors_handlers = quote! {
-                    red_asn1::ErrorKind::InvalidTypeTagEmpty => {self.#unsetter_name()},
-                    red_asn1::ErrorKind::InvalidTypeTagUnmatched => {self.#unsetter_name()},
-                    red_asn1::ErrorKind::InvalidTypeTagHighFormNumberUnfinished => {self.#unsetter_name()},
+                    if tag_class == red_asn1::TagClass::Context {
+                        return Err(red_asn1::ErrorKind::SequenceFieldError(
+                            stringify!(#sequence_name).to_string(), 
+                            stringify!(#component_name).to_string(),
+                            Box::new(error.kind().clone())
+                        ))?;
+                    } else {
+                        self.#unsetter_name();
+                    }
                 };
             }
 
@@ -201,7 +220,19 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
                     },
                     Err(error) => {
                         match error.kind() {
-                            #invalid_tag_errors_handlers
+                            red_asn1::ErrorKind::InvalidTag(tag_error_kind) => {
+                                match **tag_error_kind {
+                                    TagErrorKind::Empty(tag_class) => {
+                                        #invalid_tag_errors_handlers
+                                    }
+                                    TagErrorKind::HighFormNumberUnfinished(tag_class) => {
+                                        #invalid_tag_errors_handlers
+                                    }
+                                    TagErrorKind::Unmatched(tag_class) => {
+                                        #invalid_tag_errors_handlers
+                                    }
+                                }
+                            },
                             _ => {
                                 return Err(red_asn1::ErrorKind::SequenceFieldError(
                                     stringify!(#sequence_name).to_string(), 
@@ -376,7 +407,7 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
                 let consumed_octets = decoded_tag.decode(raw_tag)?;
 
                 if decoded_tag != Tag::new(#application_tag_number, TagType::Constructed, TagClass::Application) {
-                    return Err(red_asn1::ErrorKind::InvalidApplicationTagUnmatched)?;
+                    return Err(red_asn1::TagErrorKind::Unmatched(TagClass::Application))?;
                 }
 
                 return Ok(consumed_octets);

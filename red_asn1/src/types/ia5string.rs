@@ -136,7 +136,7 @@ mod tests {
                                         0x22, 0x22, 0x22]));
     }
 
-    #[should_panic (expected = "Invalid type tag: Not match with expected tag")]
+    #[should_panic (expected = "Invalid universal tag: Not match with expected tag")]
     #[test]
     fn test_decode_with_invalid_tag() {
         _parse(&[0x7, 0x1, 0x0]);

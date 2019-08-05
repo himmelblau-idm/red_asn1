@@ -215,7 +215,7 @@ mod tests {
         assert_eq!((Integer::new(-3310595109), 7), _parse_with_consumed_octets(&[0x2, 0x5, 0xFF, 0x3A, 0xAC, 0x53, 0xDB, 0x22]));
     }
 
-    #[should_panic (expected = "Invalid type tag: Not match with expected tag")]
+    #[should_panic (expected = "Invalid universal tag: Not match with expected tag")]
     #[test]
     fn test_decode_with_invalid_tag() {
         _parse(&[0x7, 0x1, 0x0]);

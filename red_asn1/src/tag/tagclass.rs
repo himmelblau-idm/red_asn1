@@ -1,4 +1,4 @@
-use std::convert::From;
+use std::fmt;
 
 /// Enum with the different tag classes
 /// * Universal: basic common types that are the same in all applications, defined in X.208 (all defined in this library are of this type)
@@ -24,4 +24,26 @@ impl From<u8> for TagClass {
             _ => unreachable!()
         }
     }
+}
+
+impl fmt::Display for TagClass {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            TagClass::Universal => {
+                write!(f, "universal")
+            }
+            TagClass::Application => {
+                write!(f, "application")
+            }
+            TagClass::Context => {
+                write!(f, "context")
+            }
+            TagClass::Private => {
+                write!(f, "private")
+            }
+        }
+        
+    }
+
 }

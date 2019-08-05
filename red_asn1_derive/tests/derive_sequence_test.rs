@@ -208,7 +208,7 @@ fn test_decode_empty_with_excesive_bytes() {
     assert_eq!(2, consumed_octets);
 }
 
-#[should_panic (expected = "Invalid type tag: Not match with expected tag")]
+#[should_panic (expected = "Invalid universal tag: Not match with expected tag")]
 #[test]
 fn test_decode_with_invalid_tag() {
     #[derive(Sequence)]
@@ -285,7 +285,7 @@ fn test_decode_with_optional_and_context_tag() {
     assert_eq!(None, p.get_age());
 }
 
-#[should_panic(expected = "Invalid type tag: Empty")]
+#[should_panic(expected = "Invalid universal tag: Empty")]
 #[test]
 fn test_decode_with_optional_and_context_tag_bad_context_length() {
 
@@ -317,7 +317,7 @@ fn test_bad_decode_optional_context_tag_bad_context_tag() {
     p.decode(&[0x30, 0x1, 0xee]).unwrap();
 }
 
-#[should_panic(expected =  "Person => Invalid type tag: Not match with expected tag")]
+#[should_panic(expected =  "Person => Invalid universal tag: Not match with expected tag")]
 #[test]
 fn test_decode_bad_sequence_type_tag() {
 
@@ -367,7 +367,7 @@ fn test_decode_sequence_application_tag_bad_length() {
     p.decode(&[0x60, 0x81]).unwrap();
 }
 
-#[should_panic(expected =  "Person::age => Invalid type tag: Not match with expected tag")]
+#[should_panic(expected =  "Person::age => Invalid universal tag: Not match with expected tag")]
 #[test]
 fn test_bad_decode_optional_context_tag_bad_type_tag() {
 
@@ -478,7 +478,7 @@ fn test_decode_with_optional_without_context_tag() {
 }
 
 
-#[should_panic (expected = "TestSequence::id => Invalid type tag: Not match with expected tag")]
+#[should_panic (expected = "TestSequence::id => Invalid universal tag: Not match with expected tag")]
 #[test]
 fn test_decode_with_optional_and_context_tag_and_bad_type_tag() {
     #[derive(Sequence)]

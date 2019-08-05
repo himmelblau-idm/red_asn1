@@ -74,7 +74,7 @@ impl Tag {
     pub fn decode(&mut self, raw: &[u8]) -> asn1err::Result<usize> {
         let raw_len = raw.len();
         if raw_len == 0 {
-            return Err(asn1err::ErrorKind::InvalidTypeTagEmpty)?;
+            return Err(asn1err::TagErrorKind::Empty(TagClass::Universal))?;
         }
 
         let mut consumed_octets = 1;
@@ -85,7 +85,7 @@ impl Tag {
         let mut tag_number = octet & 0x1f;
 
         if tag_number == 0x1f {
-            let (tag_number_long_form, octets_consumed_long_form) = self._decode_tag_number_long_form(raw)?;
+            let (tag_number_long_form, octets_consumed_long_form) = self._decode_high_tag_number(raw)?;
             consumed_octets += octets_consumed_long_form;
             tag_number = tag_number_long_form;
         }
@@ -97,7 +97,7 @@ impl Tag {
         return Ok(consumed_octets);
     }
 
-    fn _decode_tag_number_long_form(&self, raw: &[u8]) -> asn1err::Result<(u8, usize)> {
+    fn _decode_high_tag_number(&self, raw: &[u8]) -> asn1err::Result<(u8, usize)> {
         let mut consumed_octets = 1;
         let mut tag_number: u8 = 0;
         while consumed_octets < raw.len() {
@@ -109,7 +109,7 @@ impl Tag {
             consumed_octets += 1;
         }
         if consumed_octets == raw.len() {
-            return Err(asn1err::ErrorKind::InvalidTypeTagHighFormNumberUnfinished)?;
+            return Err(asn1err::TagErrorKind::HighFormNumberUnfinished(TagClass::Universal))?;
         }
 
         return Ok((tag_number,consumed_octets));
@@ -179,14 +179,14 @@ mod tests {
         assert_eq!((Tag::new(198, TagType::Primitive, TagClass::Private), 3), _parse_tag_with_consumed_octets(vec![0xdf, 0xc6, 0x01, 0x01, 0x02]));
     }
 
-    #[should_panic (expected = "Invalid type tag: Empty")]
+    #[should_panic (expected = "Invalid universal tag: Empty")]
     #[test]
     fn test_decode_empty_tag() {
         _parse_tag(vec![]);
     }
     
 
-    #[should_panic (expected = "Invalid type tag: High form number unfinished")]
+    #[should_panic (expected = "Invalid universal tag: High form number unfinished")]
     #[test]
     fn test_decode_invalid_tag_with_unfinished_tag_number() {
         _parse_tag(vec![0x1F, 0x80, 0x81]);

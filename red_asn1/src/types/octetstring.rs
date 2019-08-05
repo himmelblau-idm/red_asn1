@@ -113,7 +113,7 @@ mod tests {
         0x01, 0x02, 0x03, 0x04]));
     }
 
-    #[should_panic (expected = "Invalid type tag: Not match with expected tag")]
+    #[should_panic (expected = "Invalid universal tag: Not match with expected tag")]
     #[test]
     fn test_decode_with_invalid_tag() {
         _parse_octet_string(&[0x7, 0x1, 0x0]);

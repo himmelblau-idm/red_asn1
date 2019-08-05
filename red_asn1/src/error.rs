@@ -2,6 +2,7 @@ use std::fmt;
 use failure::*;
 use failure_derive::Fail;
 use std::result;
+use crate::tag::*;
 
 /// Result that encapsulates the Error type of this library
 pub type Result<T> = result::Result<T, Error>;
@@ -12,26 +13,13 @@ pub struct Error {
     inner: Context<ErrorKind>
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Fail)]
+/// Type of error
+#[derive(Clone, Debug, PartialEq, Fail)]
 pub enum ErrorKind {
-    #[fail (display = "Invalid type tag: Empty")]
-    InvalidTypeTagEmpty,
-    #[fail (display = "Invalid type tag: High form number unfinished")]
-    InvalidTypeTagHighFormNumberUnfinished,
-    #[fail (display = "Invalid type tag: Not match with expected tag")]
-    InvalidTypeTagUnmatched,
-    #[fail (display = "Invalid context tag: Empty tag")]
-    InvalidContextTagEmpty,
-    #[fail (display = "Invalid context tag: High form number unfinished")]
-    InvalidContextTagHighFormNumberUnfinished,
-    #[fail (display = "Invalid context tag: Not match with expected tag")]
-    InvalidContextTagUnmatched,
-    #[fail (display = "Invalid application tag: Empty tag")]
-    InvalidApplicationTagEmpty,
-    #[fail (display = "Invalid application tag: High form number unfinished")]
-    InvalidApplicationTagHighFormNumberUnfinished,
-    #[fail (display = "Invalid application tag: Not match with expected tag")]
-    InvalidApplicationTagUnmatched,
+    /// Error decoding tag
+    #[fail (display = "{}", _0)]
+    InvalidTag(Box<TagErrorKind>),
+    
     #[fail (display = "Invalid length: Empty")]
     InvalidLengthEmpty,
     #[fail (display = "Invalid length: Invalid length of length")]
@@ -52,6 +40,21 @@ pub enum ErrorKind {
     SequenceFieldError(String, String, Box<ErrorKind>),
     #[fail (display = "{} => {}", _0,_1)]
     SequenceError(String, Box<ErrorKind>)
+}
+
+#[derive(Clone, PartialEq, Debug, Fail)]
+pub enum TagErrorKind {
+    /// Tag cannot be decoded because there are no data
+    #[fail (display = "Invalid {} tag: Empty", _0)]
+    Empty(TagClass),
+
+    /// All data was consumed but tag length octets did not finished (high tag number form)
+    #[fail (display = "Invalid {} tag: High form number unfinished", _0)]
+    HighFormNumberUnfinished(TagClass),
+
+    /// Tag decoded is not the expected for the type
+    #[fail (display = "Invalid {} tag: Not match with expected tag", _0)]
+    Unmatched(TagClass),
 }
 
 impl Error {
@@ -86,6 +89,15 @@ impl std::convert::From<ErrorKind> for Error {
     }
 }
 
+
+impl From<TagErrorKind> for Error {
+    fn from(kind: TagErrorKind) -> Self {
+        return Self {
+            inner: Context::new(ErrorKind::InvalidTag(Box::new(kind)))
+        };
+    }
+}
+
 impl std::convert::From<Context<ErrorKind>> for Error {
     fn from(inner: Context<ErrorKind>) -> Self {
         return Self { inner };
@@ -106,4 +118,33 @@ impl std::convert::From<std::num::ParseIntError> for Error {
             inner: Context::new(ErrorKind::InvalidValue("Error parsing to int".to_string()))
         };
     }
+}
+
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn raise_empty_tag_error() {
+        let error_kind = super::Error::from(TagErrorKind::Empty(TagClass::Context));
+
+        match error_kind.kind() {
+            ErrorKind::InvalidTag(tag_error_kind) => {
+                match **tag_error_kind {
+                    TagErrorKind::Empty(tag_class) => {
+                        assert_eq!(TagClass::Context, tag_class)
+                    }
+                    _ => {
+                        unreachable!()
+                    }
+                }
+            }
+            _ => {
+                unreachable!()
+            }
+        }
+
+    }
+
 }
