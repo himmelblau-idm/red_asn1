@@ -13,12 +13,6 @@ pub struct Boolean {
 
 impl Boolean {
 
-    pub fn new(value: bool) -> Boolean {
-        return Boolean {
-            _value: Some(value)
-        };
-    }
-
     pub fn value(&self) -> Option<&bool> {
         match &self._value {
             Some(ref value) => {
@@ -64,13 +58,22 @@ impl Asn1Object for Boolean {
     }
 }
 
+impl From<bool> for Boolean {
+    fn from(value: bool) -> Self {
+        return Self {
+            _value: Some(value)
+        };
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_create() {
-        let b = Boolean::new(true);
+        let b = Boolean::from(true);
         assert_eq!(&true, b.value().unwrap());
     }
 
@@ -82,33 +85,33 @@ mod tests {
 
     #[test]
     fn test_unset_value() {
-        let mut b = Boolean::new(true);
+        let mut b = Boolean::from(true);
         b.unset_value();
         assert_eq!(None, b.value());
     }
 
     #[test]
     fn test_encode() {
-        assert_eq!(vec![0x1, 0x1, 0x0], Boolean::new(false).encode().unwrap());
-        assert_eq!(vec![0x1, 0x1, 0xff], Boolean::new(true).encode().unwrap());
+        assert_eq!(vec![0x1, 0x1, 0x0], Boolean::from(false).encode().unwrap());
+        assert_eq!(vec![0x1, 0x1, 0xff], Boolean::from(true).encode().unwrap());
     }
 
     #[test]
     fn test_decode() {
-        assert_eq!(Boolean::new(false), _parse(&[0x1, 0x1, 0x0]));
-        assert_eq!(Boolean::new(true), _parse(&[0x1, 0x1, 0xff]));
-        assert_eq!(Boolean::new(true), _parse(&[0x1, 0x1, 0x01]));
-        assert_eq!(Boolean::new(true), _parse(&[0x1, 0x1, 0x7b]));
+        assert_eq!(Boolean::from(false), _parse(&[0x1, 0x1, 0x0]));
+        assert_eq!(Boolean::from(true), _parse(&[0x1, 0x1, 0xff]));
+        assert_eq!(Boolean::from(true), _parse(&[0x1, 0x1, 0x01]));
+        assert_eq!(Boolean::from(true), _parse(&[0x1, 0x1, 0x7b]));
     }
 
     #[test]
     fn test_decode_with_excesive_bytes() {
-        assert_eq!((Boolean::new(false), 3), _parse_with_consumed_octets(&[0x1, 0x1, 0x0, 0x1]));
-        assert_eq!((Boolean::new(true), 3), _parse_with_consumed_octets(&[0x1, 0x1, 0xff, 0x0, 0x1, 0x2]));
-        assert_eq!((Boolean::new(true), 3), _parse_with_consumed_octets(&[0x1, 0x1, 0x01, 0x0, 0x1]));
-        assert_eq!((Boolean::new(true), 3), _parse_with_consumed_octets(&[0x1, 0x1, 0x7b, 0x0]));
+        assert_eq!((Boolean::from(false), 3), _parse_with_consumed_octets(&[0x1, 0x1, 0x0, 0x1]));
+        assert_eq!((Boolean::from(true), 3), _parse_with_consumed_octets(&[0x1, 0x1, 0xff, 0x0, 0x1, 0x2]));
+        assert_eq!((Boolean::from(true), 3), _parse_with_consumed_octets(&[0x1, 0x1, 0x01, 0x0, 0x1]));
+        assert_eq!((Boolean::from(true), 3), _parse_with_consumed_octets(&[0x1, 0x1, 0x7b, 0x0]));
 
-        assert_eq!((Boolean::new(false), 4), _parse_with_consumed_octets(&[0x1, 0x2, 0x0, 0x1]));
+        assert_eq!((Boolean::from(false), 4), _parse_with_consumed_octets(&[0x1, 0x2, 0x0, 0x1]));
     }
 
     #[should_panic (expected = "Invalid universal tag: Not match with expected tag")]
@@ -128,7 +131,7 @@ mod tests {
     }
 
     fn _parse_with_consumed_octets(raw: &[u8]) -> (Boolean, usize) {
-        let mut b = Boolean::new(false);
+        let mut b = Boolean::from(false);
         let consumed_octets = b.decode(raw).unwrap();
         return (b, consumed_octets);
     }
