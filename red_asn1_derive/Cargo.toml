@@ -4,7 +4,7 @@ description = "macros for red_asn1"
 version = "0.1.0"
 authors = ["Zer1t0 <Zer1t0@hotmail.com>"]
 edition = "2018"
-license = "GNU AGPLv3"
+license = "AGPL-3.0"
 repository = "https://github.com/Zer1t0/red_asn1"
 
 [lib]
