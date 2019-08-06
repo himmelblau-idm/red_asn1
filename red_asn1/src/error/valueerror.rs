@@ -1,5 +1,8 @@
 use failure_derive::Fail;
 
+/// Error related to type value encoding/decoding, subtype of [`ErrorKind::InvalidValue`]
+/// 
+/// [`ErrorKind::InvalidValue`]: ./enum.ErrorKind.html#variant.InvalidValue
 #[derive(Clone, PartialEq, Debug, Fail)]
 pub enum ValueErrorKind {
     /// There are no enough data provided for the length specified

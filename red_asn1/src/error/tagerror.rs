@@ -1,6 +1,10 @@
 use failure_derive::Fail;
 use crate::tag::*;
 
+
+/// Error related to type tag encoding/decoding, subtype of [`ErrorKind::InvalidTag`]
+/// 
+/// [`ErrorKind::InvalidTag`]: ./enum.ErrorKind.html#variant.InvalidTag
 #[derive(Clone, PartialEq, Debug, Fail)]
 pub enum TagErrorKind {
     /// Tag cannot be decoded because there are no data
