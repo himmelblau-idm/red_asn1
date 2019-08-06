@@ -15,12 +15,7 @@ pub struct GeneralizedTime {
 }
 
 impl GeneralizedTime {
-    pub fn new(value: DateTime<Utc>) -> GeneralizedTime {
-        return GeneralizedTime {
-            _value: Some(value),
-            format: TimeFormat::default()
-        };
-    }
+    
 
     pub fn set_format(&mut self, format: TimeFormat) {
         self.format = format;
@@ -101,13 +96,22 @@ impl Asn1Object for GeneralizedTime {
     }
 }
 
+impl From<DateTime<Utc>> for GeneralizedTime {
+    fn from(value: DateTime<Utc>) -> Self {
+        return Self {
+            _value: Some(value),
+            format: TimeFormat::default()
+        };
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_create() {
-        let b = GeneralizedTime::new(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000));
+        let b = GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000));
         assert_eq!(&Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000), b.value().unwrap());
     }
 
@@ -124,7 +128,7 @@ mod tests {
 
     #[test]
     fn test_unset_value() {
-        let mut b = GeneralizedTime::new(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000));
+        let mut b = GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000));
         b.unset_value();
         assert_eq!(None, b.value());
     }
@@ -133,12 +137,12 @@ mod tests {
     fn test_encode_generalized_time() {
         assert_eq!(vec![0x18, 0x11, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 
                         0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33, 0x5a],
-        GeneralizedTime::new(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)).encode().unwrap());
+        GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)).encode().unwrap());
     }
 
     #[test]
     fn test_encode_generalized_time_without_deciseconds() {
-        let mut gen_time = GeneralizedTime::new(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000));
+        let mut gen_time = GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000));
         gen_time.set_format(TimeFormat::YYYYmmddHHMMSSZ);
         assert_eq!(vec![0x18, 0xf, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 
                         0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x5a],
@@ -147,21 +151,21 @@ mod tests {
 
     #[test]
     fn test_decode() {
-        assert_eq!(GeneralizedTime::new(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)),
+        assert_eq!(GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)),
             _parse(&[0x18, 0x11, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 
             0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33, 0x5a]));
     }
 
     #[test]
     fn test_encode_without_deciseconds() {
-        assert_eq!(GeneralizedTime::new(Utc.ymd(1985, 11, 6).and_hms(21, 6, 27)),
+        assert_eq!(GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms(21, 6, 27)),
                     _parse(&[0x18, 0xf, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 
                     0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x5a]));
     }
 
     #[test]
     fn test_decode_with_excesive_bytes() {
-        assert_eq!((GeneralizedTime::new(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)), 19),
+        assert_eq!((GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)), 19),
             _parse_with_consumed_octets(&[0x18, 0x11, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 
             0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33, 0x5a, 
             0x22, 0x22, 0x22]));
@@ -200,7 +204,7 @@ mod tests {
     }
 
     fn _parse_with_consumed_octets(raw: &[u8]) -> (GeneralizedTime, usize) {
-        let mut b = GeneralizedTime::new(Utc::now());
+        let mut b = GeneralizedTime::from(Utc::now());
         let consumed_octets = b.decode(raw).unwrap();
         return (b, consumed_octets);
     }
