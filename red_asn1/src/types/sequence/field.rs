@@ -76,8 +76,8 @@ mod test {
     #[test]
     fn create_seq_field() {
         assert_eq!(
-            SeqField{value: Some(Integer::new(1))},
-            SeqField::from(Integer::new(1))
+            SeqField{value: Some(Integer::from(1))},
+            SeqField::from(Integer::from(1))
         );
 
         assert_eq!(
@@ -90,8 +90,8 @@ mod test {
     #[test]
     fn get_value() {
         assert_eq!(
-            Some(&Integer::new(1)),
-            SeqField::from(Integer::new(1)).get_value()
+            Some(&Integer::from(1)),
+            SeqField::from(Integer::from(1)).get_value()
         );
 
         assert_eq!(
@@ -109,9 +109,9 @@ mod test {
     fn set_value() {
         let mut field = SeqField::default();
 
-        field.set_value(Integer::new(1));
+        field.set_value(Integer::from(1));
         assert_eq!(
-            Some(&Integer::new(1)),
+            Some(&Integer::from(1)),
             field.get_value()
         );
 

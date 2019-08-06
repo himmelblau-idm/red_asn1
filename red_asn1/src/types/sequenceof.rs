@@ -84,7 +84,7 @@ mod tests {
     #[test]
     fn test_unset_value() {
         let mut seq_of: SequenceOf<Integer> = SequenceOf::default();
-        seq_of.push(Integer::new(9));
+        seq_of.push(Integer::from(9));
         seq_of.unset_value();
         assert_eq!(&Vec::<Integer>::new(), seq_of.value());
     }
@@ -92,8 +92,8 @@ mod tests {
     #[test]
     fn test_encode_sequence_of_integers(){
         let mut seq_of: SequenceOf<Integer> = SequenceOf::default();
-        seq_of.push(Integer::new(9));
-        seq_of.push(Integer::new(1000));
+        seq_of.push(Integer::from(9));
+        seq_of.push(Integer::from(1000));
 
         assert_eq!(vec![0x30, 0x7, 
                         INTEGER_TAG_NUMBER, 0x1, 0x9, 
@@ -115,8 +115,8 @@ mod tests {
                         INTEGER_TAG_NUMBER, 0x1, 0x9, 
                         INTEGER_TAG_NUMBER, 0x2, 0x3, 0xe8]).unwrap();
 
-        assert_eq!(Integer::new(9), seq_of[0]);
-        assert_eq!(Integer::new(1000), seq_of[1]);
+        assert_eq!(Integer::from(9), seq_of[0]);
+        assert_eq!(Integer::from(1000), seq_of[1]);
 
     }
 
@@ -136,8 +136,8 @@ mod tests {
                                             0xff, 0xff]).unwrap();
         
         assert_eq!(9, consumed_octets);
-        assert_eq!(Integer::new(9), seq_of[0]);
-        assert_eq!(Integer::new(1000), seq_of[1]);
+        assert_eq!(Integer::from(9), seq_of[0]);
+        assert_eq!(Integer::from(1000), seq_of[1]);
     }
 
     #[should_panic(expected = "Invalid universal tag: Not match with expected tag")]

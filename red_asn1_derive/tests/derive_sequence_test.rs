@@ -13,10 +13,10 @@ fn test_define_simple() {
         id: SeqField::default(),
         data: SeqField::default()
     };
-    seq.set_id(Integer::new(9));
+    seq.set_id(Integer::from(9));
     seq.set_data(OctetString::new(vec![1,2,3,4]));
 
-    assert_eq!(&Integer::new(9), seq.get_id().unwrap());
+    assert_eq!(&Integer::from(9), seq.get_id().unwrap());
     assert_eq!(&OctetString::new(vec![1,2,3,4]), seq.get_data().unwrap());
 }
 
@@ -68,7 +68,7 @@ fn test_encode() {
     let mut p = Person{
         age: SeqField::default(),
     };
-    p.set_age(Integer::new(9));
+    p.set_age(Integer::from(9));
 
     assert_eq!(vec![0x30, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x9], p.encode().unwrap());
 }
@@ -85,7 +85,7 @@ fn test_encode_with_context_tags() {
     let mut p = Person{
         age: SeqField::default(),
     };
-    p.set_age(Integer::new(9));
+    p.set_age(Integer::from(9));
 
     assert_eq!(vec![0x30, 0x5, 
                     0xa0, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x9], p.encode().unwrap());
@@ -103,9 +103,9 @@ fn test_encode_with_optional_component() {
     let mut p = Person{
         age: SeqField::default(),
     };
-    p.set_age(Integer::new(9));
+    p.set_age(Integer::from(9));
 
-    assert_eq!(&Integer::new(9), p.get_age().unwrap());
+    assert_eq!(&Integer::from(9), p.get_age().unwrap());
 }
 
 #[test]
@@ -168,7 +168,7 @@ fn test_encode_with_inner_sequenceof() {
 
     let mut seq = TestSequence{ attrs: SeqField::default()};
     let mut seqof_ints: SequenceOf<Integer> = SequenceOf::default();
-    seqof_ints.push(Integer::new(1));
+    seqof_ints.push(Integer::from(1));
 
     seq.set_attrs(seqof_ints);
 
@@ -232,7 +232,7 @@ fn test_decode_with_context_tags() {
     };
     p.decode(&[0x30, 0x5, 0xa0, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x9]).unwrap();
 
-    assert_eq!(&Integer::new(9), p.get_age().unwrap());
+    assert_eq!(&Integer::from(9), p.get_age().unwrap());
 }
 
 #[should_panic(expected =  "Invalid value: Not all octects were consumed")]
@@ -526,7 +526,7 @@ fn test_decode_unsetting_optional_value() {
         id: SeqField::default()
     };
 
-    seq.set_id(Integer::new(9));
+    seq.set_id(Integer::from(9));
     seq.decode(&[0x30, 0x0]).unwrap();
 
     assert_eq!(None, seq.get_id());
@@ -546,7 +546,7 @@ fn test_decode_with_inner_sequenceof() {
 
     let seqof_ints = seq.get_attrs().unwrap();
     assert_eq!(1, seqof_ints.len());
-    assert_eq!(&Integer::new(1), &seqof_ints[0]);
+    assert_eq!(&Integer::from(1), &seqof_ints[0]);
 }
 
 

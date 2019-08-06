@@ -72,11 +72,6 @@ impl Asn1Object for Integer {
 
 
 impl Integer {
-    pub fn new(value: i64) -> Integer{
-        return Integer{
-            _value: Some(value)
-        };
-    }
 
     pub fn value(&self) -> Option<&i64> {
         match &self._value {
@@ -127,13 +122,21 @@ impl Integer {
     
 }
 
+impl From<i64> for Integer {
+    fn from(int: i64) -> Self {
+        return Integer{
+            _value: Some(int)
+        };
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_create() {
-        let b = Integer::new(78);
+        let b = Integer::from(78);
         assert_eq!(&78, b.value().unwrap());
     }
 
@@ -156,7 +159,7 @@ mod tests {
 
     #[test]
     fn test_unset_value() {
-        let mut b = Integer::new(78);
+        let mut b = Integer::from(78);
         b.unset_value();
         assert_eq!(None, b.value());
     }
@@ -169,50 +172,50 @@ mod tests {
 
     #[test]
     fn test_encode() {
-        assert_eq!(vec![0x2, 0x1, 0x0], Integer::new(0).encode().unwrap());
-        assert_eq!(vec![0x2, 0x1, 0x1], Integer::new(1).encode().unwrap());
-        assert_eq!(vec![0x2, 0x1, 0xff], Integer::new(-1).encode().unwrap());
+        assert_eq!(vec![0x2, 0x1, 0x0], Integer::from(0).encode().unwrap());
+        assert_eq!(vec![0x2, 0x1, 0x1], Integer::from(1).encode().unwrap());
+        assert_eq!(vec![0x2, 0x1, 0xff], Integer::from(-1).encode().unwrap());
 
-        assert_eq!(vec![0x2, 0x1, 0x7F], Integer::new(127).encode().unwrap());
-        assert_eq!(vec![0x2, 0x2, 0x00, 0x80], Integer::new(128).encode().unwrap());
-        assert_eq!(vec![0x2, 0x2, 0x01, 0x00], Integer::new(256).encode().unwrap());
-        assert_eq!(vec![0x2, 0x1, 0x80], Integer::new(-128).encode().unwrap());
-        assert_eq!(vec![0x2, 0x2, 0xFF, 0x7F], Integer::new(-129).encode().unwrap());
+        assert_eq!(vec![0x2, 0x1, 0x7F], Integer::from(127).encode().unwrap());
+        assert_eq!(vec![0x2, 0x2, 0x00, 0x80], Integer::from(128).encode().unwrap());
+        assert_eq!(vec![0x2, 0x2, 0x01, 0x00], Integer::from(256).encode().unwrap());
+        assert_eq!(vec![0x2, 0x1, 0x80], Integer::from(-128).encode().unwrap());
+        assert_eq!(vec![0x2, 0x2, 0xFF, 0x7F], Integer::from(-129).encode().unwrap());
 
-        assert_eq!(vec![0x2, 0x5, 0x00, 0xF8, 0x45, 0x33, 0x8], Integer::new(4165284616).encode().unwrap());
-        assert_eq!(vec![0x2, 0x5, 0xFF, 0x3A, 0xAC, 0x53, 0xDB], Integer::new(-3310595109).encode().unwrap());
+        assert_eq!(vec![0x2, 0x5, 0x00, 0xF8, 0x45, 0x33, 0x8], Integer::from(4165284616).encode().unwrap());
+        assert_eq!(vec![0x2, 0x5, 0xFF, 0x3A, 0xAC, 0x53, 0xDB], Integer::from(-3310595109).encode().unwrap());
     }
 
     #[test]
     fn test_decode() {
-        assert_eq!(Integer::new(0), _parse(&[0x2, 0x1, 0x0]));
-        assert_eq!(Integer::new(1), _parse(&[0x2, 0x1, 0x1]));
-        assert_eq!(Integer::new(-1), _parse(&[0x2, 0x1, 0xff]));
+        assert_eq!(Integer::from(0), _parse(&[0x2, 0x1, 0x0]));
+        assert_eq!(Integer::from(1), _parse(&[0x2, 0x1, 0x1]));
+        assert_eq!(Integer::from(-1), _parse(&[0x2, 0x1, 0xff]));
 
-        assert_eq!(Integer::new(127), _parse(&[0x2, 0x1, 0x7F]));
-        assert_eq!(Integer::new(128), _parse(&[0x2, 0x2, 0x00, 0x80]));
-        assert_eq!(Integer::new(256), _parse(&[0x2, 0x2, 0x01, 0x00]));
-        assert_eq!(Integer::new(-128), _parse(&[0x2, 0x1, 0x80]));
-        assert_eq!(Integer::new(-129), _parse(&[0x2, 0x2, 0xFF, 0x7F]));
+        assert_eq!(Integer::from(127), _parse(&[0x2, 0x1, 0x7F]));
+        assert_eq!(Integer::from(128), _parse(&[0x2, 0x2, 0x00, 0x80]));
+        assert_eq!(Integer::from(256), _parse(&[0x2, 0x2, 0x01, 0x00]));
+        assert_eq!(Integer::from(-128), _parse(&[0x2, 0x1, 0x80]));
+        assert_eq!(Integer::from(-129), _parse(&[0x2, 0x2, 0xFF, 0x7F]));
 
-        assert_eq!(Integer::new(4165284616), _parse(&[0x2, 0x5, 0x00, 0xF8, 0x45, 0x33, 0x8]));
-        assert_eq!(Integer::new(-3310595109), _parse(&[0x2, 0x5, 0xFF, 0x3A, 0xAC, 0x53, 0xDB]));
+        assert_eq!(Integer::from(4165284616), _parse(&[0x2, 0x5, 0x00, 0xF8, 0x45, 0x33, 0x8]));
+        assert_eq!(Integer::from(-3310595109), _parse(&[0x2, 0x5, 0xFF, 0x3A, 0xAC, 0x53, 0xDB]));
     }
 
     #[test]
     fn test_decode_with_excesive_bytes() {
-        assert_eq!((Integer::new(0), 3), _parse_with_consumed_octets(&[0x2, 0x1, 0x0, 0x22]));
-        assert_eq!((Integer::new(1), 3), _parse_with_consumed_octets(&[0x2, 0x1, 0x1, 0x22]));
-        assert_eq!((Integer::new(-1), 3), _parse_with_consumed_octets(&[0x2, 0x1, 0xff, 0x22]));
+        assert_eq!((Integer::from(0), 3), _parse_with_consumed_octets(&[0x2, 0x1, 0x0, 0x22]));
+        assert_eq!((Integer::from(1), 3), _parse_with_consumed_octets(&[0x2, 0x1, 0x1, 0x22]));
+        assert_eq!((Integer::from(-1), 3), _parse_with_consumed_octets(&[0x2, 0x1, 0xff, 0x22]));
 
-        assert_eq!((Integer::new(127), 3), _parse_with_consumed_octets(&[0x2, 0x1, 0x7F, 0x22]));
-        assert_eq!((Integer::new(128), 4), _parse_with_consumed_octets(&[0x2, 0x2, 0x00, 0x80, 0x22]));
-        assert_eq!((Integer::new(256), 4), _parse_with_consumed_octets(&[0x2, 0x2, 0x01, 0x00, 0x22]));
-        assert_eq!((Integer::new(-128), 3), _parse_with_consumed_octets(&[0x2, 0x1, 0x80, 0x22]));
-        assert_eq!((Integer::new(-129), 4), _parse_with_consumed_octets(&[0x2, 0x2, 0xFF, 0x7F, 0x22]));
+        assert_eq!((Integer::from(127), 3), _parse_with_consumed_octets(&[0x2, 0x1, 0x7F, 0x22]));
+        assert_eq!((Integer::from(128), 4), _parse_with_consumed_octets(&[0x2, 0x2, 0x00, 0x80, 0x22]));
+        assert_eq!((Integer::from(256), 4), _parse_with_consumed_octets(&[0x2, 0x2, 0x01, 0x00, 0x22]));
+        assert_eq!((Integer::from(-128), 3), _parse_with_consumed_octets(&[0x2, 0x1, 0x80, 0x22]));
+        assert_eq!((Integer::from(-129), 4), _parse_with_consumed_octets(&[0x2, 0x2, 0xFF, 0x7F, 0x22]));
 
-        assert_eq!((Integer::new(4165284616), 7), _parse_with_consumed_octets(&[0x2, 0x5, 0x00, 0xF8, 0x45, 0x33, 0x8, 0x22]));
-        assert_eq!((Integer::new(-3310595109), 7), _parse_with_consumed_octets(&[0x2, 0x5, 0xFF, 0x3A, 0xAC, 0x53, 0xDB, 0x22]));
+        assert_eq!((Integer::from(4165284616), 7), _parse_with_consumed_octets(&[0x2, 0x5, 0x00, 0xF8, 0x45, 0x33, 0x8, 0x22]));
+        assert_eq!((Integer::from(-3310595109), 7), _parse_with_consumed_octets(&[0x2, 0x5, 0xFF, 0x3A, 0xAC, 0x53, 0xDB, 0x22]));
     }
 
     #[should_panic (expected = "Invalid universal tag: Not match with expected tag")]
@@ -238,7 +241,7 @@ mod tests {
     }
 
     fn _parse_with_consumed_octets(raw: &[u8]) -> (Integer, usize) {
-        let mut b = Integer::new(0);
+        let mut b = Integer::from(0);
         let consumed_octets = b.decode(raw).unwrap();
         return (b, consumed_octets);
     }
