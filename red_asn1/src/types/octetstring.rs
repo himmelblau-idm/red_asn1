@@ -40,12 +40,6 @@ impl Asn1Object for OctetString {
 
 impl OctetString {
 
-    pub fn new(value: Vec<u8>) -> OctetString {
-        return OctetString {
-            _value: Some(value)
-        }
-    }
-
     pub fn value(&self) -> Option<&Vec<u8>> {
         match &self._value {
             Some(ref value) => {
@@ -59,13 +53,21 @@ impl OctetString {
 
 }
 
+impl From<Vec<u8>> for OctetString {
+    fn from(value: Vec<u8>) -> Self {
+        return OctetString {
+            _value: Some(value)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_create() {
-        let b = OctetString::new(vec![0x0]);
+        let b = OctetString::from(vec![0x0]);
         assert_eq!(&vec![0x0], b.value().unwrap());
     }
 
@@ -81,35 +83,35 @@ mod tests {
 
     #[test]
     fn test_unset_value() {
-        let mut b = OctetString::new(vec![0x0]);
+        let mut b = OctetString::from(vec![0x0]);
         b.unset_value();
         assert_eq!(None, b.value());
     }
 
     #[test]
     fn test_encode_octet_string() {
-        assert_eq!(vec![0x4, 0x1, 0x0], OctetString::new(vec![0x0]).encode().unwrap());
+        assert_eq!(vec![0x4, 0x1, 0x0], OctetString::from(vec![0x0]).encode().unwrap());
         assert_eq!(vec![0x04, 0x08, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef], 
-        OctetString::new(vec![0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]).encode().unwrap());
-        assert_eq!(vec![0x4, 0x0], OctetString::new(vec![]).encode().unwrap());
+        OctetString::from(vec![0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]).encode().unwrap());
+        assert_eq!(vec![0x4, 0x0], OctetString::from(vec![]).encode().unwrap());
     }
 
     #[test]
     fn test_decode() {
-        assert_eq!(OctetString::new(vec![0x0]), _parse_octet_string(&[0x4, 0x1, 0x0]));
-        assert_eq!(OctetString::new(vec![0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]),
+        assert_eq!(OctetString::from(vec![0x0]), _parse_octet_string(&[0x4, 0x1, 0x0]));
+        assert_eq!(OctetString::from(vec![0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]),
         _parse_octet_string(&[0x04, 0x08, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]));
-        assert_eq!(OctetString::new(vec![]), _parse_octet_string(&[0x4, 0x0]));
+        assert_eq!(OctetString::from(vec![]), _parse_octet_string(&[0x4, 0x0]));
     }
 
     #[test]
     fn test_decode_with_excesive_bytes() {
-        assert_eq!((OctetString::new(vec![0x0]), 3), _parse_octet_string_with_consumed_octets(&[0x4, 0x1, 0x0,
+        assert_eq!((OctetString::from(vec![0x0]), 3), _parse_octet_string_with_consumed_octets(&[0x4, 0x1, 0x0,
         0x01, 0x02, 0x03, 0x04]));
-        assert_eq!((OctetString::new(vec![0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]), 0xa),
+        assert_eq!((OctetString::from(vec![0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]), 0xa),
         _parse_octet_string_with_consumed_octets(&[0x04, 0x08, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 
         0x01, 0x02, 0x03, 0x04]));
-        assert_eq!((OctetString::new(vec![]), 2), _parse_octet_string_with_consumed_octets(&[0x4, 0x0,
+        assert_eq!((OctetString::from(vec![]), 2), _parse_octet_string_with_consumed_octets(&[0x4, 0x0,
         0x01, 0x02, 0x03, 0x04]));
     }
 
@@ -124,7 +126,7 @@ mod tests {
     }
 
     fn _parse_octet_string_with_consumed_octets(raw: &[u8]) -> (OctetString, usize) {
-        let mut os = OctetString::new(vec![]);
+        let mut os = OctetString::from(vec![]);
         let consumed_octets = os.decode(raw).unwrap();
         return (os, consumed_octets);
     }

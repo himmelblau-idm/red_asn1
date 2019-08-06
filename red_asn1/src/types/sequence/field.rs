@@ -81,8 +81,8 @@ mod test {
         );
 
         assert_eq!(
-            SeqField{value: Some(OctetString::new(vec![1,2,3,4]))},
-            SeqField::from(OctetString::new(vec![1,2,3,4]))
+            SeqField{value: Some(OctetString::from(vec![1,2,3,4]))},
+            SeqField::from(OctetString::from(vec![1,2,3,4]))
         );
     }
 
@@ -95,8 +95,8 @@ mod test {
         );
 
         assert_eq!(
-            Some(&OctetString::new(vec![1,2,3,4])),
-            SeqField::from(OctetString::new(vec![1,2,3,4])).get_value()
+            Some(&OctetString::from(vec![1,2,3,4])),
+            SeqField::from(OctetString::from(vec![1,2,3,4])).get_value()
         );
 
         assert_eq!(
@@ -116,9 +116,9 @@ mod test {
         );
 
         let mut field = SeqField::default();
-        field.set_value(OctetString::new(vec![1,2,3,4]));
+        field.set_value(OctetString::from(vec![1,2,3,4]));
         assert_eq!(
-            Some(&OctetString::new(vec![1,2,3,4])),
+            Some(&OctetString::from(vec![1,2,3,4])),
             field.get_value()
         );
     }

@@ -14,10 +14,10 @@ fn test_define_simple() {
         data: SeqField::default()
     };
     seq.set_id(Integer::from(9));
-    seq.set_data(OctetString::new(vec![1,2,3,4]));
+    seq.set_data(OctetString::from(vec![1,2,3,4]));
 
     assert_eq!(&Integer::from(9), seq.get_id().unwrap());
-    assert_eq!(&OctetString::new(vec![1,2,3,4]), seq.get_data().unwrap());
+    assert_eq!(&OctetString::from(vec![1,2,3,4]), seq.get_data().unwrap());
 }
 
 #[test]
