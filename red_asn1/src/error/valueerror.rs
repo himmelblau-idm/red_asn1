@@ -33,4 +33,8 @@ pub enum ValueErrorKind {
     #[fail (display = "Invalid value: {}", _0)]
     ImplementationError(String),
 
+    /// Error in value due to a constraint in the type
+    #[fail (display = "Invalid value: {}", _0)]
+    ConstraintError(String),
+
 }
