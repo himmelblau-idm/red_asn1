@@ -13,10 +13,10 @@ pub struct Boolean {
 
 impl Boolean {
 
-    pub fn value(&self) -> Option<&bool> {
+    pub fn value(&self) -> Option<bool> {
         match &self._value {
             Some(ref value) => {
-                return Some(value);
+                return Some(*value);
             }
             None => {
                 return None;
@@ -74,7 +74,7 @@ mod tests {
     #[test]
     fn test_create() {
         let b = Boolean::from(true);
-        assert_eq!(&true, b.value().unwrap());
+        assert_eq!(true, b.value().unwrap());
     }
 
     #[test]

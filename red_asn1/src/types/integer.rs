@@ -73,10 +73,10 @@ impl Asn1Object for Integer {
 
 impl Integer {
 
-    pub fn value(&self) -> Option<&i64> {
+    pub fn value(&self) -> Option<i64> {
         match &self._value {
             Some(ref value) => {
-                return Some(value);
+                return Some(*value);
             }
             None => {
                 return None;
@@ -137,7 +137,7 @@ mod tests {
     #[test]
     fn test_create() {
         let b = Integer::from(78);
-        assert_eq!(&78, b.value().unwrap());
+        assert_eq!(78, b.value().unwrap());
     }
 
     #[test]
@@ -154,7 +154,7 @@ mod tests {
     fn test_set_value() {
         let mut b = Integer::default();
         b.set_value(56);
-        assert_eq!(&56, b.value().unwrap());
+        assert_eq!(56, b.value().unwrap());
     }
 
     #[test]

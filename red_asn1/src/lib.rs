@@ -24,7 +24,7 @@
 //!     address: SeqField<GeneralString>
 //! }
 //! 
-//! let person = Person{
+//! let mut person = Person{
 //!     name: GeneralString::from("John").into(),
 //!     age: Integer::from(18).into(),
 //!     address: SeqField::default()
@@ -38,6 +38,17 @@
 //!     ]
 //!     , person.encode().unwrap()
 //! );
+//! 
+//! person.decode(&[
+//!     0x61, 0x1b, 0x30, 0x19,
+//!     0xa0, 0x8, 0x1b, 0x6, 0x52, 0x61, 0x63, 0x68, 0x65, 0x6c, // "Rachel"
+//!     0xa1, 0x3, 0x2, 0x1, 0x1e, // 30
+//!     0xa2, 0x8, 0x1b, 0x6, 0x48, 0x61, 0x77, 0x61, 0x69, 0x69 // "Hawaii"
+//! ]).unwrap();
+//! 
+//! assert_eq!("Rachel", person.get_name().unwrap().value().unwrap());
+//! assert_eq!(30, person.get_age().unwrap().value().unwrap());
+//! assert_eq!("Hawaii", person.get_address().unwrap().value().unwrap());
 //! 
 //! ```
 //! 

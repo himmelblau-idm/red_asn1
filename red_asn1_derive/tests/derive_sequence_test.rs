@@ -427,7 +427,7 @@ fn test_decode_without_context_tags() {
                INTEGER_TAG_NUMBER, 0x1, 0x9, 
                OCTET_STRING_TAG_NUMBER, 0x4, 0x1, 0x2, 0x3, 0x4]).unwrap();
 
-    assert_eq!(&9, p.get_id().unwrap().value().unwrap());
+    assert_eq!(9, p.get_id().unwrap().value().unwrap());
     assert_eq!(&vec![0x1, 0x2, 0x3, 0x4], p.get_data().unwrap().value().unwrap());
 }
 
