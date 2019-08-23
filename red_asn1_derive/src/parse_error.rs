@@ -34,7 +34,7 @@ impl ParseComponentError {
 }
 
 impl Fail for ParseComponentError {
-    fn cause(&self) -> Option<&Fail> {
+    fn cause(&self) -> Option<&dyn Fail> {
         self.inner.cause()
     }
 
