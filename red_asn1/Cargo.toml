@@ -9,7 +9,7 @@ repository = "https://gitlab.com/Zer1t0/red_asn1"
 documentation = "https://docs.rs/red_asn1/"
 
 [dependencies]
-ascii = "0.9.1"
+ascii = "1"
 chrono = "0.4"
 failure = "0.1.5"
 failure_derive = "0.1.5"

@@ -31,7 +31,7 @@ impl Asn1Object for IA5String {
 
         let mut encoded_value : Vec<u8> = Vec::with_capacity(value.len());
 
-        for &c in value.chars() {
+        for c in value.chars() {
             encoded_value.push(c as u8);
         }
 
@@ -42,7 +42,7 @@ impl Asn1Object for IA5String {
         let mut value = AsciiString::with_capacity(raw.len());
 
         for byte in raw.iter() {
-            value.push(AsciiChar::from(*byte as char)?);
+            value.push(AsciiChar::from_ascii(*byte)?);
         }
 
         self._value = Some(value);
