@@ -13,8 +13,11 @@ pub enum Error {
     /// Error decoding tag
     InvalidTag(Box<TagErrorKind>),
     
-    /// Error decoding length
-    InvalidLength(Box<LengthErrorKind>),
+    /// No length was provided 
+    LengthEmpty,
+
+    /// The size of the length is higher than the available octets
+    NotEnoughLengthOctects,
 
     /// Error decoding value
     InvalidValue(Box<ValueErrorKind>),
@@ -48,14 +51,6 @@ impl fmt::Display for Error {
 impl From<TagErrorKind> for Error {
     fn from(kind: TagErrorKind) -> Self {
         return Self::InvalidTag(Box::new(kind));
-    }
-}
-
-
-
-impl From<LengthErrorKind> for Error {
-    fn from(kind: LengthErrorKind) -> Self {
-        return Self::InvalidLength(Box::new(kind));
     }
 }
 

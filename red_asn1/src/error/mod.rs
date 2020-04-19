@@ -8,8 +8,6 @@ pub use tagerror::*;
 mod valueerror;
 pub use valueerror::*;
 
-mod lengtherror;
-pub use lengtherror::*;
 
 #[cfg(test)]
 mod test {

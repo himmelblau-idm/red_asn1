@@ -51,7 +51,7 @@ pub trait Asn1Object {
     fn decode_length(&self, raw_length: &[u8]) -> asn1err::Result<(usize, usize)> {
         let raw_length_length = raw_length.len();
         if raw_length_length == 0 {
-            return Err(asn1err::LengthErrorKind::InvalidLengthEmpty)?;
+            return Err(asn1err::Error::LengthEmpty)?;
         }
 
         let mut consumed_octets: usize = 1;
@@ -62,7 +62,7 @@ pub trait Asn1Object {
 
         let length_of_length = (raw_length[0] & 0x7F) as usize;
         if length_of_length >= raw_length_length {
-            return Err(asn1err::LengthErrorKind::InvalidLengthOfLength)?;
+            return Err(asn1err::Error::NotEnoughLengthOctects)?;
         }
 
         let mut length: usize = 0;
