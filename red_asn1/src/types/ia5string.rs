@@ -31,8 +31,8 @@ impl Asn1Object for IA5String {
 
         let mut encoded_value : Vec<u8> = Vec::with_capacity(value.len());
 
-        for c in value.chars() {
-            encoded_value.push(c as u8);
+        for ch in value.chars() {
+            encoded_value.push(ch as u8);
         }
 
         return Ok(encoded_value);

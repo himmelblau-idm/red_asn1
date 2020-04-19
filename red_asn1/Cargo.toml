@@ -11,6 +11,4 @@ documentation = "https://docs.rs/red_asn1/"
 [dependencies]
 ascii = "1"
 chrono = "0.4"
-failure = "0.1.5"
-failure_derive = "0.1.5"
 red_asn1_derive = { path = "../red_asn1_derive", version = "0.1" }
