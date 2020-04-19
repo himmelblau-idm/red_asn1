@@ -1,14 +1,13 @@
-
-use proc_macro2::TokenStream;
 use super::parse_definitions::*;
+use proc_macro2::TokenStream;
 
 pub fn code_component(comp_def: &ComponentDefinition) -> ComponentCode {
-      return ComponentCode {
+    return ComponentCode {
         getter: code_getter(comp_def),
         setter: code_setter(comp_def),
         unsetter: code_unsetter(comp_def),
         encoder: code_encoder(comp_def),
-        decoder: code_decoder(comp_def)
+        decoder: code_decoder(comp_def),
     };
 }
 
@@ -98,14 +97,13 @@ fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
 
                 return Ok(consumed_octets);
             }
-        }
-
-    }else {
+        };
+    } else {
         return quote! {
             fn #decoder_name (&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
                 return self.#field_name.decode(raw);
             }
-        }
+        };
     }
 }
 
@@ -126,27 +124,25 @@ fn code_encoder(comp_def: &ComponentDefinition) -> TokenStream {
 
                 return Ok(encoded);
             }
-        }
-    }else {
+        };
+    } else {
         return quote! {
             fn #encoder_name (&self) -> red_asn1::Result<Vec<u8>> {
                 return self.#field_name.encode();
             }
-        }
+        };
     }
-
 }
 
-
-pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> SequenceInnerCallsCode {
-    
+pub fn code_sequence_inner_calls(
+    sequence_definition: &SequenceDefinition,
+) -> SequenceInnerCallsCode {
     let mut components_unit_functions = quote! {};
     let mut encode_calls = quote! {};
     let mut decode_calls = quote! {};
     let sequence_name = &sequence_definition.name;
-    
-    for component in &sequence_definition.components {
 
+    for component in &sequence_definition.components {
         let component_code = code_component(&component);
         let encoder_name = component.encoder_name();
         let decoder_name = component.decoder_name();
@@ -166,7 +162,7 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
                             },
                             _ => {
                                 return Err(red_asn1::Error::SequenceFieldError(
-                                    stringify!(#sequence_name).to_string(), 
+                                    stringify!(#sequence_name).to_string(),
                                     stringify!(#component_name).to_string(),
                                     Box::new(error.clone())
                                     ))?;
@@ -184,18 +180,17 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
                         self.#unsetter_name();
                     } else {
                         return Err(red_asn1::Error::SequenceFieldError(
-                            stringify!(#sequence_name).to_string(), 
+                            stringify!(#sequence_name).to_string(),
                             stringify!(#component_name).to_string(),
                             Box::new(error.clone())
                         ))?;
                     }
                 };
-
-            }else{
+            } else {
                 invalid_tag_errors_handlers = quote! {
                     if tag_class == red_asn1::TagClass::Context {
                         return Err(red_asn1::Error::SequenceFieldError(
-                            stringify!(#sequence_name).to_string(), 
+                            stringify!(#sequence_name).to_string(),
                             stringify!(#component_name).to_string(),
                             Box::new(error.clone())
                         ))?;
@@ -204,7 +199,6 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
                     }
                 };
             }
-
 
             decode_calls = quote! {
                 #decode_calls
@@ -225,7 +219,7 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
                             }
                             _ => {
                                 return Err(red_asn1::Error::SequenceFieldError(
-                                    stringify!(#sequence_name).to_string(), 
+                                    stringify!(#sequence_name).to_string(),
                                     stringify!(#component_name).to_string(),
                                     Box::new(error.clone())
                                     ))?;
@@ -234,14 +228,12 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
                     }
                 };
             };
-
-            
         } else {
             encode_calls = quote! {
                 #encode_calls
                 value.append(&mut self.#encoder_name().or_else(
                     |error| Err(red_asn1::Error::SequenceFieldError(
-                                stringify!(#sequence_name).to_string(), 
+                                stringify!(#sequence_name).to_string(),
                                 stringify!(#component_name).to_string(),
                                 Box::new(error.clone())
                                 )))?
@@ -252,7 +244,7 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
                 #decode_calls
                 consumed_octets += self.#decoder_name(&raw[consumed_octets..]).or_else(
                     |error| Err(red_asn1::Error::SequenceFieldError(
-                                stringify!(#sequence_name).to_string(), 
+                                stringify!(#sequence_name).to_string(),
                                 stringify!(#component_name).to_string(),
                                 Box::new(error.clone())
                                 )))?;
@@ -275,20 +267,19 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
             #unsetter
 
         };
-
     }
 
-    return SequenceInnerCallsCode{
+    return SequenceInnerCallsCode {
         encode_calls,
         decode_calls,
-        components_unit_functions
+        components_unit_functions,
     };
 }
 
-
-pub fn code_sequence(sequence_definition: &SequenceDefinition, 
-                     sequence_inner_calls: &SequenceInnerCallsCode ) -> TokenStream {
-
+pub fn code_sequence(
+    sequence_definition: &SequenceDefinition,
+    sequence_inner_calls: &SequenceInnerCallsCode,
+) -> TokenStream {
     let name = &sequence_definition.name;
     let encode_calls = &sequence_inner_calls.encode_calls;
     let decode_calls = &sequence_inner_calls.decode_calls;
@@ -302,7 +293,6 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
         }
     };
 
-    
     let decode_value = quote! {
         fn decode_value(&mut self, raw: &[u8]) -> red_asn1::Result<()> {
             let mut consumed_octets = 0;
@@ -334,25 +324,25 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
 
     let mut inner_decode = quote! {
         fn _inner_decode(&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
-            let (mut consumed_octets, decoded_tag) = Tag::decode(raw).or_else( |error| 
-                Err(red_asn1::Error::SequenceError( 
-                    stringify!(#name).to_string(), 
+            let (mut consumed_octets, decoded_tag) = Tag::decode(raw).or_else( |error|
+                Err(red_asn1::Error::SequenceError(
+                    stringify!(#name).to_string(),
                     Box::new(error.clone())
                 ))
             )?;
 
             if decoded_tag != self.tag() {
-                return Err(red_asn1::Error::SequenceError( 
-                    stringify!(#name).to_string(), 
+                return Err(red_asn1::Error::SequenceError(
+                    stringify!(#name).to_string(),
                     Box::new(red_asn1::Error::UnmatchedTag(TagClass::Universal))
                 ))
             }
-            
+
             let (_, raw_length) = raw.split_at(consumed_octets);
 
-            let (value_length, consumed_octets_by_length) = red_asn1::decode_length(raw_length).or_else( |error| 
-                Err(red_asn1::Error::SequenceError( 
-                    stringify!(#name).to_string(), 
+            let (value_length, consumed_octets_by_length) = red_asn1::decode_length(raw_length).or_else( |error|
+                Err(red_asn1::Error::SequenceError(
+                    stringify!(#name).to_string(),
                     Box::new(error.clone())
                 ))
             )?;
@@ -362,8 +352,8 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
             let (_, raw_value) = raw.split_at(consumed_octets);
 
             if value_length > raw_value.len() {
-                return Err(red_asn1::Error::SequenceError( 
-                    stringify!(#name).to_string(), 
+                return Err(red_asn1::Error::SequenceError(
+                    stringify!(#name).to_string(),
                     Box::new(red_asn1::Error::from(red_asn1::Error::NoDataForLength))
                 ))?;
             }
@@ -381,10 +371,9 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
     let decode;
 
     if let Some(application_tag_number) = sequence_definition.application_tag_number {
-
         encode = quote! {
             fn encode(&self) -> red_asn1::Result<Vec<u8>> {
-                let mut encoded = Tag::new(#application_tag_number, 
+                let mut encoded = Tag::new(#application_tag_number,
                                             TagType::Constructed, TagClass::Application).encode();
                 let mut encoded_value = self._inner_encode()?;
                 let mut encoded_length = red_asn1::encode_length(encoded_value.len());
@@ -413,16 +402,16 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
         decode = quote! {
 
             fn decode(&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
-                let mut consumed_octets = self._decode_application_tag(raw).or_else( |error| 
-                    Err(red_asn1::Error::SequenceError( 
-                        stringify!(#name).to_string(), 
+                let mut consumed_octets = self._decode_application_tag(raw).or_else( |error|
+                    Err(red_asn1::Error::SequenceError(
+                        stringify!(#name).to_string(),
                         Box::new(error.clone())
                     ))
                 )?;
                 let (_, raw_length) = raw.split_at(consumed_octets);
-                let (value_length, consumed_octets_by_length) = red_asn1::decode_length(raw_length).or_else( |error| 
-                    Err(red_asn1::Error::SequenceError( 
-                        stringify!(#name).to_string(), 
+                let (value_length, consumed_octets_by_length) = red_asn1::decode_length(raw_length).or_else( |error|
+                    Err(red_asn1::Error::SequenceError(
+                        stringify!(#name).to_string(),
                         Box::new(error.clone())
                     ))
                 )?;
@@ -430,8 +419,8 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
                 let (_, raw_value) = raw.split_at(consumed_octets);
 
                 if value_length > raw_value.len() {
-                    return Err(red_asn1::Error::SequenceError( 
-                        stringify!(#name).to_string(), 
+                    return Err(red_asn1::Error::SequenceError(
+                        stringify!(#name).to_string(),
                         Box::new(red_asn1::Error::from(red_asn1::Error::NoDataForLength))
                     ))?;
                 }
@@ -444,7 +433,6 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
                 return Ok(consumed_octets);
             }
         };
-
     } else {
         encode = quote! {
             fn encode(&self) -> red_asn1::Result<Vec<u8>> {
@@ -483,5 +471,4 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
     };
 
     return total_exp;
-
 }
