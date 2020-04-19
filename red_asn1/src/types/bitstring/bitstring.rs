@@ -50,7 +50,7 @@ impl Asn1Object for BitSring {
                 bitstring_value = value;
             },
             None => {
-                return Err(asn1err::ErrorKind::NoValue)?;
+                return Err(asn1err::Error::NoValue)?;
             }
         };
 

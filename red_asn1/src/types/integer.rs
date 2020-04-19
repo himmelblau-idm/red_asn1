@@ -25,7 +25,7 @@ impl Asn1Object for Integer {
                 shifted_value = value;
             },
             None => {
-                return Err(asn1err::ErrorKind::NoValue)?;
+                return Err(asn1err::Error::NoValue)?;
             }
         }
 

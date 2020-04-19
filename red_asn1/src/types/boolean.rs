@@ -38,7 +38,7 @@ impl Asn1Object for Boolean {
                 return Ok(vec![(value as u8) * 0xff]);
             },
             None => {
-                return Err(asn1err::ErrorKind::NoValue)?;
+                return Err(asn1err::Error::NoValue)?;
             }
         }
         

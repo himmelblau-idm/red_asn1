@@ -55,7 +55,7 @@ impl Asn1Object for GeneralString {
                 value = _value;
             },
             None => {
-                return Err(asn1err::ErrorKind::NoValue)?;
+                return Err(asn1err::Error::NoValue)?;
             }
         }
 

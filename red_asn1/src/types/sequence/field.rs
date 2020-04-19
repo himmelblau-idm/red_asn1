@@ -39,7 +39,7 @@ impl<T: Asn1Object + Default> SeqField<T> {
                 return value.encode();
             }
             None => {
-                return Err(asn1err::ErrorKind::NoValue)?;
+                return Err(asn1err::Error::NoValue)?;
             }
         };
     }

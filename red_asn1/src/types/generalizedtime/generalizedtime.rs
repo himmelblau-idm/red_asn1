@@ -50,7 +50,7 @@ impl Asn1Object for GeneralizedTime {
                 return Ok(self._format_datetime_as_string(&value).into_bytes());
             },
             None => {
-                return Err(asn1err::ErrorKind::NoValue)?;
+                return Err(asn1err::Error::NoValue)?;
             }
         }
     }
