@@ -1,6 +1,4 @@
 use std::fmt;
-use failure::*;
-use failure_derive::Fail;
 use std::result;
 use ascii;
 
@@ -10,110 +8,54 @@ use super::*;
 pub type Result<T> = result::Result<T, Error>;
 
 /// Error in ASN1-DER decode/encode operations
-#[derive(Debug)]
-pub struct Error {
-    inner: Context<ErrorKind>
-}
-
-/// Type of error
-#[derive(Clone, Debug, PartialEq, Fail)]
-pub enum ErrorKind {
+#[derive(Clone, Debug, PartialEq)]
+pub enum Error {
     /// Error decoding tag
-    #[fail (display = "{}", _0)]
     InvalidTag(Box<TagErrorKind>),
     
     /// Error decoding length
-    #[fail (display = "{}", _0)]
     InvalidLength(Box<LengthErrorKind>),
 
     /// Error decoding value
-    #[fail (display = "{}", _0)]
     InvalidValue(Box<ValueErrorKind>),
 
     /// No value was provided to encode
-    #[fail (display = "No value provided")]
     NoValue,
 
     /// No found component with the identifier specified
-    #[fail (display = "No component with such identifier")]
     NoComponent,
 
     /// Error in a field of a sequence
-    #[fail (display = "{}::{} => {}", _0,_1,_2)]
-    SequenceFieldError(String, String, Box<ErrorKind>),
+    SequenceFieldError(String, String, Box<Error>),
 
     /// Error while processing a sequence
-    #[fail (display = "{} => {}", _0,_1)]
-    SequenceError(String, Box<ErrorKind>)
-}
-
-impl From<ValueErrorKind> for ErrorKind {
-    fn from(kind: ValueErrorKind) -> Self {
-        return ErrorKind::InvalidValue(Box::new(kind));
-    }
-}
-
-
-impl Error {
-
-    pub fn kind(&self) -> &ErrorKind {
-        return self.inner.get_context();
-    }
-
-}
-
-impl Fail for Error {
-    fn cause(&self) -> Option<&dyn Fail> {
-        self.inner.cause()
-    }
-
-    fn backtrace(&self) -> Option<&Backtrace> {
-        self.inner.backtrace()
-    }
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(&self.inner, f)
-    }
-}
-
-impl std::convert::From<ErrorKind> for Error {
-    fn from(kind: ErrorKind) -> Self {
-        return Self {
-            inner: Context::new(kind)
-        };
-    }
-}
-
-
-impl From<TagErrorKind> for Error {
-    fn from(kind: TagErrorKind) -> Self {
-        return Self {
-            inner: Context::new(ErrorKind::InvalidTag(Box::new(kind)))
-        };
-    }
+    SequenceError(String, Box<Error>)
 }
 
 impl From<ValueErrorKind> for Error {
     fn from(kind: ValueErrorKind) -> Self {
-        return Self {
-            inner: Context::new(ErrorKind::InvalidValue(Box::new(kind)))
-        };
+        return Error::InvalidValue(Box::new(kind));
     }
 }
+
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(&self, f)
+    }
+}
+
+impl From<TagErrorKind> for Error {
+    fn from(kind: TagErrorKind) -> Self {
+        return Self::InvalidTag(Box::new(kind));
+    }
+}
+
+
 
 impl From<LengthErrorKind> for Error {
     fn from(kind: LengthErrorKind) -> Self {
-        return Self {
-            inner: Context::new(ErrorKind::InvalidLength(Box::new(kind)))
-        };
-    }
-}
-
-impl std::convert::From<Context<ErrorKind>> for Error {
-    fn from(inner: Context<ErrorKind>) -> Self {
-        return Self { inner };
+        return Self::InvalidLength(Box::new(kind));
     }
 }
 
