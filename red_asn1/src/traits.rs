@@ -1,5 +1,6 @@
 use crate::tag::*;
 use crate::error as asn1err;
+use crate::length::{encode_length, decode_length};
 
 /// A trait to allow objects to be encoded/decoded from ASN1-DER
 pub trait Asn1Object {
@@ -22,58 +23,6 @@ pub trait Asn1Object {
         return Ok(consumed_octets);
     }
 
-    /// To encode the object value length to DER, should not be overwritten
-    fn encode_length(&self, value_size: usize) -> Vec<u8> {
-        if value_size < 128 {
-            return vec![value_size as u8];
-        }
-
-        let mut shifted_length = value_size;
-        let mut octets_count: u8 = 0;
-        let mut encoded_length : Vec<u8> = Vec::new();
-
-        while shifted_length > 0 {
-            octets_count += 1;
-            encoded_length.push(shifted_length as u8);
-            shifted_length >>= 8;
-        }
-
-        encoded_length.push(octets_count | 0b10000000);
-        
-        encoded_length.reverse();
-
-
-        return encoded_length;
-    }
-
-    /// To decode the object value length from DER, should not be overwritten
-    fn decode_length(&self, raw_length: &[u8]) -> asn1err::Result<(usize, usize)> {
-        let raw_length_length = raw_length.len();
-        if raw_length_length == 0 {
-            return Err(asn1err::Error::LengthEmpty)?;
-        }
-
-        let mut consumed_octets: usize = 1;
-        let is_short_form = (raw_length[0] & 0x80) == 0;
-        if is_short_form {
-            return Ok(((raw_length[0] & 0x7F) as usize, consumed_octets));
-        }
-
-        let length_of_length = (raw_length[0] & 0x7F) as usize;
-        if length_of_length >= raw_length_length {
-            return Err(asn1err::Error::NotEnoughLengthOctects)?;
-        }
-
-        let mut length: usize = 0;
-        for i in 1..(length_of_length + 1) {
-            length <<= 8;
-            length += raw_length[i] as usize;
-        }
-        consumed_octets += length_of_length;
-
-        return Ok((length, consumed_octets));
-    }
-    
     /// Method which indicates how object value must be encoded
     fn encode_value(&self) -> asn1err::Result<Vec<u8>>;
 
@@ -86,7 +35,7 @@ pub trait Asn1Object {
     fn encode(&self) -> asn1err::Result<Vec<u8>> {
         let mut encoded = self.encode_tag();
         let mut encoded_value = self.encode_value()?;
-        let mut encoded_length = self.encode_length(encoded_value.len());
+        let mut encoded_length = encode_length(encoded_value.len());
 
         encoded.append(&mut encoded_length);
         encoded.append(&mut encoded_value);
@@ -101,7 +50,7 @@ pub trait Asn1Object {
 
         let (_, raw_length) = raw.split_at(consumed_octets);
 
-        let (value_length, consumed_octets_by_length) = self.decode_length(raw_length)?;
+        let (value_length, consumed_octets_by_length) = decode_length(raw_length)?;
         consumed_octets += consumed_octets_by_length;
 
         let (_, raw_value) = raw.split_at(consumed_octets);
@@ -202,54 +151,12 @@ mod tests {
         assert_eq!(2, TestObject::new_tagged(Tag::new_primitive_universal(0x1F)).decode_tag(&[0x1F, 0x1F, 0x2]).unwrap());
     }
 
-    #[test]
-    fn encode_length() {
-        assert_eq!(vec![0x0], _build_length(0));
-        assert_eq!(vec![0x1], _build_length(1));
-        assert_eq!(vec![0x7F], _build_length(127));
-        assert_eq!(vec![0x81, 0x80], _build_length(128));
-        assert_eq!(vec![0x81, 0xFF], _build_length(255));
-        assert_eq!(vec![0x82, 0x01, 0x00], _build_length(256));
-        assert_eq!(vec![0x82, 0xFF, 0xFF], _build_length(65535));
-        assert_eq!(vec![0x83, 0x01, 0x00, 0x00], _build_length(65536));
 
-        assert_eq!(vec![0x84, 0x10, 0xf3, 0x91, 0xbd], _build_length(0x10f391bd));
-        assert_eq!(vec![0x84, 0x0f, 0xc4, 0x69, 0x89], _build_length(0xfc46989));
-        assert_eq!(vec![0x84, 0x31, 0xb2, 0x50, 0x42], _build_length(0x31b25042));
-        assert_eq!(vec![0x84, 0x13, 0x93, 0xaa, 0x93], _build_length(0x1393aa93));
-        assert_eq!(vec![0x84, 0x05, 0x71, 0x6f, 0xa9], _build_length(0x5716fa9));
-    }
-
-    #[test]
-    fn decode_length() {
-        assert_eq!((0, 1), _parse_length(vec![0x0]));
-        assert_eq!((1, 1), _parse_length(vec![0x1]));
-        assert_eq!((127, 1), _parse_length(vec![0x7F]));
-        assert_eq!((128, 2), _parse_length(vec![0x81, 0x80]));
-        assert_eq!((255, 2), _parse_length(vec![0x81, 0xFF]));
-        assert_eq!((256, 3), _parse_length(vec![0x82, 0x01, 0x00]));
-        assert_eq!((65535, 3), _parse_length(vec![0x82, 0xFF, 0xFF]));
-        assert_eq!((65536, 4), _parse_length(vec![0x83, 0x01, 0x00, 0x00]));
-
-        assert_eq!((0x10f391bd, 5), _parse_length(vec![0x84, 0x10, 0xf3, 0x91, 0xbd]));
-        assert_eq!((0xfc46989, 5), _parse_length(vec![0x84, 0x0f, 0xc4, 0x69, 0x89]));
-        assert_eq!((0x31b25042, 5), _parse_length(vec![0x84, 0x31, 0xb2, 0x50, 0x42]));
-        assert_eq!((0x1393aa93, 5), _parse_length(vec![0x84, 0x13, 0x93, 0xaa, 0x93]));
-        assert_eq!((0x5716fa9, 5), _parse_length(vec![0x84, 0x05, 0x71, 0x6f, 0xa9]));
-    }
 
     #[should_panic (expected = "NoDataForLength")]
     #[test]
     fn test_decode_with_excesive_length_for_data() {
         TestObject::new_tagged(Tag::new_primitive_universal(1)).decode(&[0x1, 0x3, 0x0]).unwrap();
-    }
-
-    fn _build_length(length: usize) -> Vec<u8> {
-        return TestObject::new().encode_length(length);
-    }
-
-    fn _parse_length(raw_length: Vec<u8>) -> (usize, usize) {
-        return TestObject::new().decode_length(&raw_length).unwrap();
     }
 
     fn _build_tag(tag: Tag) -> Vec<u8> {

@@ -83,7 +83,7 @@ fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
 
                 let (_, raw_length) = raw.split_at(consumed_octets);
 
-                let (value_length, consumed_octets_by_length) = self.decode_length(raw_length)?;
+                let (value_length, consumed_octets_by_length) = red_asn1::decode_length(raw_length)?;
                 consumed_octets += consumed_octets_by_length;
                 let (_, raw_value) = raw.split_at(consumed_octets);
 
@@ -119,7 +119,7 @@ fn code_encoder(comp_def: &ComponentDefinition) -> TokenStream {
                 let tag = Tag::new(#context_tag_number, TagType::Constructed, TagClass::Context);
                 let mut encoded = tag.encode();
                 let mut encoded_value = self.#field_name.encode()?;
-                let mut encoded_length = self.encode_length(encoded_value.len());
+                let mut encoded_length = red_asn1::encode_length(encoded_value.len());
 
                 encoded.append(&mut encoded_length);
                 encoded.append(&mut encoded_value);
@@ -323,7 +323,7 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
         fn _inner_encode(&self) -> red_asn1::Result<Vec<u8>> {
             let mut encoded = self.encode_tag();
             let mut encoded_value = self.encode_value()?;
-            let mut encoded_length = self.encode_length(encoded_value.len());
+            let mut encoded_length = red_asn1::encode_length(encoded_value.len());
 
             encoded.append(&mut encoded_length);
             encoded.append(&mut encoded_value);
@@ -343,7 +343,7 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
 
             let (_, raw_length) = raw.split_at(consumed_octets);
 
-            let (value_length, consumed_octets_by_length) = self.decode_length(raw_length).or_else( |error| 
+            let (value_length, consumed_octets_by_length) = red_asn1::decode_length(raw_length).or_else( |error| 
                 Err(red_asn1::Error::SequenceError( 
                     stringify!(#name).to_string(), 
                     Box::new(error.clone())
@@ -380,7 +380,7 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
                 let mut encoded = Tag::new(#application_tag_number, 
                                             TagType::Constructed, TagClass::Application).encode();
                 let mut encoded_value = self._inner_encode()?;
-                let mut encoded_length = self.encode_length(encoded_value.len());
+                let mut encoded_length = red_asn1::encode_length(encoded_value.len());
 
                 encoded.append(&mut encoded_length);
                 encoded.append(&mut encoded_value);
@@ -413,7 +413,7 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
                     ))
                 )?;
                 let (_, raw_length) = raw.split_at(consumed_octets);
-                let (value_length, consumed_octets_by_length) = self.decode_length(raw_length).or_else( |error| 
+                let (value_length, consumed_octets_by_length) = red_asn1::decode_length(raw_length).or_else( |error| 
                     Err(red_asn1::Error::SequenceError( 
                         stringify!(#name).to_string(), 
                         Box::new(error.clone())
