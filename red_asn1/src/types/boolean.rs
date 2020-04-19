@@ -114,7 +114,7 @@ mod tests {
         assert_eq!((Boolean::from(false), 4), _parse_with_consumed_octets(&[0x1, 0x2, 0x0, 0x1]));
     }
 
-    #[should_panic (expected = "InvalidTag(Unmatched")]
+    #[should_panic (expected = "UnmatchedTag")]
     #[test]
     fn test_decode_with_invalid_tag() {
         _parse(&[0x7, 0x1, 0x0]);

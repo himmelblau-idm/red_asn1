@@ -140,14 +140,14 @@ mod tests {
         assert_eq!(Integer::from(1000), seq_of[1]);
     }
 
-    #[should_panic(expected = "InvalidTag(Unmatched")]
+    #[should_panic(expected = "UnmatchedTag")]
     #[test]
     fn test_decode_with_invalid_sequence_of_tag() {
         let mut seq_of: SequenceOf<Integer> = SequenceOf::default();
         seq_of.decode(&[0xff, 0x0]).unwrap();
     }
 
-    #[should_panic(expected = "InvalidTag(Unmatched")]
+    #[should_panic(expected = "UnmatchedTag")]
     #[test]
     fn test_decode_with_invalid_inner_type_tag() {
         let mut seq_of: SequenceOf<Integer> = SequenceOf::default();

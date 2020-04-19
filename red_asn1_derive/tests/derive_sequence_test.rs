@@ -208,7 +208,7 @@ fn test_decode_empty_with_excesive_bytes() {
     assert_eq!(2, consumed_octets);
 }
 
-#[should_panic (expected = "SequenceError(\"Person\", InvalidTag(Unmatched(Universal)))")]
+#[should_panic (expected = "SequenceError(\"Person\", UnmatchedTag(Universal))")]
 #[test]
 fn test_decode_with_invalid_tag() {
     #[derive(Sequence)]
@@ -285,7 +285,7 @@ fn test_decode_with_optional_and_context_tag() {
     assert_eq!(None, p.get_age());
 }
 
-#[should_panic(expected = "SequenceFieldError(\"Person\", \"age\", InvalidTag(Empty(Universal)))")]
+#[should_panic(expected = "SequenceFieldError(\"Person\", \"age\", EmptyTag(Universal))")]
 #[test]
 fn test_decode_with_optional_and_context_tag_bad_context_length() {
 
@@ -317,7 +317,7 @@ fn test_bad_decode_optional_context_tag_bad_context_tag() {
     p.decode(&[0x30, 0x1, 0xee]).unwrap();
 }
 
-#[should_panic(expected =  "SequenceError(\"Person\", InvalidTag(Unmatched(Universal)))")]
+#[should_panic(expected =  "SequenceError(\"Person\", UnmatchedTag(Universal))")]
 #[test]
 fn test_decode_bad_sequence_type_tag() {
 
@@ -341,7 +341,7 @@ fn test_decode_bad_sequence_length() {
     p.decode(&[0x30, 0x81]).unwrap();
 }
 
-#[should_panic(expected =  "SequenceError(\"Person\", InvalidTag(Unmatched(Application)))")]
+#[should_panic(expected =  "SequenceError(\"Person\", UnmatchedTag(Application))")]
 #[test]
 fn test_decode_bad_sequence_application_tag() {
 
@@ -367,7 +367,7 @@ fn test_decode_sequence_application_tag_bad_length() {
     p.decode(&[0x60, 0x81]).unwrap();
 }
 
-#[should_panic(expected =  "SequenceFieldError(\"Person\", \"age\", InvalidTag(Unmatched(Universal)))")]
+#[should_panic(expected =  "SequenceFieldError(\"Person\", \"age\", UnmatchedTag(Universal))")]
 #[test]
 fn test_bad_decode_optional_context_tag_bad_type_tag() {
 
@@ -478,7 +478,7 @@ fn test_decode_with_optional_without_context_tag() {
 }
 
 
-#[should_panic (expected = "SequenceFieldError(\"TestSequence\", \"id\", InvalidTag(Unmatched(Universal)))")]
+#[should_panic (expected = "SequenceFieldError(\"TestSequence\", \"id\", UnmatchedTag(Universal))")]
 #[test]
 fn test_decode_with_optional_and_context_tag_and_bad_type_tag() {
     #[derive(Sequence)]
@@ -550,7 +550,7 @@ fn test_decode_with_inner_sequenceof() {
 }
 
 
-#[should_panic (expected = "SequenceFieldError(\"TestSequence\", \"id\", InvalidTag(Empty(Context)))")]
+#[should_panic (expected = "SequenceFieldError(\"TestSequence\", \"id\", EmptyTag(Context))")]
 #[test]
 fn test_decode_without_required_value() {
     #[derive(Sequence)]
@@ -566,7 +566,7 @@ fn test_decode_without_required_value() {
 
 }
 
-#[should_panic (expected = "SequenceFieldError(\"SuperTestSequence\", \"inner\", SequenceFieldError(\"TestSequence\", \"id\", InvalidTag(Empty(Context))))")]
+#[should_panic (expected = "SequenceFieldError(\"SuperTestSequence\", \"inner\", SequenceFieldError(\"TestSequence\", \"id\", EmptyTag(Context)))")]
 #[test]
 fn test_decode_without_required_value_with_inner_sequence() {
     #[derive(Sequence, Debug, PartialEq, Default)]

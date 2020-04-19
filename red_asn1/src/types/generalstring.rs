@@ -134,7 +134,7 @@ mod tests {
         _parse(&[0x1b, 0x1, 0xff]);
     }
 
-    #[should_panic (expected = "InvalidTag(Unmatched")]
+    #[should_panic (expected = "UnmatchedTag")]
     #[test]
     fn test_decode_with_invalid_tag() {
         _parse(&[0x7, 0x1, 0x0]);

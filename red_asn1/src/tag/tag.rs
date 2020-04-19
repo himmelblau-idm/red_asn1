@@ -74,7 +74,7 @@ impl Tag {
     pub fn decode(&mut self, raw: &[u8]) -> asn1err::Result<usize> {
         let raw_len = raw.len();
         if raw_len == 0 {
-            return Err(asn1err::TagErrorKind::Empty(TagClass::Universal))?;
+            return Err(asn1err::Error::EmptyTag(TagClass::Universal))?;
         }
 
         let mut consumed_octets = 1;
@@ -109,7 +109,7 @@ impl Tag {
             consumed_octets += 1;
         }
         if consumed_octets == raw.len() {
-            return Err(asn1err::TagErrorKind::HighFormNumberUnfinished(TagClass::Universal))?;
+            return Err(asn1err::Error::NotEnoughTagOctets(TagClass::Universal))?;
         }
 
         return Ok((tag_number,consumed_octets));
@@ -179,14 +179,14 @@ mod tests {
         assert_eq!((Tag::new(198, TagType::Primitive, TagClass::Private), 3), _parse_tag_with_consumed_octets(vec![0xdf, 0xc6, 0x01, 0x01, 0x02]));
     }
 
-    #[should_panic (expected = "InvalidTag(Empty")]
+    #[should_panic (expected = "EmptyTag")]
     #[test]
     fn test_decode_empty_tag() {
         _parse_tag(vec![]);
     }
     
 
-    #[should_panic (expected = "InvalidTag(HighFormNumberUnfinished(")]
+    #[should_panic (expected = "NotEnoughTagOctets")]
     #[test]
     fn test_decode_invalid_tag_with_unfinished_tag_number() {
         _parse_tag(vec![0x1F, 0x80, 0x81]);

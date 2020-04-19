@@ -1,8 +1,7 @@
 use ascii;
 use std::fmt;
 use std::result;
-
-use super::*;
+use crate::tag::TagClass;
 
 /// Result that encapsulates the Error type of this library
 pub type Result<T> = result::Result<T, Error>;
@@ -10,8 +9,14 @@ pub type Result<T> = result::Result<T, Error>;
 /// Error in ASN1-DER decode/encode operations
 #[derive(Clone, Debug, PartialEq)]
 pub enum Error {
-    /// Error decoding tag
-    InvalidTag(Box<TagErrorKind>),
+    /// Tag cannot be decoded because there are no data
+    EmptyTag(TagClass),
+
+    /// All data was consumed but tag length octets did not finished (high tag number form)
+    NotEnoughTagOctets(TagClass),
+
+    /// Tag decoded is not the expected for the type
+    UnmatchedTag(TagClass),
 
     /// No length was provided
     LengthEmpty,
@@ -59,12 +64,6 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(&self, f)
-    }
-}
-
-impl From<TagErrorKind> for Error {
-    fn from(kind: TagErrorKind) -> Self {
-        return Self::InvalidTag(Box::new(kind));
     }
 }
 

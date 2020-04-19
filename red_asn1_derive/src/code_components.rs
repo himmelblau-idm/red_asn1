@@ -63,19 +63,12 @@ fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
                     },
                     Err(error) => {
                         match error.clone() {
-                            red_asn1::Error::InvalidTag(tag_error_kind) => {
-                                match *tag_error_kind {
-                                    red_asn1::TagErrorKind::HighFormNumberUnfinished(_) => {
-                                        return Err(red_asn1::TagErrorKind::HighFormNumberUnfinished(TagClass::Context))?;
-                                    }
-                                    red_asn1::TagErrorKind::Empty(_) => {
-                                        return Err(red_asn1::TagErrorKind::Empty(TagClass::Context))?;
-                                    }
-                                    _ => {
-                                        return Err(error);
-                                    }
-                                }
-                            },
+                            red_asn1::Error::NotEnoughTagOctets(_) => {
+                                return Err(red_asn1::Error::NotEnoughTagOctets(TagClass::Context))?;
+                            }
+                            red_asn1::Error::EmptyTag(_) => {
+                                return Err(red_asn1::Error::EmptyTag(TagClass::Context))?;
+                            }
                             _ => {
                                 return Err(error);
                             }
@@ -84,7 +77,7 @@ fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
                 }
 
                 if decoded_tag != Tag::new(#context_tag_number, TagType::Constructed, TagClass::Context) {
-                    return Err(red_asn1::TagErrorKind::Unmatched(TagClass::Context))?;
+                    return Err(red_asn1::Error::UnmatchedTag(TagClass::Context))?;
                 }
 
                 let (_, raw_length) = raw.split_at(consumed_octets);
@@ -220,19 +213,15 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
                     },
                     Err(error) => {
                         match error.clone() {
-                            red_asn1::Error::InvalidTag(tag_error_kind) => {
-                                match *tag_error_kind {
-                                    TagErrorKind::Empty(tag_class) => {
-                                        #invalid_tag_errors_handlers
-                                    }
-                                    TagErrorKind::HighFormNumberUnfinished(tag_class) => {
-                                        #invalid_tag_errors_handlers
-                                    }
-                                    TagErrorKind::Unmatched(tag_class) => {
-                                        #invalid_tag_errors_handlers
-                                    }
-                                }
-                            },
+                            Error::EmptyTag(tag_class) => {
+                                #invalid_tag_errors_handlers
+                            }
+                            Error::NotEnoughTagOctets(tag_class) => {
+                                #invalid_tag_errors_handlers
+                            }
+                            Error::UnmatchedTag(tag_class) => {
+                                #invalid_tag_errors_handlers
+                            }
                             _ => {
                                 return Err(red_asn1::Error::SequenceFieldError(
                                     stringify!(#sequence_name).to_string(), 
@@ -407,7 +396,7 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
                 let consumed_octets = decoded_tag.decode(raw_tag)?;
 
                 if decoded_tag != Tag::new(#application_tag_number, TagType::Constructed, TagClass::Application) {
-                    return Err(red_asn1::TagErrorKind::Unmatched(TagClass::Application))?;
+                    return Err(red_asn1::Error::UnmatchedTag(TagClass::Application))?;
                 }
 
                 return Ok(consumed_octets);
