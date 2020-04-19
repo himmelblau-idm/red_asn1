@@ -1,9 +1,9 @@
-use chrono::prelude::*;
+use super::TimeFormat;
+use crate::error as asn1err;
 use crate::tag::Tag;
 use crate::traits::*;
-use crate::error as asn1err;
+use chrono::prelude::*;
 use std::str;
-use super::TimeFormat;
 
 pub static GENERALIZED_TIME_TAG_NUMBER: u8 = 0x18;
 
@@ -11,12 +11,10 @@ pub static GENERALIZED_TIME_TAG_NUMBER: u8 = 0x18;
 #[derive(Debug, PartialEq, Default)]
 pub struct GeneralizedTime {
     _value: Option<DateTime<Utc>>,
-    format: TimeFormat
+    format: TimeFormat,
 }
 
 impl GeneralizedTime {
-    
-
     pub fn set_format(&mut self, format: TimeFormat) {
         self.format = format;
     }
@@ -35,11 +33,9 @@ impl GeneralizedTime {
     fn _format_datetime_as_string(&self, datetime: &DateTime<Utc>) -> String {
         return self.format.format_to_string(datetime);
     }
-
 }
 
 impl Asn1Object for GeneralizedTime {
-
     fn tag(&self) -> Tag {
         return Tag::new_primitive_universal(GENERALIZED_TIME_TAG_NUMBER);
     }
@@ -48,7 +44,7 @@ impl Asn1Object for GeneralizedTime {
         match self._value {
             Some(value) => {
                 return Ok(self._format_datetime_as_string(&value).into_bytes());
-            },
+            }
             None => {
                 return Err(asn1err::Error::NoValue)?;
             }
@@ -57,7 +53,7 @@ impl Asn1Object for GeneralizedTime {
 
     fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         if raw.len() < 15 {
-            return Err(asn1err::ValueErrorKind::NoDataForType)?;
+            return Err(asn1err::Error::NoDataForType)?;
         }
 
         let year_str = str::from_utf8(&raw[0..4])?;
@@ -83,9 +79,16 @@ impl Asn1Object for GeneralizedTime {
         let is_utc: bool = raw[raw.len() - 1] == 'Z' as u8;
 
         if is_utc {
-            self._value = Some(Utc.ymd(year, month, day).and_hms_nano(hour, minute, second, decisecond * 100000000));
-        }else {
-            return Err(asn1err::ValueErrorKind::ImplementationError("Local time decode is not implemented yet".to_string()))?;
+            self._value = Some(Utc.ymd(year, month, day).and_hms_nano(
+                hour,
+                minute,
+                second,
+                decisecond * 100000000,
+            ));
+        } else {
+            return Err(asn1err::Error::ImplementationError(
+                "Local time decode is not implemented yet".to_string(),
+            ))?;
         }
 
         return Ok(());
@@ -100,7 +103,7 @@ impl From<DateTime<Utc>> for GeneralizedTime {
     fn from(value: DateTime<Utc>) -> Self {
         return Self {
             _value: Some(value),
-            format: TimeFormat::default()
+            format: TimeFormat::default(),
         };
     }
 }
@@ -112,7 +115,10 @@ mod tests {
     #[test]
     fn test_create() {
         let b = GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000));
-        assert_eq!(&Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000), b.value().unwrap());
+        assert_eq!(
+            &Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000),
+            b.value().unwrap()
+        );
     }
 
     #[test]
@@ -135,69 +141,99 @@ mod tests {
 
     #[test]
     fn test_encode_generalized_time() {
-        assert_eq!(vec![0x18, 0x11, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 
-                        0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33, 0x5a],
-        GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)).encode().unwrap());
+        assert_eq!(
+            vec![
+                0x18, 0x11, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32, 0x31, 0x30, 0x36,
+                0x32, 0x37, 0x2e, 0x33, 0x5a
+            ],
+            GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000))
+                .encode()
+                .unwrap()
+        );
     }
 
     #[test]
     fn test_encode_generalized_time_without_deciseconds() {
-        let mut gen_time = GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000));
+        let mut gen_time =
+            GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000));
         gen_time.set_format(TimeFormat::YYYYmmddHHMMSSZ);
-        assert_eq!(vec![0x18, 0xf, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 
-                        0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x5a],
-        gen_time.encode().unwrap());
+        assert_eq!(
+            vec![
+                0x18, 0xf, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32, 0x31, 0x30, 0x36,
+                0x32, 0x37, 0x5a
+            ],
+            gen_time.encode().unwrap()
+        );
     }
 
     #[test]
     fn test_decode() {
-        assert_eq!(GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)),
-            _parse(&[0x18, 0x11, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 
-            0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33, 0x5a]));
+        assert_eq!(
+            GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)),
+            _parse(&[
+                0x18, 0x11, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32, 0x31, 0x30, 0x36,
+                0x32, 0x37, 0x2e, 0x33, 0x5a
+            ])
+        );
     }
 
     #[test]
     fn test_encode_without_deciseconds() {
-        assert_eq!(GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms(21, 6, 27)),
-                    _parse(&[0x18, 0xf, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 
-                    0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x5a]));
+        assert_eq!(
+            GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms(21, 6, 27)),
+            _parse(&[
+                0x18, 0xf, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32, 0x31, 0x30, 0x36,
+                0x32, 0x37, 0x5a
+            ])
+        );
     }
 
     #[test]
     fn test_decode_with_excesive_bytes() {
-        assert_eq!((GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)), 19),
-            _parse_with_consumed_octets(&[0x18, 0x11, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 
-            0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33, 0x5a, 
-            0x22, 0x22, 0x22]));
+        assert_eq!(
+            (
+                GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)),
+                19
+            ),
+            _parse_with_consumed_octets(&[
+                0x18, 0x11, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32, 0x31, 0x30, 0x36,
+                0x32, 0x37, 0x2e, 0x33, 0x5a, 0x22, 0x22, 0x22
+            ])
+        );
     }
 
-    #[should_panic (expected = "InvalidValue(NoDataForType)")]
+    #[should_panic(expected = "NoDataForType")]
     #[test]
     fn test_decode_without_enough_value_octets() {
-        _parse(&[0x18, 0x0e, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 
-            0x32, 0x31, 0x30, 0x36, 0x32, 0x37]);
+        _parse(&[
+            0x18, 0x0e, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32, 0x31, 0x30, 0x36,
+            0x32, 0x37,
+        ]);
     }
 
-    #[should_panic (expected = "InvalidTag(Unmatched")]
+    #[should_panic(expected = "InvalidTag(Unmatched")]
     #[test]
     fn test_decode_with_invalid_tag() {
         _parse(&[0x7, 0x1, 0x0]);
     }
 
-    #[should_panic(expected="ParseIntError")]
+    #[should_panic(expected = "ParseIntError")]
     #[test]
-    fn test_decode_with_no_number_characters(){
-        _parse(&[0x18, 0x11, 0x41, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 
-            0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33, 0x5a]);
+    fn test_decode_with_no_number_characters() {
+        _parse(&[
+            0x18, 0x11, 0x41, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32, 0x31, 0x30, 0x36,
+            0x32, 0x37, 0x2e, 0x33, 0x5a,
+        ]);
     }
 
-    #[should_panic(expected="ImplementationError")]
+    #[should_panic(expected = "ImplementationError")]
     #[test]
-    fn test_decode_local_time(){
-        _parse(&[0x18, 0x10, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 
-            0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33]);
+    fn test_decode_local_time() {
+        _parse(&[
+            0x18, 0x10, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32, 0x31, 0x30, 0x36,
+            0x32, 0x37, 0x2e, 0x33,
+        ]);
     }
-
 
     fn _parse(raw: &[u8]) -> GeneralizedTime {
         return _parse_with_consumed_octets(raw).0;

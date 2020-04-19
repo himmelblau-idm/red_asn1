@@ -108,7 +108,7 @@ pub trait Asn1Object {
         let (_, raw_value) = raw.split_at(consumed_octets);
 
         if value_length > raw_value.len() {
-            return Err(asn1err::ValueErrorKind::NoDataForLength)?;
+            return Err(asn1err::Error::NoDataForLength)?;
         }
 
         let (raw_value, _) = raw_value.split_at(value_length);
@@ -239,7 +239,7 @@ mod tests {
         assert_eq!((0x5716fa9, 5), _parse_length(vec![0x84, 0x05, 0x71, 0x6f, 0xa9]));
     }
 
-    #[should_panic (expected = "InvalidValue(NoDataForLength)")]
+    #[should_panic (expected = "NoDataForLength")]
     #[test]
     fn test_decode_with_excesive_length_for_data() {
         TestObject::new_tagged(Tag::new_primitive_universal(1)).decode(&[0x1, 0x3, 0x0]).unwrap();

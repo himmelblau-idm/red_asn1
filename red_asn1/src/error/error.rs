@@ -1,6 +1,6 @@
+use ascii;
 use std::fmt;
 use std::result;
-use ascii;
 
 use super::*;
 
@@ -12,15 +12,12 @@ pub type Result<T> = result::Result<T, Error>;
 pub enum Error {
     /// Error decoding tag
     InvalidTag(Box<TagErrorKind>),
-    
-    /// No length was provided 
+
+    /// No length was provided
     LengthEmpty,
 
     /// The size of the length is higher than the available octets
     NotEnoughLengthOctects,
-
-    /// Error decoding value
-    InvalidValue(Box<ValueErrorKind>),
 
     /// No value was provided to encode
     NoValue,
@@ -32,15 +29,32 @@ pub enum Error {
     SequenceFieldError(String, String, Box<Error>),
 
     /// Error while processing a sequence
-    SequenceError(String, Box<Error>)
-}
+    SequenceError(String, Box<Error>),
 
-impl From<ValueErrorKind> for Error {
-    fn from(kind: ValueErrorKind) -> Self {
-        return Error::InvalidValue(Box::new(kind));
-    }
-}
+    /// There are no enough data provided for the length specified
+    NoDataForLength,
 
+    /// There are not enough data octets for the type to be build
+    NoDataForType,
+
+    /// There are octets which were not consumed in decoding
+    NoAllDataConsumed,
+
+    /// Error formating non-utf8 characters
+    Utf8Error,
+
+    /// Error formating non-utf8 characters
+    AsciiError,
+
+    /// Error parsing to int
+    ParseIntError,
+
+    /// Error in value due to limitation of the implementation
+    ImplementationError(String),
+
+    /// Error in value due to a constraint in the type
+    ConstraintError(String),
+}
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -56,24 +70,24 @@ impl From<TagErrorKind> for Error {
 
 impl From<std::str::Utf8Error> for Error {
     fn from(_inner: std::str::Utf8Error) -> Self {
-        return Self::from(ValueErrorKind::Utf8Error);
+        return Self::Utf8Error;
     }
 }
 
 impl From<std::string::FromUtf8Error> for Error {
     fn from(_inner: std::string::FromUtf8Error) -> Self {
-        return Self::from(ValueErrorKind::Utf8Error);
+        return Self::Utf8Error;
     }
 }
 
 impl From<std::num::ParseIntError> for Error {
     fn from(_inner: std::num::ParseIntError) -> Self {
-        return Self::from(ValueErrorKind::ParseIntError);
+        return Self::ParseIntError;
     }
 }
 
 impl From<ascii::ToAsciiCharError> for Error {
     fn from(_inner: ascii::ToAsciiCharError) -> Self {
-        return Self::from(ValueErrorKind::AsciiError);
+        return Self::AsciiError;
     }
 }

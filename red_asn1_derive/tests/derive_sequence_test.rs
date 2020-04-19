@@ -235,7 +235,7 @@ fn test_decode_with_context_tags() {
     assert_eq!(&Integer::from(9), p.get_age().unwrap());
 }
 
-#[should_panic(expected =  "SequenceError(\"Person\", InvalidValue(NoAllDataConsumed))")]
+#[should_panic(expected =  "SequenceError(\"Person\", NoAllDataConsumed)")]
 #[test]
 fn test_decode_with_optional_with_bad_type_tag() {
 
@@ -251,7 +251,7 @@ fn test_decode_with_optional_with_bad_type_tag() {
     p.decode(&[0x30, 0x1, 0xee]).unwrap();
 }
 
-#[should_panic(expected =  "SequenceError(\"Person\", InvalidValue(NoAllDataConsumed))")]
+#[should_panic(expected =  "SequenceError(\"Person\", NoAllDataConsumed)")]
 #[test]
 fn test_decode_with_optional_with_bad_number_type_tag() {
 
@@ -301,7 +301,7 @@ fn test_decode_with_optional_and_context_tag_bad_context_length() {
     p.decode(&[0x30, 0x2, 0xa0, 0x0]).unwrap();
 }
 
-#[should_panic(expected =  "SequenceError(\"Person\", InvalidValue(NoAllDataConsumed))")]
+#[should_panic(expected =  "SequenceError(\"Person\", NoAllDataConsumed)")]
 #[test]
 fn test_bad_decode_optional_context_tag_bad_context_tag() {
 
@@ -329,7 +329,7 @@ fn test_decode_bad_sequence_type_tag() {
     p.decode(&[0x33, 0x0]).unwrap();
 }
 
-#[should_panic(expected =  "SequenceError(\"Person\", InvalidLength(InvalidLengthOfLength))")]
+#[should_panic(expected =  "SequenceError(\"Person\", NotEnoughLengthOctects)")]
 #[test]
 fn test_decode_bad_sequence_length() {
 
@@ -354,7 +354,7 @@ fn test_decode_bad_sequence_application_tag() {
     p.decode(&[0x61, 0x0]).unwrap();
 }
 
-#[should_panic(expected =  "SequenceError(\"Person\", InvalidLength(InvalidLengthOfLength))")]
+#[should_panic(expected =  "SequenceError(\"Person\", NotEnoughLengthOctects)")]
 #[test]
 fn test_decode_sequence_application_tag_bad_length() {
 
@@ -383,7 +383,7 @@ fn test_bad_decode_optional_context_tag_bad_type_tag() {
     p.decode(&[0x30, 0x3, 0xa0, 0x1, 0xee]).unwrap();
 }
 
-#[should_panic(expected =  "SequenceError(\"Person\", InvalidValue(NoDataForLength))")]
+#[should_panic(expected =  "SequenceError(\"Person\", NoDataForLength)")]
 #[test]
 fn test_bad_decode_not_enough_data_for_length () {
 
@@ -396,7 +396,7 @@ fn test_bad_decode_not_enough_data_for_length () {
     p.decode(&[0x30, 0x1]).unwrap();
 }
 
-#[should_panic(expected =  "SequenceError(\"Person\", InvalidValue(NoDataForLength))")]
+#[should_panic(expected =  "SequenceError(\"Person\", NoDataForLength)")]
 #[test]
 fn test_bad_decode_not_enough_data_for_length_with_application_tag () {
 

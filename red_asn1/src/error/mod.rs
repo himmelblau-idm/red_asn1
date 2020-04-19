@@ -5,9 +5,6 @@ pub use error::Error;
 mod tagerror;
 pub use tagerror::*;
 
-mod valueerror;
-pub use valueerror::*;
-
 
 #[cfg(test)]
 mod test {

@@ -46,7 +46,7 @@ impl Asn1Object for Boolean {
 
     fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         if raw.len() == 0 {
-            return Err(asn1err::ValueErrorKind::NoDataForType)?;
+            return Err(asn1err::Error::NoDataForType)?;
         }
 
         self._value = Some(raw[0] != 0);
@@ -120,7 +120,7 @@ mod tests {
         _parse(&[0x7, 0x1, 0x0]);
     }
 
-    #[should_panic (expected = "InvalidValue(NoDataForType)")]
+    #[should_panic (expected = "NoDataForType")]
     #[test]
     fn test_decode_without_enough_value_octets() {
         _parse(&[0x1, 0x0]);
