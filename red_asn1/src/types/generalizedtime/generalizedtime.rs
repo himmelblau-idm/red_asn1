@@ -171,27 +171,27 @@ mod tests {
             0x22, 0x22, 0x22]));
     }
 
-    #[should_panic (expected = "Invalid value: Not enough data for type")]
+    #[should_panic (expected = "InvalidValue(NoDataForType)")]
     #[test]
     fn test_decode_without_enough_value_octets() {
         _parse(&[0x18, 0x0e, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 
             0x32, 0x31, 0x30, 0x36, 0x32, 0x37]);
     }
 
-    #[should_panic (expected = "Invalid universal tag: Not match with expected tag")]
+    #[should_panic (expected = "InvalidTag(Unmatched")]
     #[test]
     fn test_decode_with_invalid_tag() {
         _parse(&[0x7, 0x1, 0x0]);
     }
 
-    #[should_panic(expected="Invalid value: Error parsing to int")]
+    #[should_panic(expected="ParseIntError")]
     #[test]
     fn test_decode_with_no_number_characters(){
         _parse(&[0x18, 0x11, 0x41, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 
             0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33, 0x5a]);
     }
 
-    #[should_panic(expected="Invalid value: Local time decode is not implemented yet")]
+    #[should_panic(expected="ImplementationError")]
     #[test]
     fn test_decode_local_time(){
         _parse(&[0x18, 0x10, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 

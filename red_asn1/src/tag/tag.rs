@@ -179,14 +179,14 @@ mod tests {
         assert_eq!((Tag::new(198, TagType::Primitive, TagClass::Private), 3), _parse_tag_with_consumed_octets(vec![0xdf, 0xc6, 0x01, 0x01, 0x02]));
     }
 
-    #[should_panic (expected = "Invalid universal tag: Empty")]
+    #[should_panic (expected = "InvalidTag(Empty")]
     #[test]
     fn test_decode_empty_tag() {
         _parse_tag(vec![]);
     }
     
 
-    #[should_panic (expected = "Invalid universal tag: High form number unfinished")]
+    #[should_panic (expected = "InvalidTag(HighFormNumberUnfinished(")]
     #[test]
     fn test_decode_invalid_tag_with_unfinished_tag_number() {
         _parse_tag(vec![0x1F, 0x80, 0x81]);

@@ -114,13 +114,13 @@ mod tests {
         assert_eq!((Boolean::from(false), 4), _parse_with_consumed_octets(&[0x1, 0x2, 0x0, 0x1]));
     }
 
-    #[should_panic (expected = "Invalid universal tag: Not match with expected tag")]
+    #[should_panic (expected = "InvalidTag(Unmatched")]
     #[test]
     fn test_decode_with_invalid_tag() {
         _parse(&[0x7, 0x1, 0x0]);
     }
 
-    #[should_panic (expected = "Invalid value: Not enough data for type")]
+    #[should_panic (expected = "InvalidValue(NoDataForType)")]
     #[test]
     fn test_decode_without_enough_value_octets() {
         _parse(&[0x1, 0x0]);

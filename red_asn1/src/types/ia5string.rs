@@ -129,13 +129,13 @@ mod tests {
                                         0x22, 0x22, 0x22]));
     }
 
-    #[should_panic (expected = "Invalid universal tag: Not match with expected tag")]
+    #[should_panic (expected = "InvalidTag(Unmatched")]
     #[test]
     fn test_decode_with_invalid_tag() {
         _parse(&[0x7, 0x1, 0x0]);
     }
 
-    #[should_panic (expected = "Invalid value: Error formating non-ascii characters")]
+    #[should_panic (expected = "AsciiError")]
     #[test]
     fn test_decode_non_ascii_characters() {
         _parse(&[0x16, 0x1, 0x80]);

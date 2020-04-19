@@ -190,7 +190,7 @@ mod tests {
         assert_eq!(2, TestObject::new_tagged(Tag::new_primitive_universal(0x1F)).decode_tag(&[0x1F, 0x1F]).unwrap());
     }
 
-    #[should_panic(expected="Not match with expected tag")]
+    #[should_panic(expected="InvalidTag(Unmatched(")]
     #[test]
     fn test_decode_different_tag() {
         assert_eq!(1, TestObject::new().decode_tag(&[0x1]).unwrap());
@@ -239,7 +239,7 @@ mod tests {
         assert_eq!((0x5716fa9, 5), _parse_length(vec![0x84, 0x05, 0x71, 0x6f, 0xa9]));
     }
 
-    #[should_panic (expected = "Invalid value: Not enough data for length")]
+    #[should_panic (expected = "InvalidValue(NoDataForLength)")]
     #[test]
     fn test_decode_with_excesive_length_for_data() {
         TestObject::new_tagged(Tag::new_primitive_universal(1)).decode(&[0x1, 0x3, 0x0]).unwrap();
