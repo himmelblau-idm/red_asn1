@@ -14,8 +14,7 @@ pub trait Asn1Object {
 
     /// To decode the tag from DER, should not be overwritten
     fn decode_tag(&self, raw_tag: &[u8]) -> asn1err::Result<usize> {
-        let mut decoded_tag = Tag::new(0, TagType::Primitive, TagClass::Universal);
-        let consumed_octets = decoded_tag.decode(raw_tag)?;
+        let (consumed_octets, decoded_tag) = Tag::decode(raw_tag)?;
 
         if decoded_tag != self.tag() {
             return Err(asn1err::Error::UnmatchedTag(TagClass::Universal))?;
