@@ -321,7 +321,7 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
 
     let inner_encode = quote! {
         fn _inner_encode(&self) -> red_asn1::Result<Vec<u8>> {
-            let mut encoded = self.encode_tag();
+            let mut encoded = self.tag().encode();
             let mut encoded_value = self.encode_value()?;
             let mut encoded_length = red_asn1::encode_length(encoded_value.len());
 
@@ -334,13 +334,20 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
 
     let mut inner_decode = quote! {
         fn _inner_decode(&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
-            let mut consumed_octets = self.decode_tag(raw).or_else( |error| 
+            let (mut consumed_octets, decoded_tag) = Tag::decode(raw).or_else( |error| 
                 Err(red_asn1::Error::SequenceError( 
                     stringify!(#name).to_string(), 
                     Box::new(error.clone())
                 ))
             )?;
 
+            if decoded_tag != self.tag() {
+                return Err(red_asn1::Error::SequenceError( 
+                    stringify!(#name).to_string(), 
+                    Box::new(red_asn1::Error::UnmatchedTag(TagClass::Universal))
+                ))
+            }
+            
             let (_, raw_length) = raw.split_at(consumed_octets);
 
             let (value_length, consumed_octets_by_length) = red_asn1::decode_length(raw_length).or_else( |error| 
