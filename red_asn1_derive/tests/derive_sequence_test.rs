@@ -124,7 +124,7 @@ fn test_encode_with_optional_without_value_component() {
     assert_eq!(vec![0x30, 0x0], p.encode().unwrap());
 }
 
-#[should_panic(expected = "Person::age => No value provided")]
+#[should_panic(expected = "SequenceFieldError(\"Person\", \"age\", NoValue)")]
 #[test]
 fn test_encode_without_give_required_values() {
 
@@ -208,7 +208,7 @@ fn test_decode_empty_with_excesive_bytes() {
     assert_eq!(2, consumed_octets);
 }
 
-#[should_panic (expected = "Invalid universal tag: Not match with expected tag")]
+#[should_panic (expected = "SequenceError(\"Person\", InvalidTag(Unmatched(Universal)))")]
 #[test]
 fn test_decode_with_invalid_tag() {
     #[derive(Sequence)]
@@ -235,7 +235,7 @@ fn test_decode_with_context_tags() {
     assert_eq!(&Integer::from(9), p.get_age().unwrap());
 }
 
-#[should_panic(expected =  "Invalid value: Not all octects were consumed")]
+#[should_panic(expected =  "SequenceError(\"Person\", InvalidValue(NoAllDataConsumed))")]
 #[test]
 fn test_decode_with_optional_with_bad_type_tag() {
 
@@ -251,7 +251,7 @@ fn test_decode_with_optional_with_bad_type_tag() {
     p.decode(&[0x30, 0x1, 0xee]).unwrap();
 }
 
-#[should_panic(expected =  "Invalid value: Not all octects were consumed")]
+#[should_panic(expected =  "SequenceError(\"Person\", InvalidValue(NoAllDataConsumed))")]
 #[test]
 fn test_decode_with_optional_with_bad_number_type_tag() {
 
@@ -285,7 +285,7 @@ fn test_decode_with_optional_and_context_tag() {
     assert_eq!(None, p.get_age());
 }
 
-#[should_panic(expected = "Invalid universal tag: Empty")]
+#[should_panic(expected = "SequenceFieldError(\"Person\", \"age\", InvalidTag(Empty(Universal)))")]
 #[test]
 fn test_decode_with_optional_and_context_tag_bad_context_length() {
 
@@ -301,7 +301,7 @@ fn test_decode_with_optional_and_context_tag_bad_context_length() {
     p.decode(&[0x30, 0x2, 0xa0, 0x0]).unwrap();
 }
 
-#[should_panic(expected =  "Person => Invalid value: Not all octects were consumed")]
+#[should_panic(expected =  "SequenceError(\"Person\", InvalidValue(NoAllDataConsumed))")]
 #[test]
 fn test_bad_decode_optional_context_tag_bad_context_tag() {
 
@@ -317,7 +317,7 @@ fn test_bad_decode_optional_context_tag_bad_context_tag() {
     p.decode(&[0x30, 0x1, 0xee]).unwrap();
 }
 
-#[should_panic(expected =  "Person => Invalid universal tag: Not match with expected tag")]
+#[should_panic(expected =  "SequenceError(\"Person\", InvalidTag(Unmatched(Universal)))")]
 #[test]
 fn test_decode_bad_sequence_type_tag() {
 
@@ -329,7 +329,7 @@ fn test_decode_bad_sequence_type_tag() {
     p.decode(&[0x33, 0x0]).unwrap();
 }
 
-#[should_panic(expected =  "Person => Invalid length: Invalid length of length")]
+#[should_panic(expected =  "SequenceError(\"Person\", InvalidLength(InvalidLengthOfLength))")]
 #[test]
 fn test_decode_bad_sequence_length() {
 
@@ -341,7 +341,7 @@ fn test_decode_bad_sequence_length() {
     p.decode(&[0x30, 0x81]).unwrap();
 }
 
-#[should_panic(expected =  "Person => Invalid application tag: Not match with expected tag")]
+#[should_panic(expected =  "SequenceError(\"Person\", InvalidTag(Unmatched(Application)))")]
 #[test]
 fn test_decode_bad_sequence_application_tag() {
 
@@ -354,7 +354,7 @@ fn test_decode_bad_sequence_application_tag() {
     p.decode(&[0x61, 0x0]).unwrap();
 }
 
-#[should_panic(expected =  "Person => Invalid length: Invalid length of length")]
+#[should_panic(expected =  "SequenceError(\"Person\", InvalidLength(InvalidLengthOfLength))")]
 #[test]
 fn test_decode_sequence_application_tag_bad_length() {
 
@@ -367,7 +367,7 @@ fn test_decode_sequence_application_tag_bad_length() {
     p.decode(&[0x60, 0x81]).unwrap();
 }
 
-#[should_panic(expected =  "Person::age => Invalid universal tag: Not match with expected tag")]
+#[should_panic(expected =  "SequenceFieldError(\"Person\", \"age\", InvalidTag(Unmatched(Universal)))")]
 #[test]
 fn test_bad_decode_optional_context_tag_bad_type_tag() {
 
@@ -383,7 +383,7 @@ fn test_bad_decode_optional_context_tag_bad_type_tag() {
     p.decode(&[0x30, 0x3, 0xa0, 0x1, 0xee]).unwrap();
 }
 
-#[should_panic(expected =  "Person => Invalid value: Not enough data for length")]
+#[should_panic(expected =  "SequenceError(\"Person\", InvalidValue(NoDataForLength))")]
 #[test]
 fn test_bad_decode_not_enough_data_for_length () {
 
@@ -396,7 +396,7 @@ fn test_bad_decode_not_enough_data_for_length () {
     p.decode(&[0x30, 0x1]).unwrap();
 }
 
-#[should_panic(expected =  "Person => Invalid value: Not enough data for length")]
+#[should_panic(expected =  "SequenceError(\"Person\", InvalidValue(NoDataForLength))")]
 #[test]
 fn test_bad_decode_not_enough_data_for_length_with_application_tag () {
 
@@ -478,7 +478,7 @@ fn test_decode_with_optional_without_context_tag() {
 }
 
 
-#[should_panic (expected = "TestSequence::id => Invalid universal tag: Not match with expected tag")]
+#[should_panic (expected = "SequenceFieldError(\"TestSequence\", \"id\", InvalidTag(Unmatched(Universal)))")]
 #[test]
 fn test_decode_with_optional_and_context_tag_and_bad_type_tag() {
     #[derive(Sequence)]
@@ -550,7 +550,7 @@ fn test_decode_with_inner_sequenceof() {
 }
 
 
-#[should_panic (expected = "TestSequence::id => Invalid context tag: Empty")]
+#[should_panic (expected = "SequenceFieldError(\"TestSequence\", \"id\", InvalidTag(Empty(Context)))")]
 #[test]
 fn test_decode_without_required_value() {
     #[derive(Sequence)]
@@ -566,7 +566,7 @@ fn test_decode_without_required_value() {
 
 }
 
-#[should_panic (expected = "SuperTestSequence::inner => TestSequence::id => Invalid context tag: Empty")]
+#[should_panic (expected = "SequenceFieldError(\"SuperTestSequence\", \"inner\", SequenceFieldError(\"TestSequence\", \"id\", InvalidTag(Empty(Context))))")]
 #[test]
 fn test_decode_without_required_value_with_inner_sequence() {
     #[derive(Sequence, Debug, PartialEq, Default)]

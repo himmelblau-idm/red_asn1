@@ -62,9 +62,9 @@ fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
                         consumed_octets += octets_count;
                     },
                     Err(error) => {
-                        match error.kind() {
-                            red_asn1::ErrorKind::InvalidTag(tag_error_kind) => {
-                                match **tag_error_kind {
+                        match error.clone() {
+                            red_asn1::Error::InvalidTag(tag_error_kind) => {
+                                match *tag_error_kind {
                                     red_asn1::TagErrorKind::HighFormNumberUnfinished(_) => {
                                         return Err(red_asn1::TagErrorKind::HighFormNumberUnfinished(TagClass::Context))?;
                                     }
@@ -167,14 +167,14 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
                         value.append(bytes);
                     },
                     Err(error) => {
-                        match error.kind() {
-                            red_asn1::ErrorKind::NoValue => {
+                        match error.clone() {
+                            red_asn1::Error::NoValue => {
                             },
                             _ => {
-                                return Err(red_asn1::ErrorKind::SequenceFieldError(
+                                return Err(red_asn1::Error::SequenceFieldError(
                                     stringify!(#sequence_name).to_string(), 
                                     stringify!(#component_name).to_string(),
-                                    Box::new(error.kind().clone())
+                                    Box::new(error.clone())
                                     ))?;
                             }
                         }
@@ -189,10 +189,10 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
                     if tag_class == red_asn1::TagClass::Context {
                         self.#unsetter_name();
                     } else {
-                        return Err(red_asn1::ErrorKind::SequenceFieldError(
+                        return Err(red_asn1::Error::SequenceFieldError(
                             stringify!(#sequence_name).to_string(), 
                             stringify!(#component_name).to_string(),
-                            Box::new(error.kind().clone())
+                            Box::new(error.clone())
                         ))?;
                     }
                 };
@@ -200,10 +200,10 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
             }else{
                 invalid_tag_errors_handlers = quote! {
                     if tag_class == red_asn1::TagClass::Context {
-                        return Err(red_asn1::ErrorKind::SequenceFieldError(
+                        return Err(red_asn1::Error::SequenceFieldError(
                             stringify!(#sequence_name).to_string(), 
                             stringify!(#component_name).to_string(),
-                            Box::new(error.kind().clone())
+                            Box::new(error.clone())
                         ))?;
                     } else {
                         self.#unsetter_name();
@@ -219,9 +219,9 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
                         consumed_octets += num_octets;
                     },
                     Err(error) => {
-                        match error.kind() {
-                            red_asn1::ErrorKind::InvalidTag(tag_error_kind) => {
-                                match **tag_error_kind {
+                        match error.clone() {
+                            red_asn1::Error::InvalidTag(tag_error_kind) => {
+                                match *tag_error_kind {
                                     TagErrorKind::Empty(tag_class) => {
                                         #invalid_tag_errors_handlers
                                     }
@@ -234,10 +234,10 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
                                 }
                             },
                             _ => {
-                                return Err(red_asn1::ErrorKind::SequenceFieldError(
+                                return Err(red_asn1::Error::SequenceFieldError(
                                     stringify!(#sequence_name).to_string(), 
                                     stringify!(#component_name).to_string(),
-                                    Box::new(error.kind().clone())
+                                    Box::new(error.clone())
                                     ))?;
                             }
                         }
@@ -250,10 +250,10 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
             encode_calls = quote! {
                 #encode_calls
                 value.append(&mut self.#encoder_name().or_else(
-                    |error| Err(red_asn1::ErrorKind::SequenceFieldError(
+                    |error| Err(red_asn1::Error::SequenceFieldError(
                                 stringify!(#sequence_name).to_string(), 
                                 stringify!(#component_name).to_string(),
-                                Box::new(error.kind().clone())
+                                Box::new(error.clone())
                                 )))?
                 );
             };
@@ -261,10 +261,10 @@ pub fn code_sequence_inner_calls(sequence_definition: &SequenceDefinition) -> Se
             decode_calls = quote! {
                 #decode_calls
                 consumed_octets += self.#decoder_name(&raw[consumed_octets..]).or_else(
-                    |error| Err(red_asn1::ErrorKind::SequenceFieldError(
+                    |error| Err(red_asn1::Error::SequenceFieldError(
                                 stringify!(#sequence_name).to_string(), 
                                 stringify!(#component_name).to_string(),
-                                Box::new(error.kind().clone())
+                                Box::new(error.clone())
                                 )))?;
             };
         }
@@ -319,9 +319,9 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
             #decode_calls
 
             if consumed_octets < raw.len() {
-                return Err(red_asn1::ErrorKind::SequenceError(
+                return Err(red_asn1::Error::SequenceError(
                                 stringify!(#name).to_string(),
-                                Box::new(red_asn1::ErrorKind::from(red_asn1::ValueErrorKind::NoAllDataConsumed))
+                                Box::new(red_asn1::Error::from(red_asn1::ValueErrorKind::NoAllDataConsumed))
                         ))?;
             }
 
@@ -345,18 +345,18 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
     let mut inner_decode = quote! {
         fn _inner_decode(&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
             let mut consumed_octets = self.decode_tag(raw).or_else( |error| 
-                Err(red_asn1::ErrorKind::SequenceError( 
+                Err(red_asn1::Error::SequenceError( 
                     stringify!(#name).to_string(), 
-                    Box::new(error.kind().clone())
+                    Box::new(error.clone())
                 ))
             )?;
 
             let (_, raw_length) = raw.split_at(consumed_octets);
 
             let (value_length, consumed_octets_by_length) = self.decode_length(raw_length).or_else( |error| 
-                Err(red_asn1::ErrorKind::SequenceError( 
+                Err(red_asn1::Error::SequenceError( 
                     stringify!(#name).to_string(), 
-                    Box::new(error.kind().clone())
+                    Box::new(error.clone())
                 ))
             )?;
 
@@ -365,9 +365,9 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
             let (_, raw_value) = raw.split_at(consumed_octets);
 
             if value_length > raw_value.len() {
-                return Err(red_asn1::ErrorKind::SequenceError( 
+                return Err(red_asn1::Error::SequenceError( 
                     stringify!(#name).to_string(), 
-                    Box::new(red_asn1::ErrorKind::from(red_asn1::ValueErrorKind::NoDataForLength))
+                    Box::new(red_asn1::Error::from(red_asn1::ValueErrorKind::NoDataForLength))
                 ))?;
             }
 
@@ -418,25 +418,25 @@ pub fn code_sequence(sequence_definition: &SequenceDefinition,
 
             fn decode(&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
                 let mut consumed_octets = self._decode_application_tag(raw).or_else( |error| 
-                    Err(red_asn1::ErrorKind::SequenceError( 
+                    Err(red_asn1::Error::SequenceError( 
                         stringify!(#name).to_string(), 
-                        Box::new(error.kind().clone())
+                        Box::new(error.clone())
                     ))
                 )?;
                 let (_, raw_length) = raw.split_at(consumed_octets);
                 let (value_length, consumed_octets_by_length) = self.decode_length(raw_length).or_else( |error| 
-                    Err(red_asn1::ErrorKind::SequenceError( 
+                    Err(red_asn1::Error::SequenceError( 
                         stringify!(#name).to_string(), 
-                        Box::new(error.kind().clone())
+                        Box::new(error.clone())
                     ))
                 )?;
                 consumed_octets += consumed_octets_by_length;
                 let (_, raw_value) = raw.split_at(consumed_octets);
 
                 if value_length > raw_value.len() {
-                    return Err(red_asn1::ErrorKind::SequenceError( 
+                    return Err(red_asn1::Error::SequenceError( 
                         stringify!(#name).to_string(), 
-                        Box::new(red_asn1::ErrorKind::from(red_asn1::ValueErrorKind::NoDataForLength))
+                        Box::new(red_asn1::Error::from(red_asn1::ValueErrorKind::NoDataForLength))
                     ))?;
                 }
 
