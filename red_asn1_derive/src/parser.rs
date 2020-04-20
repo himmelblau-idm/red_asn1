@@ -1,4 +1,4 @@
-use super::parse_error::*;
+use super::parse_error::{ParseComponentErrorKind, ParseComponentResult};
 use syn::*;
 use super::parse_definitions::*;
 

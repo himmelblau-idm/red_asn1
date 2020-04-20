@@ -126,8 +126,7 @@ mod tests {
     }
 
     fn _parse_octet_string_with_consumed_octets(raw: &[u8]) -> (OctetString, usize) {
-        let mut os = OctetString::from(vec![]);
-        let consumed_octets = os.decode(raw).unwrap();
+        let (consumed_octets, os) = OctetString::decode(raw).unwrap();
         return (os, consumed_octets);
     }
 }

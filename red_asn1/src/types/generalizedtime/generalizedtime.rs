@@ -240,8 +240,7 @@ mod tests {
     }
 
     fn _parse_with_consumed_octets(raw: &[u8]) -> (GeneralizedTime, usize) {
-        let mut b = GeneralizedTime::from(Utc::now());
-        let consumed_octets = b.decode(raw).unwrap();
+        let (consumed_octets, b) = GeneralizedTime::decode(raw).unwrap();
         return (b, consumed_octets);
     }
 }

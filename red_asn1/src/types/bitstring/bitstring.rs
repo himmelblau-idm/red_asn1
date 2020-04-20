@@ -152,8 +152,7 @@ mod tests {
     }
 
     fn _parse_with_consumed_octets(raw: &[u8]) -> (BitSring, usize) {
-        let mut b = BitSring::new(vec![], 0);
-        let consumed_octets = b.decode(raw).unwrap();
+        let (consumed_octets, b) = BitSring::decode(raw).unwrap();
         return (b, consumed_octets);
     }
 

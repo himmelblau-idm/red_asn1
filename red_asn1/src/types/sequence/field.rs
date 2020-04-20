@@ -3,11 +3,11 @@ use crate::error as asn1err;
 
 /// Class to represent a field of a Sequence
 #[derive(Debug, PartialEq, Default)]
-pub struct SeqField<T: Asn1Object + Default> {
+pub struct SeqField<T: Asn1Object> {
     value: Option<T>
 }
 
-impl<T: Asn1Object + Default> SeqField<T> {
+impl<T: Asn1Object> SeqField<T> {
 
     pub fn get_value(&self) -> Option<&T> {
         match self.value {
@@ -44,11 +44,11 @@ impl<T: Asn1Object + Default> SeqField<T> {
         };
     }
 
-    pub fn decode(&mut self, raw: &[u8]) -> asn1err::Result<usize> {
-        let mut new_subtype = T::default();
-        let size = new_subtype.decode(raw)?;
-        self.value = Some(new_subtype);
-        return Ok(size);
+    pub fn decode(raw: &[u8]) -> asn1err::Result<(usize, Self)> {
+        let mut s = Self::default();
+        let (size, new_subtype) = T::decode(raw)?;
+        s.value = Some(new_subtype);
+        return Ok((size, s));
     }
 
 }

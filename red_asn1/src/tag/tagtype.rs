@@ -19,3 +19,10 @@ impl From<u8> for TagType {
         }
     }
 }
+
+
+impl Default for TagType {
+    fn default() -> Self {
+        return Self::Primitive;
+    }
+}

@@ -3,7 +3,7 @@ use crate::error as asn1err;
 use crate::length::{encode_length, decode_length};
 
 /// A trait to allow objects to be encoded/decoded from ASN1-DER
-pub trait Asn1Object {
+pub trait Asn1Object: Sized + Default {
 
     /// Method to retrieve the tag of the object, used to identify each object in ASN1
     fn tag(&self) -> Tag;
@@ -29,10 +29,11 @@ pub trait Asn1Object {
 
     /// To decode the object from DER, generally does not need to be overwritten.
     /// Usually, just decode_value should be overwritten
-    fn decode(&mut self, raw: &[u8]) -> asn1err::Result<usize> {
+    fn decode(raw: &[u8]) -> asn1err::Result<(usize, Self)> {
         let (mut consumed_octets, decoded_tag) = Tag::decode(raw)?;
-
-        if decoded_tag != self.tag() {
+        let mut asn1obj = Self::default();
+        
+        if decoded_tag != asn1obj.tag() {
             return Err(asn1err::Error::UnmatchedTag(TagClass::Universal))?;
         }
 
@@ -49,10 +50,10 @@ pub trait Asn1Object {
 
         let (raw_value, _) = raw_value.split_at(value_length);
 
-        self.decode_value(raw_value)?;
+        asn1obj.decode_value(raw_value)?;
         consumed_octets += value_length;
 
-        return Ok(consumed_octets);
+        return Ok((consumed_octets, asn1obj));
     }
 
     /// Method to reset the object value
@@ -64,6 +65,7 @@ pub trait Asn1Object {
 mod tests {
     use super::*;
 
+    #[derive(Default)]
     struct TestObject {
         tag: Tag
     }
@@ -93,7 +95,7 @@ mod tests {
     #[should_panic (expected = "NoDataForLength")]
     #[test]
     fn test_decode_with_excesive_length_for_data() {
-        TestObject::new_tagged(Tag::new_primitive_universal(1)).decode(&[0x1, 0x3, 0x0]).unwrap();
+        TestObject::decode(&[0x0, 0x3, 0x0]).unwrap();
     }
 
 }

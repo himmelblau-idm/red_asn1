@@ -145,8 +145,7 @@ mod tests {
     }
 
     fn _parse_with_consumed_octets(raw: &[u8]) -> (GeneralString, usize) {
-        let mut b = GeneralString::from("".to_string());
-        let consumed_octets = b.decode(raw).unwrap();
+        let (consumed_octets, b) = GeneralString::decode(raw).unwrap();
         return (b, consumed_octets);
     }
 }

@@ -8,7 +8,7 @@ use crate::error as asn1err;
 /// * Type: The scope of the object
 /// * Number: A distinguished number between objects of the same type and class
 ///
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone, Default)]
 pub struct Tag {
     pub number: u8,
     pub r#type: TagType,

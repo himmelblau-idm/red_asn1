@@ -47,3 +47,9 @@ impl fmt::Display for TagClass {
     }
 
 }
+
+impl Default for TagClass {
+    fn default() -> Self {
+        return Self::Universal;
+    }
+}

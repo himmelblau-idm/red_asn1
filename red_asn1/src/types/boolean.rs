@@ -131,8 +131,7 @@ mod tests {
     }
 
     fn _parse_with_consumed_octets(raw: &[u8]) -> (Boolean, usize) {
-        let mut b = Boolean::from(false);
-        let consumed_octets = b.decode(raw).unwrap();
+        let (consumed_octets, b) = Boolean::decode(raw).unwrap();
         return (b, consumed_octets);
     }
 }

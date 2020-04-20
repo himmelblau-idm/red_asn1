@@ -146,8 +146,7 @@ mod tests {
     }
 
     fn _parse_with_consumed_octets(raw: &[u8]) -> (IA5String, usize) {
-        let mut b = IA5String::from(AsciiString::from_ascii("".to_string()).unwrap());
-        let consumed_octets = b.decode(raw).unwrap();
+        let (consumed_octets, b) = IA5String::decode(raw).unwrap();
         return (b, consumed_octets);
     }
 }

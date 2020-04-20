@@ -282,8 +282,7 @@ mod tests {
     }
 
     fn _parse_with_consumed_octets(raw: &[u8]) -> (Integer, usize) {
-        let mut b = Integer::from(0);
-        let consumed_octets = b.decode(raw).unwrap();
+        let (consumed_octets, b) = Integer::decode(raw).unwrap();
         return (b, consumed_octets);
     }
 }

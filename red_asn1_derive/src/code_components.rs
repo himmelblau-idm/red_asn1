@@ -49,6 +49,7 @@ fn code_unsetter(comp_def: &ComponentDefinition) -> TokenStream {
 fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
     let decoder_name = comp_def.decoder_name();
     let field_name = &comp_def.id;
+    let field_type = &comp_def.kind;
 
     if let Some(context_tag_number) = comp_def.context_tag_number {
         return quote! {
@@ -101,7 +102,9 @@ fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
     } else {
         return quote! {
             fn #decoder_name (&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
-                return self.#field_name.decode(raw);
+                let (size, field) = #field_type::decode(raw)?;
+                self.#field_name = field;
+                return Ok(size);
             }
         };
     }
