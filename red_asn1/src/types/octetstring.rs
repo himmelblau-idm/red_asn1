@@ -6,10 +6,7 @@ pub static OCTET_STRING_TAG_NUMBER: u8 = 0x4;
 
 
 /// Class to encode/decode OctetString ASN1
-#[derive(Debug, PartialEq, Default)]
-pub struct OctetString {
-    _value: Option<Vec<u8>>
-}
+pub type OctetString = Vec<u8>;
 
 impl Asn1Object for OctetString {
 
@@ -17,48 +14,15 @@ impl Asn1Object for OctetString {
         return Tag::new_primitive_universal(OCTET_STRING_TAG_NUMBER);
     }
 
-    fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
-        match &self._value {
-            Some(_value) => {
-                return Ok(_value.clone());
-            },
-            None => {
-                return Err(asn1err::Error::NoValue)?;
-            }
-        }
+    fn encode_value(&self) -> Vec<u8> {
+        return self.clone();
     }
 
     fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
-        self._value = Some(raw.to_vec());
+        *self = raw.to_vec();
         return Ok(());
     }
 
-    fn unset_value(&mut self) {
-        self._value = None;
-    }
-}
-
-impl OctetString {
-
-    pub fn value(&self) -> Option<&Vec<u8>> {
-        match &self._value {
-            Some(ref value) => {
-                return Some(value);
-            }
-            None => {
-                return None;
-            }
-        };
-    }
-
-}
-
-impl From<Vec<u8>> for OctetString {
-    fn from(value: Vec<u8>) -> Self {
-        return OctetString {
-            _value: Some(value)
-        }
-    }
 }
 
 #[cfg(test)]
@@ -66,34 +30,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_create() {
-        let b = OctetString::from(vec![0x0]);
-        assert_eq!(&vec![0x0], b.value().unwrap());
-    }
-
-    #[test]
-    fn test_create_default() {
-        assert_eq!(
-            OctetString {
-                _value: None
-            },
-            OctetString::default()
-        )
-    }
-
-    #[test]
-    fn test_unset_value() {
-        let mut b = OctetString::from(vec![0x0]);
-        b.unset_value();
-        assert_eq!(None, b.value());
-    }
-
-    #[test]
     fn test_encode_octet_string() {
-        assert_eq!(vec![0x4, 0x1, 0x0], OctetString::from(vec![0x0]).encode().unwrap());
+        assert_eq!(vec![0x4, 0x1, 0x0], OctetString::from(vec![0x0]).encode());
         assert_eq!(vec![0x04, 0x08, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef], 
-        OctetString::from(vec![0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]).encode().unwrap());
-        assert_eq!(vec![0x4, 0x0], OctetString::from(vec![]).encode().unwrap());
+        OctetString::from(vec![0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]).encode());
+        assert_eq!(vec![0x4, 0x0], OctetString::from(vec![]).encode());
     }
 
     #[test]
