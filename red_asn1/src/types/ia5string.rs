@@ -1,41 +1,26 @@
-use ascii::{AsciiChar, AsciiString};
+use crate::error as asn1err;
 use crate::tag::Tag;
 use crate::traits::*;
-use crate::error as asn1err;
+use ascii::{AsciiChar, AsciiString};
 
 pub static IA5STRING_TAG_NUMBER: u8 = 0x16;
 
 /// Class to encode/decode IA5String ASN1
-#[derive(Debug, PartialEq, Default)]
-pub struct IA5String {
-    _value: Option<AsciiString>
-}
+pub type IA5String = AsciiString;
 
 impl Asn1Object for IA5String {
-    
     fn tag(&self) -> Tag {
         return Tag::new_primitive_universal(IA5STRING_TAG_NUMBER);
     }
 
-    fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
-        let value;
+    fn encode_value(&self) -> Vec<u8> {
+        let mut encoded_value: Vec<u8> = Vec::with_capacity(self.len());
 
-        match &self._value {
-            Some(_value) => {
-                value = _value;
-            },
-            None => {
-                return Err(asn1err::Error::NoValue)?;
-            }
-        }
-
-        let mut encoded_value : Vec<u8> = Vec::with_capacity(value.len());
-
-        for ch in value.chars() {
+        for ch in self.chars() {
             encoded_value.push(ch as u8);
         }
 
-        return Ok(encoded_value);
+        return encoded_value;
     }
 
     fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
@@ -45,35 +30,9 @@ impl Asn1Object for IA5String {
             value.push(AsciiChar::from_ascii(*byte)?);
         }
 
-        self._value = Some(value);
+        *self = value;
 
         return Ok(());
-    }
-
-    fn unset_value(&mut self) {
-        self._value = None;
-    }
-}
-
-impl IA5String {
-
-    pub fn value(&self) -> Option<&AsciiString> {
-        match &self._value {
-            Some(ref value) => {
-                return Some(value);
-            }
-            None => {
-                return None;
-            }
-        };
-    }
-}
-
-impl From<AsciiString> for IA5String {
-    fn from(string: AsciiString) -> Self {
-        return IA5String {
-            _value: Some(string)
-        };
     }
 }
 
@@ -82,60 +41,59 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_create() {
-        let b = IA5String::from(AsciiString::from_ascii("test1@rsa.com").unwrap());
-        assert_eq!(&AsciiString::from_ascii("test1@rsa.com").unwrap(), b.value().unwrap());
-    }
-
-    #[test]
-    fn test_create_default() {
-        assert_eq!(
-            IA5String {
-                _value: None
-            },
-            IA5String::default()
-        )
-    }
-
-    #[test]
-    fn test_unset_value() {
-        let mut b = IA5String::from(AsciiString::from_ascii("test1@rsa.com").unwrap());
-        b.unset_value();
-        assert_eq!(None, b.value());
-    }
-
-    #[test]
     fn test_encode_ia5string() {
-        assert_eq!(vec![0x16, 0x0d, 0x74, 0x65, 0x73, 0x74, 0x31, 0x40, 0x72, 0x73, 0x61, 0x2e, 0x63, 0x6f, 0x6d],
-        IA5String::from(AsciiString::from_ascii("test1@rsa.com").unwrap()).encode().unwrap());
+        assert_eq!(
+            vec![
+                0x16, 0x0d, 0x74, 0x65, 0x73, 0x74, 0x31, 0x40, 0x72, 0x73,
+                0x61, 0x2e, 0x63, 0x6f, 0x6d
+            ],
+            IA5String::from(AsciiString::from_ascii("test1@rsa.com").unwrap())
+                .encode()
+        );
     }
 
     #[test]
     fn test_decode() {
-        assert_eq!(IA5String::from(AsciiString::from_ascii("test1@rsa.com").unwrap()),
-        _parse(&[0x16, 0x0d, 0x74, 0x65, 0x73, 0x74, 0x31, 0x40, 0x72, 0x73, 0x61, 0x2e, 0x63, 0x6f, 0x6d]));
+        assert_eq!(
+            IA5String::from(AsciiString::from_ascii("test1@rsa.com").unwrap()),
+            _parse(&[
+                0x16, 0x0d, 0x74, 0x65, 0x73, 0x74, 0x31, 0x40, 0x72, 0x73,
+                0x61, 0x2e, 0x63, 0x6f, 0x6d
+            ])
+        );
     }
 
     #[test]
     fn test_decode_empty_value() {
-        assert_eq!(IA5String::from(AsciiString::from_ascii("").unwrap()),
-        _parse(&[0x16, 0x00]));
+        assert_eq!(
+            IA5String::from(AsciiString::from_ascii("").unwrap()),
+            _parse(&[0x16, 0x00])
+        );
     }
 
     #[test]
     fn test_decode_with_excesive_bytes() {
-        assert_eq!((IA5String::from(AsciiString::from_ascii("test1@rsa.com").unwrap()), 15),
-        _parse_with_consumed_octets(&[0x16, 0x0d, 0x74, 0x65, 0x73, 0x74, 0x31, 0x40, 0x72, 0x73, 0x61, 0x2e, 0x63, 0x6f, 0x6d, 
-                                        0x22, 0x22, 0x22]));
+        assert_eq!(
+            (
+                IA5String::from(
+                    AsciiString::from_ascii("test1@rsa.com").unwrap()
+                ),
+                15
+            ),
+            _parse_with_consumed_octets(&[
+                0x16, 0x0d, 0x74, 0x65, 0x73, 0x74, 0x31, 0x40, 0x72, 0x73,
+                0x61, 0x2e, 0x63, 0x6f, 0x6d, 0x22, 0x22, 0x22
+            ])
+        );
     }
 
-    #[should_panic (expected = "UnmatchedTag")]
+    #[should_panic(expected = "UnmatchedTag")]
     #[test]
     fn test_decode_with_invalid_tag() {
         _parse(&[0x7, 0x1, 0x0]);
     }
 
-    #[should_panic (expected = "AsciiError")]
+    #[should_panic(expected = "AsciiError")]
     #[test]
     fn test_decode_non_ascii_characters() {
         _parse(&[0x16, 0x1, 0x80]);
