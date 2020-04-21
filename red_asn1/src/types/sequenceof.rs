@@ -1,46 +1,23 @@
 use crate::error as asn1err;
 use crate::tag::Tag;
-use crate::traits::*;
-use std::ops::{Deref, DerefMut};
+use crate::traits::Asn1Object;
 
 pub static SEQUENCE_TAG_NUMBER: u8 = 0x10;
 
 /// Class to encode/decode SequenceOf ASN1
-#[derive(Debug, Default, PartialEq)]
-pub struct SequenceOf<T: Asn1Object> {
-    components: Vec<T>,
-}
-
-impl<T: Asn1Object + Default> Deref for SequenceOf<T> {
-    type Target = Vec<T>;
-    fn deref(&self) -> &Vec<T> {
-        &self.components
-    }
-}
-
-impl<T: Asn1Object + Default> DerefMut for SequenceOf<T> {
-    fn deref_mut(&mut self) -> &mut Vec<T> {
-        &mut self.components
-    }
-}
-
-impl<T: Asn1Object + Default> SequenceOf<T> {
-    pub fn value(&self) -> &Vec<T> {
-        return &self.components;
-    }
-}
+pub type SequenceOf<T: Asn1Object> = Vec<T>;
 
 impl<T: Asn1Object + Default> Asn1Object for SequenceOf<T> {
     fn tag(&self) -> Tag {
         return Tag::new_constructed_universal(SEQUENCE_TAG_NUMBER);
     }
 
-    fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
+    fn encode_value(&self) -> Vec<u8> {
         let mut value: Vec<u8> = Vec::new();
-        for item in self.components.iter() {
-            value.append(&mut item.encode()?)
+        for item in self.iter() {
+            value.append(&mut item.encode())
         }
-        return Ok(value);
+        return value;
     }
 
     fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
@@ -54,12 +31,8 @@ impl<T: Asn1Object + Default> Asn1Object for SequenceOf<T> {
             components.push(component);
         }
 
-        self.components = components;
+        *self = components;
         return Ok(());
-    }
-
-    fn unset_value(&mut self) {
-        self.components = Vec::new();
     }
 }
 
@@ -67,20 +40,6 @@ impl<T: Asn1Object + Default> Asn1Object for SequenceOf<T> {
 mod tests {
     use super::super::integer::{Integer, INTEGER_TAG_NUMBER};
     use super::*;
-
-    #[test]
-    fn test_create_default() {
-        let seq_of: SequenceOf<Integer> = SequenceOf::default();
-        assert_eq!(&Vec::<Integer>::new(), seq_of.value());
-    }
-
-    #[test]
-    fn test_unset_value() {
-        let mut seq_of: SequenceOf<Integer> = SequenceOf::default();
-        seq_of.push(Integer::from(9));
-        seq_of.unset_value();
-        assert_eq!(&Vec::<Integer>::new(), seq_of.value());
-    }
 
     #[test]
     fn test_encode_sequence_of_integers() {
@@ -100,7 +59,7 @@ mod tests {
                 0x3,
                 0xe8
             ],
-            seq_of.encode().unwrap()
+            seq_of.encode()
         );
     }
 
@@ -108,7 +67,7 @@ mod tests {
     fn test_encode_empty_sequence_of() {
         let seq_of: SequenceOf<Integer> = SequenceOf::default();
 
-        assert_eq!(vec![0x30, 0x0], seq_of.encode().unwrap());
+        assert_eq!(vec![0x30, 0x0], seq_of.encode());
     }
 
     #[test]
