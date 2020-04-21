@@ -74,16 +74,14 @@ mod tests {
         fn tag(&self) -> Tag {
             return self.tag.clone();
         }
-        fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
-            return Ok(vec![]);
+        fn encode_value(&self) -> Vec<u8> {
+            return vec![];
         }
 
         fn decode_value(&mut self, _raw: &[u8]) -> asn1err::Result<()> {
             return Ok(());
         }
 
-        fn unset_value(&mut self){
-        }
     }
 
     #[should_panic (expected = "NoDataForLength")]
