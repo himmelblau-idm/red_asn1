@@ -70,11 +70,7 @@ mod tests {
         tag: Tag
     }
 
-    impl TestObject {
-        fn new_tagged(tag: Tag) -> TestObject {
-            return TestObject { tag };
-        }
-    }
+    impl TestObject {}
 
     impl Asn1Object for TestObject {
         fn tag(&self) -> Tag {

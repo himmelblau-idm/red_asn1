@@ -49,7 +49,7 @@ fn code_unsetter(comp_def: &ComponentDefinition) -> TokenStream {
 fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
     let decoder_name = comp_def.decoder_name();
     let field_name = &comp_def.id;
-    let field_type = &comp_def.kind.ident;
+    let field_type = &comp_def.kind;
 
     if let Some(context_tag_number) = comp_def.context_tag_number {
         return quote! {
@@ -93,7 +93,7 @@ fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
 
                 let (raw_value, _) = raw_value.split_at(value_length);
 
-                let (consumed_octets, field) = SeqField::<#field_type>::decode(raw_value)?;
+                let (_, field) = SeqField::<#field_type>::decode(raw_value)?;
                 consumed_octets += value_length;
                 self.#field_name = field;
 
@@ -409,7 +409,7 @@ pub fn code_sequence(
         decode = quote! {
 
             fn decode(raw: &[u8]) -> red_asn1::Result<(usize, Self)> {
-                let sequence = Self::default();
+                let mut sequence = Self::default();
                 let mut consumed_octets = sequence._decode_application_tag(raw).or_else( |error|
                     Err(red_asn1::Error::SequenceError(
                         stringify!(#name).to_string(),
@@ -450,7 +450,7 @@ pub fn code_sequence(
 
         decode = quote! {
             fn decode(raw: &[u8]) -> red_asn1::Result<(usize, Self)> {
-                let sequence = Self::default();
+                let mut sequence = Self::default();
                 let size = sequence._inner_decode(raw)?;
                 return Ok((size, sequence));
             }
