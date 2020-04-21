@@ -8,31 +8,10 @@ use std::str;
 pub static GENERALIZED_TIME_TAG_NUMBER: u8 = 0x18;
 
 /// Class to encode/decode GeneralizedTime ASN1
-#[derive(Debug, PartialEq, Default)]
+#[derive(Debug, PartialEq)]
 pub struct GeneralizedTime {
-    _value: Option<DateTime<Utc>>,
-    format: TimeFormat,
-}
-
-impl GeneralizedTime {
-    pub fn set_format(&mut self, format: TimeFormat) {
-        self.format = format;
-    }
-
-    pub fn value(&self) -> Option<&DateTime<Utc>> {
-        match &self._value {
-            Some(ref value) => {
-                return Some(value);
-            }
-            None => {
-                return None;
-            }
-        };
-    }
-
-    fn _format_datetime_as_string(&self, datetime: &DateTime<Utc>) -> String {
-        return self.format.format_to_string(datetime);
-    }
+    pub time: DateTime<Utc>,
+    pub format: TimeFormat,
 }
 
 impl Asn1Object for GeneralizedTime {
@@ -40,15 +19,8 @@ impl Asn1Object for GeneralizedTime {
         return Tag::new_primitive_universal(GENERALIZED_TIME_TAG_NUMBER);
     }
 
-    fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
-        match self._value {
-            Some(value) => {
-                return Ok(self._format_datetime_as_string(&value).into_bytes());
-            }
-            None => {
-                return Err(asn1err::Error::NoValue)?;
-            }
-        }
+    fn encode_value(&self) -> Vec<u8> {
+        return self.format.format_to_string(&self.time).into_bytes();
     }
 
     fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
@@ -79,12 +51,12 @@ impl Asn1Object for GeneralizedTime {
         let is_utc: bool = raw[raw.len() - 1] == 'Z' as u8;
 
         if is_utc {
-            self._value = Some(Utc.ymd(year, month, day).and_hms_nano(
+            self.time = Utc.ymd(year, month, day).and_hms_nano(
                 hour,
                 minute,
                 second,
                 decisecond * 100000000,
-            ));
+            );
         } else {
             return Err(asn1err::Error::ImplementationError(
                 "Local time decode is not implemented yet".to_string(),
@@ -93,16 +65,21 @@ impl Asn1Object for GeneralizedTime {
 
         return Ok(());
     }
+}
 
-    fn unset_value(&mut self) {
-        self._value = None;
+impl Default for GeneralizedTime {
+    fn default() -> Self {
+        return Self {
+            time: Utc.timestamp(0, 0),
+            format: TimeFormat::default(),
+        };
     }
 }
 
 impl From<DateTime<Utc>> for GeneralizedTime {
-    fn from(value: DateTime<Utc>) -> Self {
+    fn from(time: DateTime<Utc>) -> Self {
         return Self {
-            _value: Some(value),
+            time,
             format: TimeFormat::default(),
         };
     }
@@ -114,10 +91,12 @@ mod tests {
 
     #[test]
     fn test_create() {
-        let b = GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000));
+        let b = GeneralizedTime::from(
+            Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000),
+        );
         assert_eq!(
             &Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000),
-            b.value().unwrap()
+            &b.time
         );
     }
 
@@ -125,7 +104,7 @@ mod tests {
     fn test_create_default() {
         assert_eq!(
             GeneralizedTime {
-                _value: None,
+                time: Utc.timestamp(0, 0),
                 format: TimeFormat::default()
             },
             GeneralizedTime::default()
@@ -133,46 +112,43 @@ mod tests {
     }
 
     #[test]
-    fn test_unset_value() {
-        let mut b = GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000));
-        b.unset_value();
-        assert_eq!(None, b.value());
-    }
-
-    #[test]
     fn test_encode_generalized_time() {
         assert_eq!(
             vec![
-                0x18, 0x11, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32, 0x31, 0x30, 0x36,
-                0x32, 0x37, 0x2e, 0x33, 0x5a
+                0x18, 0x11, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36,
+                0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33, 0x5a
             ],
-            GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000))
-                .encode()
-                .unwrap()
+            GeneralizedTime::from(
+                Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)
+            )
+            .encode()
         );
     }
 
     #[test]
     fn test_encode_generalized_time_without_deciseconds() {
-        let mut gen_time =
-            GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000));
-        gen_time.set_format(TimeFormat::YYYYmmddHHMMSSZ);
+        let mut gen_time = GeneralizedTime::from(
+            Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000),
+        );
+        gen_time.format = TimeFormat::YYYYmmddHHMMSSZ;
         assert_eq!(
             vec![
-                0x18, 0xf, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32, 0x31, 0x30, 0x36,
-                0x32, 0x37, 0x5a
+                0x18, 0xf, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36,
+                0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x5a
             ],
-            gen_time.encode().unwrap()
+            gen_time.encode()
         );
     }
 
     #[test]
     fn test_decode() {
         assert_eq!(
-            GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)),
+            GeneralizedTime::from(
+                Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)
+            ),
             _parse(&[
-                0x18, 0x11, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32, 0x31, 0x30, 0x36,
-                0x32, 0x37, 0x2e, 0x33, 0x5a
+                0x18, 0x11, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36,
+                0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33, 0x5a
             ])
         );
     }
@@ -182,8 +158,8 @@ mod tests {
         assert_eq!(
             GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms(21, 6, 27)),
             _parse(&[
-                0x18, 0xf, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32, 0x31, 0x30, 0x36,
-                0x32, 0x37, 0x5a
+                0x18, 0xf, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36,
+                0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x5a
             ])
         );
     }
@@ -192,12 +168,15 @@ mod tests {
     fn test_decode_with_excesive_bytes() {
         assert_eq!(
             (
-                GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)),
+                GeneralizedTime::from(
+                    Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)
+                ),
                 19
             ),
             _parse_with_consumed_octets(&[
-                0x18, 0x11, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32, 0x31, 0x30, 0x36,
-                0x32, 0x37, 0x2e, 0x33, 0x5a, 0x22, 0x22, 0x22
+                0x18, 0x11, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36,
+                0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33, 0x5a, 0x22,
+                0x22, 0x22
             ])
         );
     }
@@ -206,8 +185,8 @@ mod tests {
     #[test]
     fn test_decode_without_enough_value_octets() {
         _parse(&[
-            0x18, 0x0e, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32, 0x31, 0x30, 0x36,
-            0x32, 0x37,
+            0x18, 0x0e, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32,
+            0x31, 0x30, 0x36, 0x32, 0x37,
         ]);
     }
 
@@ -221,8 +200,8 @@ mod tests {
     #[test]
     fn test_decode_with_no_number_characters() {
         _parse(&[
-            0x18, 0x11, 0x41, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32, 0x31, 0x30, 0x36,
-            0x32, 0x37, 0x2e, 0x33, 0x5a,
+            0x18, 0x11, 0x41, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32,
+            0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33, 0x5a,
         ]);
     }
 
@@ -230,8 +209,8 @@ mod tests {
     #[test]
     fn test_decode_local_time() {
         _parse(&[
-            0x18, 0x10, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32, 0x31, 0x30, 0x36,
-            0x32, 0x37, 0x2e, 0x33,
+            0x18, 0x10, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32,
+            0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33,
         ]);
     }
 
