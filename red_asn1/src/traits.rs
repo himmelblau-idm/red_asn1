@@ -9,22 +9,22 @@ pub trait Asn1Object: Sized + Default {
     fn tag(&self) -> Tag;
 
     /// Method which indicates how object value must be encoded
-    fn encode_value(&self) -> asn1err::Result<Vec<u8>>;
+    fn encode_value(&self) -> Vec<u8>;
 
     /// Method which indicates how object value must be decoded
     fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()>;
 
     /// To encode the object to DER, generally does not need to be overwritten.
     /// Usually, just encode_value should be overwritten
-    fn encode(&self) -> asn1err::Result<Vec<u8>> {
+    fn encode(&self) -> Vec<u8> {
         let mut encoded = self.tag().encode();
-        let mut encoded_value = self.encode_value()?;
+        let mut encoded_value = self.encode_value();
         let mut encoded_length = encode_length(encoded_value.len());
 
         encoded.append(&mut encoded_length);
         encoded.append(&mut encoded_value);
 
-        return Ok(encoded);
+        return encoded;
     }
 
     /// To decode the object from DER, generally does not need to be overwritten.
@@ -56,8 +56,6 @@ pub trait Asn1Object: Sized + Default {
         return Ok((consumed_octets, asn1obj));
     }
 
-    /// Method to reset the object value
-    fn unset_value(&mut self);
 }
 
 
