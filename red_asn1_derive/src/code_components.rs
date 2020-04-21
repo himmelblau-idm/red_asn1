@@ -49,7 +49,7 @@ fn code_unsetter(comp_def: &ComponentDefinition) -> TokenStream {
 fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
     let decoder_name = comp_def.decoder_name();
     let field_name = &comp_def.id;
-    let field_type = &comp_def.kind;
+    let field_type = &comp_def.kind.ident;
 
     if let Some(context_tag_number) = comp_def.context_tag_number {
         return quote! {
@@ -93,8 +93,9 @@ fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
 
                 let (raw_value, _) = raw_value.split_at(value_length);
 
-                self.#field_name.decode(raw_value)?;
+                let (consumed_octets, field) = SeqField::<#field_type>::decode(raw_value)?;
                 consumed_octets += value_length;
+                self.#field_name = field;
 
                 return Ok(consumed_octets);
             }
@@ -102,7 +103,7 @@ fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
     } else {
         return quote! {
             fn #decoder_name (&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
-                let (size, field) = #field_type::decode(raw)?;
+                let (size, field) = SeqField::<#field_type>::decode(raw)?;
                 self.#field_name = field;
                 return Ok(size);
             }
@@ -286,7 +287,8 @@ pub fn code_sequence(
     let name = &sequence_definition.name;
     let encode_calls = &sequence_inner_calls.encode_calls;
     let decode_calls = &sequence_inner_calls.decode_calls;
-    let components_unit_functions = &sequence_inner_calls.components_unit_functions;
+    let components_unit_functions =
+        &sequence_inner_calls.components_unit_functions;
 
     let encode_value = quote! {
         fn encode_value(&self) -> red_asn1::Result<Vec<u8>> {
@@ -373,7 +375,9 @@ pub fn code_sequence(
     let encode;
     let decode;
 
-    if let Some(application_tag_number) = sequence_definition.application_tag_number {
+    if let Some(application_tag_number) =
+        sequence_definition.application_tag_number
+    {
         encode = quote! {
             fn encode(&self) -> red_asn1::Result<Vec<u8>> {
                 let mut encoded = Tag::new(#application_tag_number,
@@ -404,8 +408,9 @@ pub fn code_sequence(
 
         decode = quote! {
 
-            fn decode(&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
-                let mut consumed_octets = self._decode_application_tag(raw).or_else( |error|
+            fn decode(raw: &[u8]) -> red_asn1::Result<(usize, Self)> {
+                let sequence = Self::default();
+                let mut consumed_octets = sequence._decode_application_tag(raw).or_else( |error|
                     Err(red_asn1::Error::SequenceError(
                         stringify!(#name).to_string(),
                         Box::new(error.clone())
@@ -430,10 +435,10 @@ pub fn code_sequence(
 
                 let (raw_value, _) = raw_value.split_at(value_length);
 
-                self._inner_decode(raw_value)?;
+                sequence._inner_decode(raw_value)?;
                 consumed_octets += value_length;
 
-                return Ok(consumed_octets);
+                return Ok((consumed_octets, sequence));
             }
         };
     } else {
@@ -444,8 +449,10 @@ pub fn code_sequence(
         };
 
         decode = quote! {
-            fn decode(&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
-                return self._inner_decode(raw);
+            fn decode(raw: &[u8]) -> red_asn1::Result<(usize, Self)> {
+                let sequence = Self::default();
+                let size = sequence._inner_decode(raw)?;
+                return Ok((size, sequence));
             }
         }
     }
