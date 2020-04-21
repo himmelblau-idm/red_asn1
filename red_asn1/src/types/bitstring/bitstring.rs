@@ -9,7 +9,7 @@ pub static BIT_STRING_TAG_NUMBER: u8 = 0x3;
 /// Class to encode/decode BitSring ASN1
 #[derive(Debug, PartialEq, Default)]
 pub struct BitSring {
-    _value: Option<BitSringValue>
+    value: BitSringValue
 }
 
 
@@ -17,20 +17,13 @@ impl BitSring {
 
     pub fn new(bytes: Vec<u8>, padding_length: u8) -> BitSring{
         let bs = BitSring {
-            _value: Some(BitSringValue::new(bytes, padding_length % 8))
+            value: BitSringValue::new(bytes, padding_length % 8)
         };
         return bs;
     }
 
-    pub fn value(&self) -> Option<&BitSringValue> {
-        match &self._value {
-            Some(ref value) => {
-                return Some(value);
-            }
-            None => {
-                return None;
-            }
-        };
+    pub fn value(&self) -> &BitSringValue {
+        return &self.value;
     }
 
 }
@@ -42,28 +35,17 @@ impl Asn1Object for BitSring {
         return Tag::new_primitive_universal(BIT_STRING_TAG_NUMBER);
     }
 
-    fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
-        let bitstring_value;
-
-        match &self._value {
-            Some(value) => {
-                bitstring_value = value;
-            },
-            None => {
-                return Err(asn1err::Error::NoValue)?;
-            }
-        };
-
-        let mut encoded_value: Vec<u8> = vec![bitstring_value.get_padding_length()];
+    fn encode_value(&self) -> Vec<u8> {
+        let mut encoded_value: Vec<u8> = vec![self.value.get_padding_length()];
 
         let mut values: Vec<u8> = Vec::new();
-        let bytes = bitstring_value.get_bytes();
+        let bytes = self.value.get_bytes();
         for i in 0..bytes.len() {
             values.push(bytes[i])
         }
         encoded_value.append(&mut values);
 
-        return Ok(encoded_value);
+        return encoded_value;
     }
 
     fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
@@ -73,14 +55,11 @@ impl Asn1Object for BitSring {
 
         let (padding_length, raw_value) = raw.split_at(1);
 
-        self._value = Some(BitSringValue::new(raw_value.to_vec(), padding_length[0]));
+        self.value = BitSringValue::new(raw_value.to_vec(), padding_length[0]);
 
         return Ok(());
     }
 
-    fn unset_value(&mut self) {
-        self._value = None;
-    }
 }
 
 
@@ -91,28 +70,15 @@ mod tests {
     #[test]
     fn test_create() {
         let b = BitSring::new(vec![0x0], 0);
-        assert_eq!(&BitSringValue::new(vec![0x0], 0), b.value().unwrap());
-    }
-
-    #[test]
-    fn test_create_default() {
-        let b = BitSring::default();
-        assert_eq!(None, b.value());
-    }
-
-    #[test]
-    fn test_unset_value() {
-        let mut b = BitSring::new(vec![0x0], 0);
-        b.unset_value();
-        assert_eq!(None, b.value());
+        assert_eq!(&BitSringValue::new(vec![0x0], 0), b.value());
     }
 
     #[test]
     fn test_encode_bit_string() {
-        assert_eq!(vec![0x3, 0x2, 0x0, 0x0], BitSring::new(vec![0x0], 0).encode().unwrap());
-        assert_eq!(vec![0x3, 0x4, 0x6, 0x6e, 0x5d, 0xC0], BitSring::new(vec![0x6e, 0x5d, 0xFF], 6).encode().unwrap());
-        assert_eq!(vec![0x3, 0x2, 0x4, 0xF0], BitSring::new(vec![0xF0], 4).encode().unwrap());
-        assert_eq!(vec![0x3, 0x1, 0x4], BitSring::new(vec![], 4).encode().unwrap());
+        assert_eq!(vec![0x3, 0x2, 0x0, 0x0], BitSring::new(vec![0x0], 0).encode());
+        assert_eq!(vec![0x3, 0x4, 0x6, 0x6e, 0x5d, 0xC0], BitSring::new(vec![0x6e, 0x5d, 0xFF], 6).encode());
+        assert_eq!(vec![0x3, 0x2, 0x4, 0xF0], BitSring::new(vec![0xF0], 4).encode());
+        assert_eq!(vec![0x3, 0x1, 0x4], BitSring::new(vec![], 4).encode());
     }
 
     #[test]
@@ -160,12 +126,12 @@ mod tests {
     #[test]
     fn test_value_get_bytes() {
         let b = BitSring::new(vec![0x0, 0x1, 0x2, 0x3], 0);
-        assert_eq!(&vec![0x0, 0x1, 0x2, 0x3], b.value().unwrap().get_bytes());
+        assert_eq!(&vec![0x0, 0x1, 0x2, 0x3], b.value().get_bytes());
     }
 
     #[test]
     fn test_value_padding_length() {
         let b = BitSring::new(vec![0x0, 0x1, 0x2, 0x3], 7);
-        assert_eq!(7, b.value().unwrap().get_padding_length());
+        assert_eq!(7, b.value().get_padding_length());
     }
 }

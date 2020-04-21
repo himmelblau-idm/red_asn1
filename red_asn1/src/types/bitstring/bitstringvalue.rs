@@ -1,6 +1,6 @@
 
 /// Data type for representing the value of a BitString
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct BitSringValue {
     bytes: Vec<u8>,
     padding_length: u8
