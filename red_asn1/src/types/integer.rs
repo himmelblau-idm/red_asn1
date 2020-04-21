@@ -5,29 +5,16 @@ use crate::traits::*;
 pub static INTEGER_TAG_NUMBER: u8 = 0x2;
 
 /// Class to encode/decode Integer ASN1
-#[derive(Debug, PartialEq, Default)]
-pub struct Integer {
-    _value: Option<i64>,
-}
+pub type Integer = i64;
 
 impl Asn1Object for Integer {
     fn tag(&self) -> Tag {
         return Tag::new_primitive_universal(INTEGER_TAG_NUMBER);
     }
 
-    fn encode_value(&self) -> asn1err::Result<Vec<u8>> {
-        let mut shifted_value;
-
-        match self._value {
-            Some(value) => {
-                shifted_value = value;
-            }
-            None => {
-                return Err(asn1err::Error::NoValue)?;
-            }
-        }
-
-        let length = self._encoded_value_size();
+    fn encode_value(&self) -> Vec<u8> {
+        let mut shifted_value = *self;
+        let length = calculate_integer_size(*self);
 
         let mut encoded_value: Vec<u8> = Vec::new();
 
@@ -38,7 +25,7 @@ impl Asn1Object for Integer {
 
         encoded_value.reverse();
 
-        return Ok(encoded_value);
+        return encoded_value;
     }
 
     fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
@@ -60,69 +47,42 @@ impl Asn1Object for Integer {
             value += (*byte as i64) & 0xFF;
         }
 
-        self._value = Some(value);
+        *self = value;
 
         return Ok(());
     }
 
-    fn unset_value(&mut self) {
-        self._value = None;
-    }
 }
 
-impl Integer {
-    pub fn value(&self) -> Option<i64> {
-        match &self._value {
-            Some(ref value) => {
-                return Some(*value);
-            }
-            None => {
-                return None;
-            }
-        };
+fn calculate_integer_size(int: i64) -> usize {
+    if int >= 0 {
+        return calculate_positive_integer_size(int) as usize;
     }
-
-    pub fn set_value(&mut self, value: i64) {
-        self._value = Some(value);
-    }
-
-    fn _encoded_value_size(&self) -> usize {
-        if self._value.unwrap() >= 0 {
-            return self._calculate_positive_integer_size() as usize;
-        }
-
-        return self._calculate_negative_integer_size() as usize;
-    }
-
-    fn _calculate_negative_integer_size(&self) -> u8 {
-        let mut bytes_count = 1;
-        let mut shifted_integer = self._value.unwrap();
-
-        while shifted_integer < -128 {
-            bytes_count += 1;
-            shifted_integer >>= 8;
-        }
-
-        return bytes_count;
-    }
-
-    fn _calculate_positive_integer_size(&self) -> u8 {
-        let mut bytes_count = 1;
-        let mut shifted_integer = self._value.unwrap();
-
-        while shifted_integer > 127 {
-            bytes_count += 1;
-            shifted_integer >>= 8;
-        }
-
-        return bytes_count;
-    }
+    return calculate_negative_integer_size(int) as usize;
 }
 
-impl From<i64> for Integer {
-    fn from(int: i64) -> Self {
-        return Integer { _value: Some(int) };
+fn calculate_negative_integer_size(int: i64) -> u8 {
+    let mut bytes_count = 1;
+    let mut shifted_integer = int;
+    
+    while shifted_integer < -128 {
+        bytes_count += 1;
+        shifted_integer >>= 8;
     }
+    
+    return bytes_count;
+}
+
+fn calculate_positive_integer_size(int: i64) -> u8 {
+    let mut bytes_count = 1;
+    let mut shifted_integer = int;
+    
+    while shifted_integer > 127 {
+        bytes_count += 1;
+        shifted_integer >>= 8;
+    }
+
+    return bytes_count;
 }
 
 #[cfg(test)]
@@ -130,64 +90,33 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_create() {
-        let b = Integer::from(78);
-        assert_eq!(78, b.value().unwrap());
-    }
-
-    #[test]
-    fn test_create_default() {
-        assert_eq!(Integer { _value: None }, Integer::default())
-    }
-
-    #[test]
-    fn test_set_value() {
-        let mut b = Integer::default();
-        b.set_value(56);
-        assert_eq!(56, b.value().unwrap());
-    }
-
-    #[test]
-    fn test_unset_value() {
-        let mut b = Integer::from(78);
-        b.unset_value();
-        assert_eq!(None, b.value());
-    }
-
-    #[test]
-    fn test_empty_integer() {
-        let integer1 = Integer::default();
-        assert_eq!(None, integer1.value());
-    }
-
-    #[test]
     fn test_encode() {
-        assert_eq!(vec![0x2, 0x1, 0x0], Integer::from(0).encode().unwrap());
-        assert_eq!(vec![0x2, 0x1, 0x1], Integer::from(1).encode().unwrap());
-        assert_eq!(vec![0x2, 0x1, 0xff], Integer::from(-1).encode().unwrap());
+        assert_eq!(vec![0x2, 0x1, 0x0], Integer::from(0).encode());
+        assert_eq!(vec![0x2, 0x1, 0x1], Integer::from(1).encode());
+        assert_eq!(vec![0x2, 0x1, 0xff], Integer::from(-1).encode());
 
-        assert_eq!(vec![0x2, 0x1, 0x7F], Integer::from(127).encode().unwrap());
+        assert_eq!(vec![0x2, 0x1, 0x7F], Integer::from(127).encode());
         assert_eq!(
             vec![0x2, 0x2, 0x00, 0x80],
-            Integer::from(128).encode().unwrap()
+            Integer::from(128).encode()
         );
         assert_eq!(
             vec![0x2, 0x2, 0x01, 0x00],
-            Integer::from(256).encode().unwrap()
+            Integer::from(256).encode()
         );
-        assert_eq!(vec![0x2, 0x1, 0x80], Integer::from(-128).encode().unwrap());
+        assert_eq!(vec![0x2, 0x1, 0x80], Integer::from(-128).encode());
         assert_eq!(
             vec![0x2, 0x2, 0xFF, 0x7F],
-            Integer::from(-129).encode().unwrap()
+            Integer::from(-129).encode()
         );
 
         assert_eq!(
             vec![0x2, 0x5, 0x00, 0xF8, 0x45, 0x33, 0x8],
-            Integer::from(4165284616).encode().unwrap()
+            Integer::from(4165284616).encode()
         );
         assert_eq!(
             vec![0x2, 0x5, 0xFF, 0x3A, 0xAC, 0x53, 0xDB],
-            Integer::from(-3310595109).encode().unwrap()
+            Integer::from(-3310595109).encode()
         );
     }
 
