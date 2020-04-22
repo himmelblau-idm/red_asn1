@@ -1,13 +1,31 @@
 use crate::error as asn1err;
 use crate::tag::Tag;
 use crate::traits::Asn1Object;
+use std::ops::{Deref, DerefMut};
 
 pub static SEQUENCE_TAG_NUMBER: u8 = 0x10;
 
 /// Class to encode/decode SequenceOf ASN1
-pub type SequenceOf<T: Asn1Object> = Vec<T>;
+#[derive(Default)]
+pub struct SequenceOf<T: Asn1Object> {
+    vector: Vec<T>,
+}
 
-impl<T: Asn1Object + Default> Asn1Object for SequenceOf<T> {
+impl<T: Asn1Object> Deref for SequenceOf<T> {
+    type Target = Vec<T>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.vector
+    }
+}
+
+impl<T: Asn1Object> DerefMut for SequenceOf<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.vector
+    }
+}
+
+impl<T: Asn1Object> Asn1Object for SequenceOf<T> {
     fn tag(&self) -> Tag {
         return Tag::new_constructed_universal(SEQUENCE_TAG_NUMBER);
     }
@@ -25,13 +43,14 @@ impl<T: Asn1Object + Default> Asn1Object for SequenceOf<T> {
         let mut consumed_octets = 0;
 
         while consumed_octets < raw.len() {
-            let (component_consumed_octets, component) = T::decode(&raw[consumed_octets..])?;
+            let (component_consumed_octets, component) =
+                T::decode(&raw[consumed_octets..])?;
 
             consumed_octets += component_consumed_octets;
             components.push(component);
         }
 
-        *self = components;
+        self.vector = components;
         return Ok(());
     }
 }
@@ -73,17 +92,17 @@ mod tests {
     #[test]
     fn test_decode_sequence_of_integers() {
         let (_, seq_of) = SequenceOf::<Integer>::decode(&[
-                0x30,
-                0x7,
-                INTEGER_TAG_NUMBER,
-                0x1,
-                0x9,
-                INTEGER_TAG_NUMBER,
-                0x2,
-                0x3,
-                0xe8,
-            ])
-            .unwrap();
+            0x30,
+            0x7,
+            INTEGER_TAG_NUMBER,
+            0x1,
+            0x9,
+            INTEGER_TAG_NUMBER,
+            0x2,
+            0x3,
+            0xe8,
+        ])
+        .unwrap();
 
         assert_eq!(Integer::from(9), seq_of[0]);
         assert_eq!(Integer::from(1000), seq_of[1]);
