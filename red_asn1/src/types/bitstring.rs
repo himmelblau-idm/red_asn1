@@ -53,7 +53,7 @@ impl Asn1Object for BitString {
         let mut encoded_value: Vec<u8> = vec![self.padding_length];
 
         let mut values: Vec<u8> = Vec::new();
-        let bytes = self.bytes;
+        let bytes = &self.bytes;
         for i in 0..bytes.len() {
             values.push(bytes[i])
         }
