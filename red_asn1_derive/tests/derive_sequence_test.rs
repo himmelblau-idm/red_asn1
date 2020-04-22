@@ -9,13 +9,13 @@ fn test_define_simple() {
     }
 
     let mut seq = TestSequence::default();
-    seq.set_id(Integer::from(9));
-    seq.set_data(OctetString::from(vec![1, 2, 3, 4]));
+    *seq.id = 9;
+    *seq.data = vec![1, 2, 3, 4];
 
-    assert_eq!(&Integer::from(9), seq.get_id().unwrap());
+    assert_eq!(Integer::from(9), *seq.id);
     assert_eq!(
-        &OctetString::from(vec![1, 2, 3, 4]),
-        seq.get_data().unwrap()
+        OctetString::from(vec![1, 2, 3, 4]),
+        *seq.data
     );
 }
 
@@ -43,7 +43,7 @@ fn test_encode_empty() {
     struct TestSequence {}
 
     let seq = TestSequence {};
-    assert_eq!(vec![0x30, 0x0], seq.encode().unwrap());
+    assert_eq!(vec![0x30, 0x0], seq.encode());
 }
 
 #[test]
@@ -53,7 +53,7 @@ fn test_encode_empty_with_application_tag() {
     struct TestSequence {}
 
     let seq = TestSequence {};
-    assert_eq!(vec![0x67, 0x2, 0x30, 0x0], seq.encode().unwrap());
+    assert_eq!(vec![0x67, 0x2, 0x30, 0x0], seq.encode());
 }
 
 #[test]
@@ -63,14 +63,12 @@ fn test_encode() {
         age: SeqField<Integer>,
     }
 
-    let mut p = Person {
-        age: SeqField::default(),
-    };
-    p.set_age(Integer::from(9));
+    let mut p = Person::default();
+    *p.age = 9;
 
     assert_eq!(
         vec![0x30, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x9],
-        p.encode().unwrap()
+        p.encode()
     );
 }
 
@@ -82,14 +80,12 @@ fn test_encode_with_context_tags() {
         age: SeqField<Integer>,
     }
 
-    let mut p = Person {
-        age: SeqField::default(),
-    };
-    p.set_age(Integer::from(9));
+    let mut p = Person::default();
+    *p.age = 9;
 
     assert_eq!(
         vec![0x30, 0x5, 0xa0, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x9],
-        p.encode().unwrap()
+        p.encode()
     );
 }
 
@@ -104,9 +100,9 @@ fn test_encode_with_optional_component() {
     let mut p = Person {
         age: SeqField::default(),
     };
-    p.set_age(Integer::from(9));
+    *p.age = Integer::from(9);
 
-    assert_eq!(&Integer::from(9), p.get_age().unwrap());
+    assert_eq!(9, *p.age);
 }
 
 #[test]
@@ -121,21 +117,7 @@ fn test_encode_with_optional_without_value_component() {
         age: SeqField::default(),
     };
 
-    assert_eq!(vec![0x30, 0x0], p.encode().unwrap());
-}
-
-#[should_panic(expected = "SequenceFieldError(\"Person\", \"age\", NoValue)")]
-#[test]
-fn test_encode_without_give_required_values() {
-    #[derive(Sequence, Default)]
-    struct Person {
-        age: SeqField<Integer>,
-    }
-
-    let p = Person {
-        age: SeqField::default(),
-    };
-    p.encode().unwrap();
+    assert_eq!(vec![0x30, 0x0], p.encode());
 }
 
 #[test]
@@ -153,9 +135,9 @@ fn test_encode_with_inner_sequence() {
         inner: SeqField::default(),
     };
 
-    seq.set_inner(TestSequence::default());
+    *seq.inner = TestSequence::default();
 
-    assert_eq!(vec![0x30, 0x4, 0x67, 0x2, 0x30, 0x0], seq.encode().unwrap());
+    assert_eq!(vec![0x30, 0x4, 0x67, 0x2, 0x30, 0x0], seq.encode());
 }
 
 #[test]
@@ -171,11 +153,11 @@ fn test_encode_with_inner_sequenceof() {
     let mut seqof_ints: SequenceOf<Integer> = SequenceOf::default();
     seqof_ints.push(Integer::from(1));
 
-    seq.set_attrs(seqof_ints);
+    *seq.attrs = seqof_ints;
 
     assert_eq!(
         vec![0x30, 0x5, 0x30, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x1],
-        seq.encode().unwrap()
+        seq.encode()
     );
 }
 
@@ -229,7 +211,7 @@ fn test_decode_with_context_tags() {
         &[0x30, 0x5, 0xa0, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x9]
     ).unwrap();
 
-    assert_eq!(&Integer::from(9), p.get_age().unwrap());
+    assert_eq!(9, *p.age);
 }
 
 #[should_panic(expected = "SequenceError(\"Person\", NoAllDataConsumed)")]
@@ -390,10 +372,10 @@ fn test_decode_without_context_tags() {
     ])
     .unwrap();
 
-    assert_eq!(9, p.get_id().unwrap().value().unwrap());
+    assert_eq!(9, *p.id);
     assert_eq!(
-        &vec![0x1, 0x2, 0x3, 0x4],
-        p.get_data().unwrap().value().unwrap()
+        vec![0x1, 0x2, 0x3, 0x4],
+        *p.data
     );
 }
 
@@ -423,8 +405,8 @@ fn test_decode_with_optional() {
 
     assert_eq!(None, seq.get_id());
     assert_eq!(
-        &vec![0x1, 0x2, 0x3, 0x4],
-        seq.get_data().unwrap().value().unwrap()
+        vec![0x1, 0x2, 0x3, 0x4],
+        *seq.data
     );
 }
 
@@ -451,8 +433,8 @@ fn test_decode_with_optional_without_context_tag() {
 
     assert_eq!(None, seq.get_id());
     assert_eq!(
-        &vec![0x1, 0x2, 0x3, 0x4],
-        seq.get_data().unwrap().value().unwrap()
+        vec![0x1, 0x2, 0x3, 0x4],
+        *seq.data
     );
 }
 
@@ -495,7 +477,7 @@ fn test_decode_with_inner_sequence() {
 
     let (_, seq) =
         SuperTestSequence::decode(&[0x30, 0x4, 0x67, 0x2, 0x30, 0x0]).unwrap();
-    assert_eq!(&TestSequence {}, seq.get_inner().unwrap());
+    assert_eq!(TestSequence {}, *seq.inner);
 }
 
 #[test]
