@@ -1,11 +1,27 @@
-use crate::traits::*;
+use crate::traits::Asn1Object;
 use crate::error as asn1err;
+use std::ops::{Deref, DerefMut};
 
 /// Class to represent a field of a Sequence
 #[derive(Debug, PartialEq, Default)]
 pub struct SeqField<T: Asn1Object> {
     pub value: T
 }
+
+impl<T: Asn1Object> Deref for SeqField<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.value
+    }
+}
+
+impl<T: Asn1Object> DerefMut for SeqField<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.value
+    }
+}
+
 
 impl<T: Asn1Object> SeqField<T> {
 
