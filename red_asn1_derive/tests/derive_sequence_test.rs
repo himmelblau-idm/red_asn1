@@ -515,7 +515,7 @@ fn test_decode_unsetting_optional_value() {
 fn test_decode_with_inner_sequenceof() {
     #[derive(Sequence, Default)]
     struct TestSequence {
-        attrs: SeqField<SequenceOf<Integer>>,
+        pub attrs: SeqField<SequenceOf<Integer>>,
     }
 
     let (_, seq) = TestSequence::decode(&[
@@ -529,7 +529,7 @@ fn test_decode_with_inner_sequenceof() {
     ])
     .unwrap();
 
-    let seqof_ints = seq.get_attrs().unwrap();
+    let seqof_ints = seq.attrs;
     assert_eq!(1, seqof_ints.len());
     assert_eq!(&Integer::from(1), &seqof_ints[0]);
 }

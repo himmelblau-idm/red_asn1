@@ -33,26 +33,9 @@ impl ComponentDefinition {
         return Ident::new(&concatenated, self.id.span());
     }
 
-    pub fn getter_name(&self) -> Ident {
-        let concatenated = format!("get_{}", self.id);
-        return Ident::new(&concatenated, self.id.span());
-    }
-
-    pub fn setter_name(&self) -> Ident {
-        let concatenated = format!("set_{}", self.id);
-        return Ident::new(&concatenated, self.id.span());
-    }
-
-    pub fn unsetter_name(&self) -> Ident {
-        let concatenated = format!("unset_{}", self.id);
-        return Ident::new(&concatenated, self.id.span());
-    }
 }
 
 pub struct ComponentCode {
-    pub getter: TokenStream,
-    pub setter: TokenStream,
-    pub unsetter: TokenStream,
     pub encoder: TokenStream,
     pub decoder: TokenStream
 }

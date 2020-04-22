@@ -3,46 +3,8 @@ use proc_macro2::TokenStream;
 
 pub fn code_component(comp_def: &ComponentDefinition) -> ComponentCode {
     return ComponentCode {
-        getter: code_getter(comp_def),
-        setter: code_setter(comp_def),
-        unsetter: code_unsetter(comp_def),
         encoder: code_encoder(comp_def),
         decoder: code_decoder(comp_def),
-    };
-}
-
-fn code_getter(comp_def: &ComponentDefinition) -> TokenStream {
-    let getter_name = comp_def.getter_name();
-    let inner_type = &comp_def.kind;
-    let field_name = &comp_def.id;
-
-    return quote! {
-        fn #getter_name (&self) -> Option<&#inner_type> {
-            return self.#field_name.get_value();
-        }
-    };
-}
-
-fn code_setter(comp_def: &ComponentDefinition) -> TokenStream {
-    let setter_name = comp_def.setter_name();
-    let inner_type = &comp_def.kind;
-    let field_name = &comp_def.id;
-
-    return quote! {
-        fn #setter_name (&mut self, value: #inner_type) {
-            return self.#field_name.set_value(value);
-        }
-    };
-}
-
-fn code_unsetter(comp_def: &ComponentDefinition) -> TokenStream {
-    let unsetter_name = comp_def.unsetter_name();
-    let field_name = &comp_def.id;
-
-    return quote! {
-        fn #unsetter_name (&mut self) {
-            return self.#field_name.unset_inner_value();
-        }
     };
 }
 
@@ -117,21 +79,21 @@ fn code_encoder(comp_def: &ComponentDefinition) -> TokenStream {
 
     if let Some(context_tag_number) = comp_def.context_tag_number {
         return quote! {
-            fn #encoder_name (&self) -> red_asn1::Result<Vec<u8>> {
+            fn #encoder_name (&self) -> Vec<u8> {
                 let tag = Tag::new(#context_tag_number, TagType::Constructed, TagClass::Context);
                 let mut encoded = tag.encode();
-                let mut encoded_value = self.#field_name.encode()?;
+                let mut encoded_value = self.#field_name.encode();
                 let mut encoded_length = red_asn1::encode_length(encoded_value.len());
 
                 encoded.append(&mut encoded_length);
                 encoded.append(&mut encoded_value);
 
-                return Ok(encoded);
+                return encoded;
             }
         };
     } else {
         return quote! {
-            fn #encoder_name (&self) -> red_asn1::Result<Vec<u8>> {
+            fn #encoder_name (&self) -> Vec<u8> {
                 return self.#field_name.encode();
             }
         };
@@ -150,7 +112,6 @@ pub fn code_sequence_inner_calls(
         let component_code = code_component(&component);
         let encoder_name = component.encoder_name();
         let decoder_name = component.decoder_name();
-        let unsetter_name = component.unsetter_name();
         let component_name = &component.id;
 
         if component.optional {
@@ -180,9 +141,7 @@ pub fn code_sequence_inner_calls(
 
             if let Some(_) = component.context_tag_number {
                 invalid_tag_errors_handlers = quote! {
-                    if tag_class == red_asn1::TagClass::Context {
-                        self.#unsetter_name();
-                    } else {
+                    if tag_class != red_asn1::TagClass::Context {
                         return Err(red_asn1::Error::SequenceFieldError(
                             stringify!(#sequence_name).to_string(),
                             stringify!(#component_name).to_string(),
@@ -198,8 +157,6 @@ pub fn code_sequence_inner_calls(
                             stringify!(#component_name).to_string(),
                             Box::new(error.clone())
                         ))?;
-                    } else {
-                        self.#unsetter_name();
                     }
                 };
             }
@@ -235,13 +192,7 @@ pub fn code_sequence_inner_calls(
         } else {
             encode_calls = quote! {
                 #encode_calls
-                value.append(&mut self.#encoder_name().or_else(
-                    |error| Err(red_asn1::Error::SequenceFieldError(
-                                stringify!(#sequence_name).to_string(),
-                                stringify!(#component_name).to_string(),
-                                Box::new(error.clone())
-                                )))?
-                );
+                value.append(&mut self.#encoder_name());
             };
 
             decode_calls = quote! {
@@ -257,19 +208,12 @@ pub fn code_sequence_inner_calls(
 
         let encoder = &component_code.encoder;
         let decoder = &component_code.decoder;
-        let getter = &component_code.getter;
-        let setter = &component_code.setter;
-        let unsetter = &component_code.unsetter;
 
         components_unit_functions = quote! {
             #components_unit_functions
 
             #encoder
             #decoder
-            #getter
-            #setter
-            #unsetter
-
         };
     }
 
@@ -291,10 +235,10 @@ pub fn code_sequence(
         &sequence_inner_calls.components_unit_functions;
 
     let encode_value = quote! {
-        fn encode_value(&self) -> red_asn1::Result<Vec<u8>> {
+        fn encode_value(&self) -> Vec<u8> {
             let mut value: Vec<u8> = Vec::new();
             #encode_calls
-            return Ok(value);
+            return value;
         }
     };
 
@@ -315,15 +259,15 @@ pub fn code_sequence(
     };
 
     let inner_encode = quote! {
-        fn _inner_encode(&self) -> red_asn1::Result<Vec<u8>> {
+        fn _inner_encode(&self) -> Vec<u8> {
             let mut encoded = self.tag().encode();
-            let mut encoded_value = self.encode_value()?;
+            let mut encoded_value = self.encode_value();
             let mut encoded_length = red_asn1::encode_length(encoded_value.len());
 
             encoded.append(&mut encoded_length);
             encoded.append(&mut encoded_value);
 
-            return Ok(encoded);
+            return encoded;
         }
     };
 
@@ -379,16 +323,16 @@ pub fn code_sequence(
         sequence_definition.application_tag_number
     {
         encode = quote! {
-            fn encode(&self) -> red_asn1::Result<Vec<u8>> {
+            fn encode(&self) -> Vec<u8> {
                 let mut encoded = Tag::new(#application_tag_number,
                                             TagType::Constructed, TagClass::Application).encode();
-                let mut encoded_value = self._inner_encode()?;
+                let mut encoded_value = self._inner_encode();
                 let mut encoded_length = red_asn1::encode_length(encoded_value.len());
 
                 encoded.append(&mut encoded_length);
                 encoded.append(&mut encoded_value);
 
-                return Ok(encoded);
+                return encoded;
             }
         };
 
@@ -443,7 +387,7 @@ pub fn code_sequence(
         };
     } else {
         encode = quote! {
-            fn encode(&self) -> red_asn1::Result<Vec<u8>> {
+            fn encode(&self) -> Vec<u8> {
                 return self._inner_encode();
             }
         };
@@ -468,9 +412,6 @@ pub fn code_sequence(
 
             #encode_value
             #decode_value
-
-            fn unset_value(&mut self) {}
-
         }
 
         impl #name {
