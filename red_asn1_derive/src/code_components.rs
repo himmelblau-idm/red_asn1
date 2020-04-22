@@ -117,24 +117,7 @@ pub fn code_sequence_inner_calls(
         if component.optional {
             encode_calls = quote! {
                 #encode_calls
-                match self.#encoder_name() {
-                    Ok(ref mut bytes) => {
-                        value.append(bytes);
-                    },
-                    Err(error) => {
-                        match error.clone() {
-                            red_asn1::Error::NoValue => {
-                            },
-                            _ => {
-                                return Err(red_asn1::Error::SequenceFieldError(
-                                    stringify!(#sequence_name).to_string(),
-                                    stringify!(#component_name).to_string(),
-                                    Box::new(error.clone())
-                                    ))?;
-                            }
-                        }
-                    }
-                };
+                value.append(&mut self.#encoder_name());
             };
 
             let invalid_tag_errors_handlers;
