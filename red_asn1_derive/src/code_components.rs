@@ -1,19 +1,19 @@
 use super::parse_definitions::*;
 use proc_macro2::TokenStream;
 
-pub fn code_component(comp_def: &ComponentDefinition) -> ComponentCode {
-    return ComponentCode {
-        encoder: code_encoder(comp_def),
-        decoder: code_decoder(comp_def),
+pub fn code_field(comp_def: &FieldDefinition) -> FieldCode {
+    return FieldCode {
+        encoder: code_field_encoder(comp_def),
+        decoder: code_field_decoder(comp_def),
     };
 }
 
-fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
-    let decoder_name = comp_def.decoder_name();
-    let field_name = &comp_def.id;
-    let field_type = &comp_def.kind;
+fn code_field_decoder(field: &FieldDefinition) -> TokenStream {
+    let decoder_name = field.decoder_name();
+    let field_name = &field.id;
+    let field_type = &field.kind;
 
-    if let Some(context_tag_number) = comp_def.context_tag_number {
+    if let Some(context_tag_number) = field.context_tag_number {
         return quote! {
             fn #decoder_name (&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
                 let mut consumed_octets = 0;
@@ -73,11 +73,11 @@ fn code_decoder(comp_def: &ComponentDefinition) -> TokenStream {
     }
 }
 
-fn code_encoder(comp_def: &ComponentDefinition) -> TokenStream {
-    let encoder_name = comp_def.encoder_name();
-    let field_name = &comp_def.id;
+fn code_field_encoder(field: &FieldDefinition) -> TokenStream {
+    let encoder_name = field.encoder_name();
+    let field_name = &field.id;
 
-    if let Some(context_tag_number) = comp_def.context_tag_number {
+    if let Some(context_tag_number) = field.context_tag_number {
         return quote! {
             fn #encoder_name (&self) -> Vec<u8> {
                 let tag = Tag::new(#context_tag_number, TagType::Constructed, TagClass::Context);
@@ -101,20 +101,20 @@ fn code_encoder(comp_def: &ComponentDefinition) -> TokenStream {
 }
 
 pub fn code_sequence_inner_calls(
-    sequence_definition: &SequenceDefinition,
+    sequence: &SequenceDefinition,
 ) -> SequenceInnerCallsCode {
     let mut components_unit_functions = quote! {};
     let mut encode_calls = quote! {};
     let mut decode_calls = quote! {};
-    let sequence_name = &sequence_definition.name;
+    let sequence_name = &sequence.name;
 
-    for component in &sequence_definition.components {
-        let component_code = code_component(&component);
-        let encoder_name = component.encoder_name();
-        let decoder_name = component.decoder_name();
-        let component_name = &component.id;
+    for field in &sequence.fields {
+        let component_code = code_field(&field);
+        let encoder_name = field.encoder_name();
+        let decoder_name = field.decoder_name();
+        let field_name = &field.id;
 
-        if component.optional {
+        if field.optional {
             encode_calls = quote! {
                 #encode_calls
                 value.append(&mut self.#encoder_name());
@@ -122,12 +122,12 @@ pub fn code_sequence_inner_calls(
 
             let invalid_tag_errors_handlers;
 
-            if let Some(_) = component.context_tag_number {
+            if let Some(_) = field.context_tag_number {
                 invalid_tag_errors_handlers = quote! {
                     if tag_class != red_asn1::TagClass::Context {
                         return Err(red_asn1::Error::SequenceFieldError(
                             stringify!(#sequence_name).to_string(),
-                            stringify!(#component_name).to_string(),
+                            stringify!(#field_name).to_string(),
                             Box::new(error.clone())
                         ))?;
                     }
@@ -137,7 +137,7 @@ pub fn code_sequence_inner_calls(
                     if tag_class == red_asn1::TagClass::Context {
                         return Err(red_asn1::Error::SequenceFieldError(
                             stringify!(#sequence_name).to_string(),
-                            stringify!(#component_name).to_string(),
+                            stringify!(#field_name).to_string(),
                             Box::new(error.clone())
                         ))?;
                     }
@@ -164,7 +164,7 @@ pub fn code_sequence_inner_calls(
                             _ => {
                                 return Err(red_asn1::Error::SequenceFieldError(
                                     stringify!(#sequence_name).to_string(),
-                                    stringify!(#component_name).to_string(),
+                                    stringify!(#field_name).to_string(),
                                     Box::new(error.clone())
                                     ))?;
                             }
@@ -183,7 +183,7 @@ pub fn code_sequence_inner_calls(
                 consumed_octets += self.#decoder_name(&raw[consumed_octets..]).or_else(
                     |error| Err(red_asn1::Error::SequenceFieldError(
                                 stringify!(#sequence_name).to_string(),
-                                stringify!(#component_name).to_string(),
+                                stringify!(#field_name).to_string(),
                                 Box::new(error.clone())
                                 )))?;
             };

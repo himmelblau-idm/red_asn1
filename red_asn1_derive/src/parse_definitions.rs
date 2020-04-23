@@ -11,10 +11,10 @@ pub static APPLICATION_TAG_ATTR: &str = "application_tag";
 pub struct SequenceDefinition {
     pub name: Ident,
     pub application_tag_number: Option<u8>,
-    pub components: Vec<ComponentDefinition>
+    pub fields: Vec<FieldDefinition>
 }
 
-pub struct ComponentDefinition {
+pub struct FieldDefinition {
     pub id: Ident,
     pub kind: PathSegment,
     pub optional: bool,
@@ -22,7 +22,7 @@ pub struct ComponentDefinition {
 }
 
 
-impl ComponentDefinition {
+impl FieldDefinition {
     pub fn encoder_name(&self) -> Ident {
         let concatenated = format!("encode_{}", self.id);
         return Ident::new(&concatenated, self.id.span());
@@ -35,7 +35,7 @@ impl ComponentDefinition {
 
 }
 
-pub struct ComponentCode {
+pub struct FieldCode {
     pub encoder: TokenStream,
     pub decoder: TokenStream
 }

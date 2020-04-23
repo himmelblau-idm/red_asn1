@@ -7,7 +7,7 @@ pub fn extract_sequence_definition(
 ) -> ParseComponentResult<SequenceDefinition> {
     if let Data::Struct(data_struct) = &ast.data {
         let name = &ast.ident;
-        let components = extract_components_definitions(data_struct)?;
+        let fields = extract_components_definitions(data_struct)?;
         let mut application_tag_number: Option<u8> = None;
 
         match parse_sequence_attrs(&ast.attrs) {
@@ -25,7 +25,7 @@ pub fn extract_sequence_definition(
         return Ok(SequenceDefinition {
             name: name.clone(),
             application_tag_number: application_tag_number,
-            components: components,
+            fields,
         });
     } else {
         return Err(ParseComponentError::NotStruct);
@@ -34,7 +34,7 @@ pub fn extract_sequence_definition(
 
 fn extract_components_definitions(
     data_struct: &DataStruct,
-) -> ParseComponentResult<Vec<ComponentDefinition>> {
+) -> ParseComponentResult<Vec<FieldDefinition>> {
     if let Fields::Named(fields_named) = &data_struct.fields {
         return parse_structure_fields(fields_named);
     }
@@ -43,8 +43,8 @@ fn extract_components_definitions(
 
 fn parse_structure_fields(
     fields: &FieldsNamed,
-) -> ParseComponentResult<Vec<ComponentDefinition>> {
-    let mut components_definitions: Vec<ComponentDefinition> = Vec::new();
+) -> ParseComponentResult<Vec<FieldDefinition>> {
+    let mut components_definitions: Vec<FieldDefinition> = Vec::new();
     for field in fields.named.iter() {
         match parse_structure_field(&field) {
             Ok(component_definition) => {
@@ -65,7 +65,7 @@ fn parse_structure_fields(
 
 fn parse_structure_field(
     field: &Field,
-) -> ParseComponentResult<ComponentDefinition> {
+) -> ParseComponentResult<FieldDefinition> {
     let field_name;
     if let Some(name) = &field.ident {
         field_name = name;
@@ -90,7 +90,7 @@ fn parse_structure_field(
         },
     }
 
-    return Ok(ComponentDefinition {
+    return Ok(FieldDefinition {
         id: field_name.clone(),
         kind: field_type,
         optional,
