@@ -12,6 +12,7 @@ mod parse_error;
 mod parser;
 mod parse_definitions;
 mod code_components;
+mod field_coder;
 
 use parser::*;
 use code_components::*;
