@@ -1,31 +1,13 @@
 use crate::error as asn1err;
 use crate::tag::Tag;
 use crate::traits::Asn1Object;
-use std::ops::{Deref, DerefMut};
 
 pub static SEQUENCE_TAG_NUMBER: u8 = 0x10;
 
 /// Class to encode/decode SequenceOf ASN1
-#[derive(Default)]
-pub struct SequenceOf<T: Asn1Object> {
-    vector: Vec<T>,
-}
+pub type SequenceOf<T> = Vec<T>;
 
-impl<T: Asn1Object> Deref for SequenceOf<T> {
-    type Target = Vec<T>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.vector
-    }
-}
-
-impl<T: Asn1Object> DerefMut for SequenceOf<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.vector
-    }
-}
-
-impl<T: Asn1Object> Asn1Object for SequenceOf<T> {
+impl<T: Asn1Object> Asn1Object for Vec<T> {
     fn tag() -> Tag {
         return Tag::new_constructed_universal(SEQUENCE_TAG_NUMBER);
     }
@@ -50,7 +32,7 @@ impl<T: Asn1Object> Asn1Object for SequenceOf<T> {
             components.push(component);
         }
 
-        self.vector = components;
+        *self = components;
         return Ok(());
     }
 }
