@@ -26,7 +26,7 @@ impl<T: Asn1Object> DerefMut for SequenceOf<T> {
 }
 
 impl<T: Asn1Object> Asn1Object for SequenceOf<T> {
-    fn tag(&self) -> Tag {
+    fn tag() -> Tag {
         return Tag::new_constructed_universal(SEQUENCE_TAG_NUMBER);
     }
 

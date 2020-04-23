@@ -45,7 +45,7 @@ impl BitString {
 
 impl Asn1Object for BitString {
 
-    fn tag(&self) -> Tag {
+    fn tag() -> Tag {
         return Tag::new_primitive_universal(BIT_STRING_TAG_NUMBER);
     }
 

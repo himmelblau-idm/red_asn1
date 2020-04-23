@@ -8,7 +8,7 @@ pub static INTEGER_TAG_NUMBER: u8 = 0x2;
 pub type Integer = i128;
 
 impl Asn1Object for Integer {
-    fn tag(&self) -> Tag {
+    fn tag() -> Tag {
         return Tag::new_primitive_universal(INTEGER_TAG_NUMBER);
     }
 

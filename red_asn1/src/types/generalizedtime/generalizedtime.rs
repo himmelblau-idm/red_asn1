@@ -15,7 +15,7 @@ pub struct GeneralizedTime {
 }
 
 impl Asn1Object for GeneralizedTime {
-    fn tag(&self) -> Tag {
+    fn tag() -> Tag {
         return Tag::new_primitive_universal(GENERALIZED_TIME_TAG_NUMBER);
     }
 

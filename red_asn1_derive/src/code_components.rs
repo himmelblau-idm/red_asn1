@@ -243,7 +243,7 @@ pub fn code_sequence(
 
     let inner_encode = quote! {
         fn _inner_encode(&self) -> Vec<u8> {
-            let mut encoded = self.tag().encode();
+            let mut encoded = Self::tag().encode();
             let mut encoded_value = self.encode_value();
             let mut encoded_length = red_asn1::encode_length(encoded_value.len());
 
@@ -263,7 +263,7 @@ pub fn code_sequence(
                 ))
             )?;
 
-            if decoded_tag != self.tag() {
+            if decoded_tag != Self::tag() {
                 return Err(red_asn1::Error::SequenceError(
                     stringify!(#name).to_string(),
                     Box::new(red_asn1::Error::UnmatchedTag(TagClass::Universal))
@@ -386,7 +386,7 @@ pub fn code_sequence(
 
     let total_exp = quote! {
         impl Asn1Object for #name {
-            fn tag(&self) -> Tag {
+            fn tag() -> Tag {
                 return Tag::new_constructed_universal(SEQUENCE_TAG_NUMBER);
             }
 

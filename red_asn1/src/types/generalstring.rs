@@ -8,7 +8,7 @@ pub static GENERALSTRING_TAG_NUMBER: u8 = 0x1b;
 pub type GeneralString = String;
 
 impl Asn1Object for GeneralString {
-    fn tag(&self) -> Tag {
+    fn tag() -> Tag {
         return Tag::new_primitive_universal(GENERALSTRING_TAG_NUMBER);
     }
 

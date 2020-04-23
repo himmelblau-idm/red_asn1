@@ -6,7 +6,7 @@ use crate::length::{encode_length, decode_length};
 pub trait Asn1Object: Sized + Default {
 
     /// Method to retrieve the tag of the object, used to identify each object in ASN1
-    fn tag(&self) -> Tag;
+    fn tag() -> Tag;
 
     /// Method which indicates how object value must be encoded
     fn encode_value(&self) -> Vec<u8>;
@@ -17,7 +17,7 @@ pub trait Asn1Object: Sized + Default {
     /// To encode the object to DER, generally does not need to be overwritten.
     /// Usually, just encode_value should be overwritten
     fn encode(&self) -> Vec<u8> {
-        let mut encoded = self.tag().encode();
+        let mut encoded = Self::tag().encode();
         let mut encoded_value = self.encode_value();
         let mut encoded_length = encode_length(encoded_value.len());
 
@@ -31,9 +31,7 @@ pub trait Asn1Object: Sized + Default {
     /// Usually, just decode_value should be overwritten
     fn decode(raw: &[u8]) -> asn1err::Result<(usize, Self)> {
         let (mut consumed_octets, decoded_tag) = Tag::decode(raw)?;
-        let mut asn1obj = Self::default();
-        
-        if decoded_tag != asn1obj.tag() {
+        if decoded_tag != Self::tag() {
             return Err(asn1err::Error::UnmatchedTag(TagClass::Universal))?;
         }
 
@@ -50,6 +48,7 @@ pub trait Asn1Object: Sized + Default {
 
         let (raw_value, _) = raw_value.split_at(value_length);
 
+        let mut asn1obj = Self::default();
         asn1obj.decode_value(raw_value)?;
         consumed_octets += value_length;
 
@@ -65,14 +64,13 @@ mod tests {
 
     #[derive(Default)]
     struct TestObject {
-        tag: Tag
     }
 
     impl TestObject {}
 
     impl Asn1Object for TestObject {
-        fn tag(&self) -> Tag {
-            return self.tag.clone();
+        fn tag() -> Tag {
+            return Tag::default();
         }
         fn encode_value(&self) -> Vec<u8> {
             return vec![];

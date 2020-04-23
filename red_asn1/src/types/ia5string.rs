@@ -9,7 +9,7 @@ pub static IA5STRING_TAG_NUMBER: u8 = 0x16;
 pub type IA5String = AsciiString;
 
 impl Asn1Object for IA5String {
-    fn tag(&self) -> Tag {
+    fn tag() -> Tag {
         return Tag::new_primitive_universal(IA5STRING_TAG_NUMBER);
     }
 

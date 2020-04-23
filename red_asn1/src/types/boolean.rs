@@ -9,7 +9,7 @@ pub type Boolean = bool;
 
 impl Asn1Object for Boolean {
 
-    fn tag(&self) -> Tag {
+    fn tag() -> Tag {
         return Tag::new_primitive_universal(BOOLEAN_TAG_NUMBER);
     }
 

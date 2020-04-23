@@ -13,10 +13,7 @@ fn test_define_simple() {
     *seq.data = vec![1, 2, 3, 4];
 
     assert_eq!(Integer::from(9), *seq.id);
-    assert_eq!(
-        OctetString::from(vec![1, 2, 3, 4]),
-        *seq.data
-    );
+    assert_eq!(OctetString::from(vec![1, 2, 3, 4]), *seq.data);
 }
 
 #[test]
@@ -66,10 +63,7 @@ fn test_encode() {
     let mut p = Person::default();
     *p.age = 9;
 
-    assert_eq!(
-        vec![0x30, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x9],
-        p.encode()
-    );
+    assert_eq!(vec![0x30, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x9], p.encode());
 }
 
 #[test]
@@ -207,9 +201,9 @@ fn test_decode_with_context_tags() {
         age: SeqField<Integer>,
     }
 
-    let (_, p) = Person::decode(
-        &[0x30, 0x5, 0xa0, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x9]
-    ).unwrap();
+    let (_, p) =
+        Person::decode(&[0x30, 0x5, 0xa0, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x9])
+            .unwrap();
 
     assert_eq!(9, *p.age);
 }
@@ -373,10 +367,7 @@ fn test_decode_without_context_tags() {
     .unwrap();
 
     assert_eq!(9, *p.id);
-    assert_eq!(
-        vec![0x1, 0x2, 0x3, 0x4],
-        *p.data
-    );
+    assert_eq!(vec![0x1, 0x2, 0x3, 0x4], *p.data);
 }
 
 #[test]
@@ -404,10 +395,7 @@ fn test_decode_with_optional() {
     .unwrap();
 
     assert_eq!(None, seq.get_id());
-    assert_eq!(
-        vec![0x1, 0x2, 0x3, 0x4],
-        *seq.data
-    );
+    assert_eq!(vec![0x1, 0x2, 0x3, 0x4], *seq.data);
 }
 
 #[test]
@@ -432,10 +420,7 @@ fn test_decode_with_optional_without_context_tag() {
     .unwrap();
 
     assert_eq!(None, seq.get_id());
-    assert_eq!(
-        vec![0x1, 0x2, 0x3, 0x4],
-        *seq.data
-    );
+    assert_eq!(vec![0x1, 0x2, 0x3, 0x4], *seq.data);
 }
 
 #[should_panic(

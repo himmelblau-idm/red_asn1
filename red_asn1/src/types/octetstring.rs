@@ -10,7 +10,7 @@ pub type OctetString = Vec<u8>;
 
 impl Asn1Object for OctetString {
 
-    fn tag(&self) -> Tag {
+    fn tag() -> Tag {
         return Tag::new_primitive_universal(OCTET_STRING_TAG_NUMBER);
     }
 
