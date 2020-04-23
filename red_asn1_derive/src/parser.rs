@@ -1,56 +1,61 @@
-use super::parse_error::{ParseComponentErrorKind, ParseComponentResult};
-use syn::*;
 use super::parse_definitions::*;
+use super::parse_error::{ParseComponentError, ParseComponentResult};
+use syn::*;
 
-pub fn extract_sequence_definition(ast: &DeriveInput) -> ParseComponentResult<SequenceDefinition> {
+pub fn extract_sequence_definition(
+    ast: &DeriveInput,
+) -> ParseComponentResult<SequenceDefinition> {
     if let Data::Struct(data_struct) = &ast.data {
         let name = &ast.ident;
         let components = extract_components_definitions(data_struct)?;
         let mut application_tag_number: Option<u8> = None;
-        
+
         match parse_sequence_attrs(&ast.attrs) {
             Ok(tag_number) => {
                 application_tag_number = tag_number;
-            },
-            Err(parse_error) => {
-                match parse_error.kind() {
-                    ParseComponentErrorKind::NotFoundAttributeTag => {
-                    },
-                    _ => {
-                        return Err(parse_error);
-                    }
-                }
             }
+            Err(parse_error) => match parse_error {
+                ParseComponentError::NotFoundAttributeTag => {}
+                _ => {
+                    return Err(parse_error);
+                }
+            },
         }
 
-        return Ok(SequenceDefinition{
+        return Ok(SequenceDefinition {
             name: name.clone(),
             application_tag_number: application_tag_number,
-            components: components
+            components: components,
         });
     } else {
-        return Err(ParseComponentErrorKind::NotStruct)?;
+        return Err(ParseComponentError::NotStruct);
     }
 }
 
-fn extract_components_definitions(data_struct : &DataStruct) -> ParseComponentResult<Vec<ComponentDefinition>> {
+fn extract_components_definitions(
+    data_struct: &DataStruct,
+) -> ParseComponentResult<Vec<ComponentDefinition>> {
     if let Fields::Named(fields_named) = &data_struct.fields {
         return parse_structure_fields(fields_named);
     }
     unreachable!()
 }
 
-fn parse_structure_fields(fields : &FieldsNamed) -> ParseComponentResult<Vec<ComponentDefinition>> {
+fn parse_structure_fields(
+    fields: &FieldsNamed,
+) -> ParseComponentResult<Vec<ComponentDefinition>> {
     let mut components_definitions: Vec<ComponentDefinition> = Vec::new();
     for field in fields.named.iter() {
         match parse_structure_field(&field) {
             Ok(component_definition) => {
                 components_definitions.push(component_definition);
-            },
+            }
             Err(parse_error) => {
-                match parse_error.kind() {
-                    ParseComponentErrorKind::InvalidFieldType => {},
-                    _ => {return Err(parse_error); }
+                match parse_error {
+                    ParseComponentError::InvalidFieldType => {}
+                    _ => {
+                        return Err(parse_error);
+                    }
                 };
             }
         };
@@ -58,48 +63,47 @@ fn parse_structure_fields(fields : &FieldsNamed) -> ParseComponentResult<Vec<Com
     return Ok(components_definitions);
 }
 
-
-fn parse_structure_field(field : &Field) -> ParseComponentResult<ComponentDefinition> {
+fn parse_structure_field(
+    field: &Field,
+) -> ParseComponentResult<ComponentDefinition> {
     let field_name;
     if let Some(name) = &field.ident {
         field_name = name;
-    }else {
+    } else {
         unreachable!();
     }
- 
+
     let field_type = extract_field_type(&field.ty)?;
     let mut context_tag_number = None;
     let mut optional = false;
-
 
     match parse_field_attrs(&field.attrs) {
         Ok((opt, tag_number)) => {
             optional = opt;
             context_tag_number = tag_number;
-        },
-        Err(parse_error) => {
-            match parse_error.kind() {
-                ParseComponentErrorKind::NotFoundAttributeTag => {
-                },
-                _ => {
-                    return Err(parse_error);
-                }
-            }
         }
+        Err(parse_error) => match parse_error {
+            ParseComponentError::NotFoundAttributeTag => {}
+            _ => {
+                return Err(parse_error);
+            }
+        },
     }
 
-    return Ok(ComponentDefinition{
+    return Ok(ComponentDefinition {
         id: field_name.clone(),
         kind: field_type,
         optional,
-        context_tag_number
+        context_tag_number,
     });
 }
 
 fn extract_field_type(field_type: &Type) -> ParseComponentResult<PathSegment> {
     if let Type::Path(path) = &field_type {
         if path.path.segments[0].ident == SEQUENCE_COMPONENT_TYPE_NAME {
-            if let PathArguments::AngleBracketed(brack_argument) = &path.path.segments[0].arguments {
+            if let PathArguments::AngleBracketed(brack_argument) =
+                &path.path.segments[0].arguments
+            {
                 if let GenericArgument::Type(ty) = &brack_argument.args[0] {
                     if let Type::Path(path) = ty {
                         return Ok(path.path.segments[0].clone());
@@ -107,30 +111,34 @@ fn extract_field_type(field_type: &Type) -> ParseComponentResult<PathSegment> {
                 }
             }
         } else {
-            return Err(ParseComponentErrorKind::InvalidFieldType)?;
+            return Err(ParseComponentError::InvalidFieldType);
         }
     }
     unreachable!();
 }
 
-
-
-
-fn parse_field_attrs(attrs: &Vec<Attribute>) -> ParseComponentResult<(bool, Option<u8>)> {
+fn parse_field_attrs(
+    attrs: &Vec<Attribute>,
+) -> ParseComponentResult<(bool, Option<u8>)> {
     for attr in attrs {
-        if attr.path.segments.len() > 0 && attr.path.segments[0].ident == ASN1_SEQ_FIELD_ATTR {
+        if attr.path.segments.len() > 0
+            && attr.path.segments[0].ident == ASN1_SEQ_FIELD_ATTR
+        {
             return parse_component_attr(attr);
         }
     }
-    return Err(ParseComponentErrorKind::NotFoundAttributeTag)?;
+    return Err(ParseComponentError::NotFoundAttributeTag);
 }
 
-fn parse_component_attr(attr: &Attribute) -> ParseComponentResult<(bool, Option<u8>)> {
+fn parse_component_attr(
+    attr: &Attribute,
+) -> ParseComponentResult<(bool, Option<u8>)> {
     let mut optional = false;
     let mut tag_number = None;
 
     if let Ok(Meta::List(ref meta)) = attr.parse_meta() {
-        let subattrs : Vec<syn::NestedMeta> = meta.nested.iter().cloned().collect();
+        let subattrs: Vec<syn::NestedMeta> =
+            meta.nested.iter().cloned().collect();
         for subattr in subattrs {
             if let syn::NestedMeta::Meta(ref a) = subattr {
                 match a {
@@ -140,50 +148,55 @@ fn parse_component_attr(attr: &Attribute) -> ParseComponentResult<(bool, Option<
                                 syn::Lit::Int(ref value) => {
                                     let int_value = value.value();
                                     if int_value >= 256 {
-                                        return Err(ParseComponentErrorKind::InvalidTagNumberValue)?;
+                                        return Err(ParseComponentError::InvalidTagNumberValue);
                                     }
                                     tag_number = Some(int_value as u8);
-                                },
+                                }
                                 _ => {
-                                    return Err(ParseComponentErrorKind::InvalidTagNumberValue)?;
+                                    return Err(ParseComponentError::InvalidTagNumberValue);
                                 }
                             }
-                        }else {
-                            return Err(ParseComponentErrorKind::UnknownAttribute)?;
+                        } else {
+                            return Err(ParseComponentError::UnknownAttribute);
                         }
-                    },
+                    }
                     Meta::Word(ident) => {
                         if ident == OPTIONAL_ATTR {
                             optional = true;
-                        }else {
-                            return Err(ParseComponentErrorKind::UnknownAttribute)?;
+                        } else {
+                            return Err(ParseComponentError::UnknownAttribute);
                         }
-                    },
+                    }
                     _ => {
-                        return Err(ParseComponentErrorKind::UnknownAttribute)?;
+                        return Err(ParseComponentError::UnknownAttribute);
                     }
                 };
             }
         }
     }
 
-    return Ok((optional,tag_number));
+    return Ok((optional, tag_number));
 }
 
-fn parse_sequence_attrs(attrs: &Vec<Attribute>) -> ParseComponentResult<Option<u8>> {
+fn parse_sequence_attrs(
+    attrs: &Vec<Attribute>,
+) -> ParseComponentResult<Option<u8>> {
     for attr in attrs {
-        if attr.path.segments.len() > 0 && attr.path.segments[0].ident == ASN1_SEQ_ATTR {
+        if attr.path.segments.len() > 0
+            && attr.path.segments[0].ident == ASN1_SEQ_ATTR
+        {
             return parse_seq_attr(attr);
         }
     }
-    return Err(ParseComponentErrorKind::NotFoundAttributeTag)?;
+    return Err(ParseComponentError::NotFoundAttributeTag);
 }
 
 fn parse_seq_attr(attr: &Attribute) -> ParseComponentResult<Option<u8>> {
     let mut tag_number = None;
 
     if let Ok(Meta::List(ref meta)) = attr.parse_meta() {
-        let subattrs : Vec<syn::NestedMeta> = meta.nested.iter().cloned().collect();
+        let subattrs: Vec<syn::NestedMeta> =
+            meta.nested.iter().cloned().collect();
         for subattr in subattrs {
             if let syn::NestedMeta::Meta(ref a) = subattr {
                 match a {
@@ -193,20 +206,20 @@ fn parse_seq_attr(attr: &Attribute) -> ParseComponentResult<Option<u8>> {
                                 syn::Lit::Int(ref value) => {
                                     let int_value = value.value();
                                     if int_value >= 256 {
-                                        return Err(ParseComponentErrorKind::InvalidTagNumberValue)?;
+                                        return Err(ParseComponentError::InvalidTagNumberValue);
                                     }
                                     tag_number = Some(int_value as u8);
-                                },
+                                }
                                 _ => {
-                                    return Err(ParseComponentErrorKind::InvalidTagNumberValue)?;
+                                    return Err(ParseComponentError::InvalidTagNumberValue);
                                 }
                             }
-                        }else {
-                            return Err(ParseComponentErrorKind::UnknownAttribute)?;
+                        } else {
+                            return Err(ParseComponentError::UnknownAttribute);
                         }
-                    },
+                    }
                     _ => {
-                        return Err(ParseComponentErrorKind::UnknownAttribute)?;
+                        return Err(ParseComponentError::UnknownAttribute);
                     }
                 };
             }
