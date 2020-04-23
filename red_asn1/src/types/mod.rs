@@ -25,6 +25,8 @@ pub use sequence::*;
 mod sequenceof;
 pub use sequenceof::*;
 
+mod optional;
+pub use optional::Optional;
 
 #[cfg(test)]
 mod tests {
