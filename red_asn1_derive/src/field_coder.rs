@@ -1,6 +1,8 @@
 use crate::parse_definitions::{FieldCode, FieldDefinition};
 use proc_macro2::TokenStream;
 
+/// Method to create the code for the encode/decode methods
+/// for a field of the structure
 pub fn code_field(field: &FieldDefinition) -> FieldCode {
     return FieldCode {
         encoder: code_field_encoder(field),
@@ -8,6 +10,8 @@ pub fn code_field(field: &FieldDefinition) -> FieldCode {
     };
 }
 
+/// Method to create the code for the decode method of a
+/// structure field
 fn code_field_decoder(field: &FieldDefinition) -> TokenStream {
     let decoder_name = field.decoder_name();
     let field_name = &field.id;
@@ -73,6 +77,8 @@ fn code_field_decoder(field: &FieldDefinition) -> TokenStream {
     }
 }
 
+/// Method to create the code of the encode method of a
+/// structure field
 fn code_field_encoder(field: &FieldDefinition) -> TokenStream {
     let encoder_name = field.encoder_name();
     let field_name = &field.id;
