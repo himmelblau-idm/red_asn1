@@ -1,5 +1,5 @@
 use super::parse_definitions::*;
-use crate::field_coder::FieldCoder;
+use crate::field_coder::code_field;
 use proc_macro2::TokenStream;
 use syn::Ident;
 
@@ -259,7 +259,7 @@ pub fn code_sequence_inner_calls(
             };
         }
 
-        let field_code = FieldCoder::new(field).code_field();
+        let field_code = code_field(field);
         let encoder = &field_code.encoder;
         let decoder = &field_code.decoder;
 
