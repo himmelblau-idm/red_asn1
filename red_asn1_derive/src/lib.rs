@@ -6,16 +6,16 @@ extern crate syn;
 extern crate quote;
 
 use proc_macro::TokenStream;
-use syn::*;
+use syn::{parse_macro_input, DeriveInput};
 
 mod parse_error;
 mod parser;
 mod parse_definitions;
-mod code_components;
 mod field_coder;
+mod sequence_coder;
 
-use parser::*;
-use code_components::*;
+use parser::extract_sequence_definition;
+use sequence_coder::code_sequence;
 
 
 /// Macro to create ASN1 sequence from Rust struct
@@ -85,8 +85,7 @@ pub fn sequence_macro_derive(input: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(input as DeriveInput);
 
     let sequence_definition = extract_sequence_definition(&ast).unwrap();
-    let sequence_inner_calls = code_sequence_inner_calls(&sequence_definition);
-    let sequence_code = code_sequence(&sequence_definition, &sequence_inner_calls);
+    let sequence_code = code_sequence(&sequence_definition);
 
     return TokenStream::from(sequence_code);
 }
