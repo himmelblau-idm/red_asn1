@@ -1,10 +1,10 @@
 use std::fmt;
 
-pub type ParseComponentResult<T> = Result<T, ParseComponentError>;
+pub type ParseResult<T> = Result<T, ParseError>;
 
 
 #[derive(Clone, Debug)]
-pub enum ParseComponentError {
+pub enum ParseError {
     NotFoundAttributeTag,
     InvalidTagNumberValue,
     UnknownAttribute,
@@ -12,7 +12,7 @@ pub enum ParseComponentError {
     NotStruct
 }
 
-impl fmt::Display for ParseComponentError {
+impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(&self, f)
     }

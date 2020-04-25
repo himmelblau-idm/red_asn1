@@ -1,10 +1,10 @@
 use super::parse_definitions::*;
-use super::parse_error::{ParseComponentError, ParseComponentResult};
+use super::parse_error::{ParseError, ParseResult};
 use syn::*;
 
 pub fn extract_sequence_definition(
     ast: &DeriveInput,
-) -> ParseComponentResult<SequenceDefinition> {
+) -> ParseResult<SequenceDefinition> {
     if let Data::Struct(data_struct) = &ast.data {
         let name = &ast.ident;
         let fields = extract_components_definitions(data_struct)?;
@@ -15,7 +15,7 @@ pub fn extract_sequence_definition(
                 application_tag_number = tag_number;
             }
             Err(parse_error) => match parse_error {
-                ParseComponentError::NotFoundAttributeTag => {}
+                ParseError::NotFoundAttributeTag => {}
                 _ => {
                     return Err(parse_error);
                 }
@@ -28,13 +28,13 @@ pub fn extract_sequence_definition(
             fields,
         });
     } else {
-        return Err(ParseComponentError::NotStruct);
+        return Err(ParseError::NotStruct);
     }
 }
 
 fn extract_components_definitions(
     data_struct: &DataStruct,
-) -> ParseComponentResult<Vec<FieldDefinition>> {
+) -> ParseResult<Vec<FieldDefinition>> {
     if let Fields::Named(fields_named) = &data_struct.fields {
         return parse_structure_fields(fields_named);
     }
@@ -43,7 +43,7 @@ fn extract_components_definitions(
 
 fn parse_structure_fields(
     fields: &FieldsNamed,
-) -> ParseComponentResult<Vec<FieldDefinition>> {
+) -> ParseResult<Vec<FieldDefinition>> {
     let mut components_definitions: Vec<FieldDefinition> = Vec::new();
     for field in fields.named.iter() {
         match parse_structure_field(&field) {
@@ -52,7 +52,7 @@ fn parse_structure_fields(
             }
             Err(parse_error) => {
                 match parse_error {
-                    ParseComponentError::InvalidFieldType => {}
+                    ParseError::InvalidFieldType => {}
                     _ => {
                         return Err(parse_error);
                     }
@@ -65,7 +65,7 @@ fn parse_structure_fields(
 
 fn parse_structure_field(
     field: &Field,
-) -> ParseComponentResult<FieldDefinition> {
+) -> ParseResult<FieldDefinition> {
     let field_name;
     if let Some(name) = &field.ident {
         field_name = name;
@@ -83,7 +83,7 @@ fn parse_structure_field(
             context_tag_number = tag_number;
         }
         Err(parse_error) => match parse_error {
-            ParseComponentError::NotFoundAttributeTag => {}
+            ParseError::NotFoundAttributeTag => {}
             _ => {
                 return Err(parse_error);
             }
@@ -98,7 +98,7 @@ fn parse_structure_field(
     });
 }
 
-fn extract_field_type(field_type: &Type) -> ParseComponentResult<PathSegment> {
+fn extract_field_type(field_type: &Type) -> ParseResult<PathSegment> {
     if let Type::Path(path) = &field_type {
         if path.path.segments[0].ident == SEQUENCE_COMPONENT_TYPE_NAME {
             if let PathArguments::AngleBracketed(brack_argument) =
@@ -111,7 +111,7 @@ fn extract_field_type(field_type: &Type) -> ParseComponentResult<PathSegment> {
                 }
             }
         } else {
-            return Err(ParseComponentError::InvalidFieldType);
+            return Err(ParseError::InvalidFieldType);
         }
     }
     unreachable!();
@@ -119,7 +119,7 @@ fn extract_field_type(field_type: &Type) -> ParseComponentResult<PathSegment> {
 
 fn parse_field_attrs(
     attrs: &Vec<Attribute>,
-) -> ParseComponentResult<(bool, Option<u8>)> {
+) -> ParseResult<(bool, Option<u8>)> {
     for attr in attrs {
         if attr.path.segments.len() > 0
             && attr.path.segments[0].ident == ASN1_SEQ_FIELD_ATTR
@@ -127,12 +127,12 @@ fn parse_field_attrs(
             return parse_component_attr(attr);
         }
     }
-    return Err(ParseComponentError::NotFoundAttributeTag);
+    return Err(ParseError::NotFoundAttributeTag);
 }
 
 fn parse_component_attr(
     attr: &Attribute,
-) -> ParseComponentResult<(bool, Option<u8>)> {
+) -> ParseResult<(bool, Option<u8>)> {
     let mut optional = false;
     let mut tag_number = None;
 
@@ -148,27 +148,27 @@ fn parse_component_attr(
                                 syn::Lit::Int(ref value) => {
                                     let int_value = value.value();
                                     if int_value >= 256 {
-                                        return Err(ParseComponentError::InvalidTagNumberValue);
+                                        return Err(ParseError::InvalidTagNumberValue);
                                     }
                                     tag_number = Some(int_value as u8);
                                 }
                                 _ => {
-                                    return Err(ParseComponentError::InvalidTagNumberValue);
+                                    return Err(ParseError::InvalidTagNumberValue);
                                 }
                             }
                         } else {
-                            return Err(ParseComponentError::UnknownAttribute);
+                            return Err(ParseError::UnknownAttribute);
                         }
                     }
                     Meta::Word(ident) => {
                         if ident == OPTIONAL_ATTR {
                             optional = true;
                         } else {
-                            return Err(ParseComponentError::UnknownAttribute);
+                            return Err(ParseError::UnknownAttribute);
                         }
                     }
                     _ => {
-                        return Err(ParseComponentError::UnknownAttribute);
+                        return Err(ParseError::UnknownAttribute);
                     }
                 };
             }
@@ -180,7 +180,7 @@ fn parse_component_attr(
 
 fn parse_sequence_attrs(
     attrs: &Vec<Attribute>,
-) -> ParseComponentResult<Option<u8>> {
+) -> ParseResult<Option<u8>> {
     for attr in attrs {
         if attr.path.segments.len() > 0
             && attr.path.segments[0].ident == ASN1_SEQ_ATTR
@@ -188,10 +188,10 @@ fn parse_sequence_attrs(
             return parse_seq_attr(attr);
         }
     }
-    return Err(ParseComponentError::NotFoundAttributeTag);
+    return Err(ParseError::NotFoundAttributeTag);
 }
 
-fn parse_seq_attr(attr: &Attribute) -> ParseComponentResult<Option<u8>> {
+fn parse_seq_attr(attr: &Attribute) -> ParseResult<Option<u8>> {
     let mut tag_number = None;
 
     if let Ok(Meta::List(ref meta)) = attr.parse_meta() {
@@ -206,20 +206,20 @@ fn parse_seq_attr(attr: &Attribute) -> ParseComponentResult<Option<u8>> {
                                 syn::Lit::Int(ref value) => {
                                     let int_value = value.value();
                                     if int_value >= 256 {
-                                        return Err(ParseComponentError::InvalidTagNumberValue);
+                                        return Err(ParseError::InvalidTagNumberValue);
                                     }
                                     tag_number = Some(int_value as u8);
                                 }
                                 _ => {
-                                    return Err(ParseComponentError::InvalidTagNumberValue);
+                                    return Err(ParseError::InvalidTagNumberValue);
                                 }
                             }
                         } else {
-                            return Err(ParseComponentError::UnknownAttribute);
+                            return Err(ParseError::UnknownAttribute);
                         }
                     }
                     _ => {
-                        return Err(ParseComponentError::UnknownAttribute);
+                        return Err(ParseError::UnknownAttribute);
                     }
                 };
             }
