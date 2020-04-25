@@ -17,27 +17,27 @@ pub struct FieldDefinition {
 
 
 impl FieldDefinition {
-    pub fn encoder_name(&self) -> Ident {
-        let concatenated = format!("encode_{}", self.id);
+    pub fn parser_name(&self) -> Ident {
+        let concatenated = format!("parse_{}", self.id);
         return Ident::new(&concatenated, self.id.span());
     }
 
-    pub fn decoder_name(&self) -> Ident {
-        let concatenated = format!("decode_{}", self.id);
+    pub fn builder_name(&self) -> Ident {
+        let concatenated = format!("build_{}", self.id);
         return Ident::new(&concatenated, self.id.span());
     }
 
 }
 
 pub struct FieldCode {
-    pub encoder: TokenStream,
-    pub decoder: TokenStream
+    pub builder: TokenStream,
+    pub parser: TokenStream
 }
 
 
 pub struct SequenceInnerCallsCode {
-    pub encode_calls: TokenStream,
-    pub decode_calls: TokenStream,
+    pub build_calls: TokenStream,
+    pub parse_calls: TokenStream,
     pub components_unit_functions: TokenStream
 }
 

@@ -2,49 +2,49 @@ use crate::parse_definitions::{FieldCode, FieldDefinition};
 use proc_macro2::TokenStream;
 use syn::{Ident, PathSegment};
 
-/// Method to create the code for the encode/decode methods
+/// Method to create the code for the build/parse methods
 /// for a field of the structure
 pub fn code_field(field: &FieldDefinition) -> FieldCode {
     return FieldCode {
-        encoder: code_field_encoder(field),
-        decoder: code_field_decoder(field),
+        builder: code_field_builder(field),
+        parser: code_field_parser(field),
     };
 }
 
-/// Method to create the code for the decode method of a
+/// Method to create the code for the parse method of a
 /// structure field
-fn code_field_decoder(field: &FieldDefinition) -> TokenStream {
+fn code_field_parser(field: &FieldDefinition) -> TokenStream {
     match field.context_tag_number {
         Some(ctx_tag) => match field.optional {
             true => {
-                code_optional_field_decoder_with_context_tag(field, ctx_tag)
+                code_optional_field_parser_with_context_tag(field, ctx_tag)
             }
             false => {
-                code_required_field_decoder_with_context_tag(field, ctx_tag)
+                code_required_field_parser_with_context_tag(field, ctx_tag)
             }
         },
 
-        None => code_field_decoder_without_context_tag(field),
+        None => code_field_parser_without_context_tag(field),
     }
 }
 
-fn code_required_field_decoder_with_context_tag(
+fn code_required_field_parser_with_context_tag(
     field: &FieldDefinition,
     context_tag_number: u8,
 ) -> TokenStream {
-    let decoder_name = field.decoder_name();
+    let parser_name = field.parser_name();
     let field_name = &field.id;
     let field_type = compose_field_type(&field.kind, &field.sub_kinds);
 
     return quote! {
-        fn #decoder_name (&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
+        fn #parser_name (&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
             let mut consumed_octets = 0;
-            let decoded_tag;
+            let parsed_tag;
 
-            match Tag::decode(raw) {
+            match Tag::parse(raw) {
                 Ok((octets_count, tag)) => {
                     consumed_octets += octets_count;
-                    decoded_tag = tag;
+                    parsed_tag = tag;
                 },
                 Err(error) => {
                     match error.clone() {
@@ -61,13 +61,13 @@ fn code_required_field_decoder_with_context_tag(
                 }
             }
 
-            if decoded_tag != Tag::new(#context_tag_number, TagType::Constructed, TagClass::Context) {
+            if parsed_tag != Tag::new(#context_tag_number, TagType::Constructed, TagClass::Context) {
                 return Err(red_asn1::Error::UnmatchedTag(TagClass::Context))?;
             }
 
             let (_, raw_length) = raw.split_at(consumed_octets);
 
-            let (value_length, consumed_octets_by_length) = red_asn1::decode_length(raw_length)?;
+            let (value_length, consumed_octets_by_length) = red_asn1::parse_length(raw_length)?;
             consumed_octets += consumed_octets_by_length;
             let (_, raw_value) = raw.split_at(consumed_octets);
 
@@ -77,7 +77,7 @@ fn code_required_field_decoder_with_context_tag(
 
             let (raw_value, _) = raw_value.split_at(value_length);
 
-            let (_, field) = #field_type::decode(raw_value)?;
+            let (_, field) = #field_type::parse(raw_value)?;
             consumed_octets += value_length;
             self.#field_name = field;
 
@@ -86,28 +86,28 @@ fn code_required_field_decoder_with_context_tag(
     };
 }
 
-/// Write the code for decode a field in case of having a context tag
-/// and being optional. In this case the decode fails in case the
+/// Write the code for parse a field in case of having a context tag
+/// and being optional. In this case the parse fails in case the
 /// context tag matchs but the type tag is incorrect, or the type
 /// data is invalid. However is context tag doesn't match, then,
 /// the field is set to None.
-fn code_optional_field_decoder_with_context_tag(
+fn code_optional_field_parser_with_context_tag(
     field: &FieldDefinition,
     context_tag_number: u8,
 ) -> TokenStream {
-    let decoder_name = field.decoder_name();
+    let parser_name = field.parser_name();
     let field_name = &field.id;
     let field_type = compose_field_type(&field.kind, &field.sub_kinds);
 
     return quote! {
-        fn #decoder_name (&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
+        fn #parser_name (&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
             let mut consumed_octets = 0;
-            let decoded_tag;
+            let parsed_tag;
 
-            match Tag::decode(raw) {
+            match Tag::parse(raw) {
                 Ok((octets_count, tag)) => {
                     consumed_octets += octets_count;
-                    decoded_tag = tag;
+                    parsed_tag = tag;
                 },
                 Err(error) => {
                     self.#field_name = None;
@@ -115,14 +115,14 @@ fn code_optional_field_decoder_with_context_tag(
                 }
             }
 
-            if decoded_tag != Tag::new(#context_tag_number, TagType::Constructed, TagClass::Context) {
+            if parsed_tag != Tag::new(#context_tag_number, TagType::Constructed, TagClass::Context) {
                 self.#field_name = None;
                 return Ok(0);
             }
 
             let (_, raw_length) = raw.split_at(consumed_octets);
 
-            let (value_length, consumed_octets_by_length) = red_asn1::decode_length(raw_length)?;
+            let (value_length, consumed_octets_by_length) = red_asn1::parse_length(raw_length)?;
             consumed_octets += consumed_octets_by_length;
             let (_, raw_value) = raw.split_at(consumed_octets);
 
@@ -132,13 +132,13 @@ fn code_optional_field_decoder_with_context_tag(
 
             let (raw_value, _) = raw_value.split_at(value_length);
 
-            let (_, type_tag) = Tag::decode(raw_value)?;
+            let (_, type_tag) = Tag::parse(raw_value)?;
             if type_tag != #field_type::tag() {
                 return Err(red_asn1::Error::UnmatchedTag(TagClass::Universal));
             }
 
 
-            let (_, field) = #field_type::decode(raw_value)?;
+            let (_, field) = #field_type::parse(raw_value)?;
             consumed_octets += value_length;
 
             self.#field_name = field;
@@ -148,44 +148,44 @@ fn code_optional_field_decoder_with_context_tag(
     };
 }
 
-fn code_field_decoder_without_context_tag(
+fn code_field_parser_without_context_tag(
     field: &FieldDefinition,
 ) -> TokenStream {
-    let decoder_name = field.decoder_name();
+    let parser_name = field.parser_name();
     let field_name = &field.id;
     let field_type = compose_field_type(&field.kind, &field.sub_kinds);
     return quote! {
-        fn #decoder_name (&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
-            let (size, field) = #field_type::decode(raw)?;
+        fn #parser_name (&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
+            let (size, field) = #field_type::parse(raw)?;
             self.#field_name = field;
             return Ok(size);
         }
     };
 }
 
-/// Method to create the code of the encode method of a
+/// Method to create the code of the build method of a
 /// structure field
-fn code_field_encoder(field: &FieldDefinition) -> TokenStream {
+fn code_field_builder(field: &FieldDefinition) -> TokenStream {
     match field.context_tag_number {
         Some(context_tag_number) => {
-            code_field_encoder_with_context_tag(field, context_tag_number)
+            code_field_builder_with_context_tag(field, context_tag_number)
         }
-        None => code_field_encoder_without_context_tag(field),
+        None => code_field_builder_without_context_tag(field),
     }
 }
 
-fn code_field_encoder_with_context_tag(
+fn code_field_builder_with_context_tag(
     field: &FieldDefinition,
     ctx_tag: u8,
 ) -> TokenStream {
-    let encoder_name = field.encoder_name();
+    let builder_name = field.builder_name();
     let field_name = &field.id;
 
     return quote! {
-        fn #encoder_name (&self) -> Vec<u8> {
-            let mut encoded_value = self.#field_name.encode();
-            if encoded_value.len() == 0 {
-                return encoded_value;
+        fn #builder_name (&self) -> Vec<u8> {
+            let mut built_value = self.#field_name.build();
+            if built_value.len() == 0 {
+                return built_value;
             }
 
             let tag = Tag::new(
@@ -193,26 +193,26 @@ fn code_field_encoder_with_context_tag(
                 TagType::Constructed,
                 TagClass::Context
             );
-            let mut encoded = tag.encode();
-            let mut encoded_length = red_asn1::encode_length(encoded_value.len());
+            let mut built = tag.build();
+            let mut built_length = red_asn1::build_length(built_value.len());
 
-            encoded.append(&mut encoded_length);
-            encoded.append(&mut encoded_value);
+            built.append(&mut built_length);
+            built.append(&mut built_value);
 
-            return encoded;
+            return built;
         }
     };
 }
 
-fn code_field_encoder_without_context_tag(
+fn code_field_builder_without_context_tag(
     field: &FieldDefinition,
 ) -> TokenStream {
-    let encoder_name = field.encoder_name();
+    let builder_name = field.builder_name();
     let field_name = &field.id;
 
     return quote! {
-        fn #encoder_name (&self) -> Vec<u8> {
-            return self.#field_name.encode();
+        fn #builder_name (&self) -> Vec<u8> {
+            return self.#field_name.build();
         }
     };
 }

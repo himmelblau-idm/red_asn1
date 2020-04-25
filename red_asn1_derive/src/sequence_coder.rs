@@ -1,35 +1,35 @@
-use super::parse_definitions::*;
+use super::parse_definitions::{SequenceDefinition, SequenceInnerCallsCode};
 use crate::field_coder::code_field;
 use proc_macro2::TokenStream;
 use syn::Ident;
 
-/// Function to write the code of the methods to encode/decode a Sequence
+/// Function to write the code of the methods to build/parse a Sequence
 /// used by Asn1Object.
 pub fn code_sequence(sequence: &SequenceDefinition) -> TokenStream {
     let seq_name = &sequence.name;
 
     let seq_inner_calls = code_sequence_inner_calls(sequence);
-    let encode_calls = &seq_inner_calls.encode_calls;
-    let decode_calls = &seq_inner_calls.decode_calls;
+    let build_calls = &seq_inner_calls.build_calls;
+    let parse_calls = &seq_inner_calls.parse_calls;
     let components_unit_functions = &seq_inner_calls.components_unit_functions;
 
-    let encode_value = code_encode_value(encode_calls);
-    let decode_value = code_decode_value(decode_calls, seq_name);
-    let inner_encode = code_inner_encode();
-    let mut inner_decode = code_inner_decode(seq_name);
+    let build_value = code_build_value(build_calls);
+    let parse_value = code_parse_value(parse_calls, seq_name);
+    let inner_build = code_inner_build();
+    let mut inner_parse = code_inner_parse(seq_name);
 
-    let encode;
-    let decode;
+    let build;
+    let parse;
 
     if let Some(app_tag_number) = sequence.application_tag_number {
-        encode = code_encode_with_application_tag(app_tag_number);
-        inner_decode = quote! {
-            #inner_decode
+        build = code_build_with_application_tag(app_tag_number);
+        inner_parse = quote! {
+            #inner_parse
 
-            fn _decode_application_tag(&self, raw_tag: &[u8]) -> red_asn1::Result<usize> {
-                let (consumed_octets, decoded_tag) = Tag::decode(raw_tag)?;
+            fn _parse_application_tag(&self, raw_tag: &[u8]) -> red_asn1::Result<usize> {
+                let (consumed_octets, parsed_tag) = Tag::parse(raw_tag)?;
 
-                if decoded_tag != Tag::new(#app_tag_number, TagType::Constructed, TagClass::Application) {
+                if parsed_tag != Tag::new(#app_tag_number, TagType::Constructed, TagClass::Application) {
                     return Err(red_asn1::Error::UnmatchedTag(TagClass::Application))?;
                 }
 
@@ -37,18 +37,18 @@ pub fn code_sequence(sequence: &SequenceDefinition) -> TokenStream {
             }
         };
 
-        decode = code_decode_with_application_tag(seq_name);
+        parse = code_parse_with_application_tag(seq_name);
     } else {
-        encode = quote! {
-            fn encode(&self) -> Vec<u8> {
-                return self._inner_encode();
+        build = quote! {
+            fn build(&self) -> Vec<u8> {
+                return self._inner_build();
             }
         };
 
-        decode = quote! {
-            fn decode(raw: &[u8]) -> red_asn1::Result<(usize, Self)> {
+        parse = quote! {
+            fn parse(raw: &[u8]) -> red_asn1::Result<(usize, Self)> {
                 let mut sequence = Self::default();
-                let size = sequence._inner_decode(raw)?;
+                let size = sequence._inner_parse(raw)?;
                 return Ok((size, sequence));
             }
         }
@@ -60,44 +60,44 @@ pub fn code_sequence(sequence: &SequenceDefinition) -> TokenStream {
                 return Tag::new_constructed_universal(SEQUENCE_TAG_NUMBER);
             }
 
-            #encode
-            #decode
+            #build
+            #parse
 
-            #encode_value
-            #decode_value
+            #build_value
+            #parse_value
         }
 
         impl #seq_name {
             #components_unit_functions
-            #inner_encode
-            #inner_decode
+            #inner_build
+            #inner_parse
         }
     };
 
     return total_exp;
 }
 
-fn code_encode_value(encode_calls: &TokenStream) -> TokenStream {
+fn code_build_value(build_calls: &TokenStream) -> TokenStream {
     return quote! {
-        fn encode_value(&self) -> Vec<u8> {
+        fn build_value(&self) -> Vec<u8> {
             let mut value: Vec<u8> = Vec::new();
-            #encode_calls
+            #build_calls
             return value;
         }
     };
 }
 
-/// To write the `decode_value` function of Asn1Object for Sequence.
-/// In `decode_value` all the decode functions of the members of
+/// To write the `parse_value` function of Asn1Object for Sequence.
+/// In `parse_value` all the parse functions of the members of
 /// the Sequence are called.
-fn code_decode_value(
-    decode_calls: &TokenStream,
+fn code_parse_value(
+    parse_calls: &TokenStream,
     seq_name: &Ident,
 ) -> TokenStream {
     return quote! {
-        fn decode_value(&mut self, raw: &[u8]) -> red_asn1::Result<()> {
+        fn parse_value(&mut self, raw: &[u8]) -> red_asn1::Result<()> {
             let mut consumed_octets = 0;
-            #decode_calls
+            #parse_calls
 
             if consumed_octets < raw.len() {
                 return Err(red_asn1::Error::SequenceError(
@@ -111,36 +111,36 @@ fn code_decode_value(
     };
 }
 
-fn code_inner_encode() -> TokenStream {
+fn code_inner_build() -> TokenStream {
     return quote! {
-        fn _inner_encode(&self) -> Vec<u8> {
-            let mut encoded = Self::tag().encode();
-            let mut encoded_value = self.encode_value();
-            let mut encoded_length = red_asn1::encode_length(encoded_value.len());
+        fn _inner_build(&self) -> Vec<u8> {
+            let mut built = Self::tag().build();
+            let mut built_value = self.build_value();
+            let mut built_length = red_asn1::build_length(built_value.len());
 
-            encoded.append(&mut encoded_length);
-            encoded.append(&mut encoded_value);
+            built.append(&mut built_length);
+            built.append(&mut built_value);
 
-            return encoded;
+            return built;
         }
     };
 }
 
-/// Function to write the `_inner_decode` function (called from `decode`) of
-/// the structure, which decodes the structure tag and length, and calls
-/// decode_value. In case of an application tag in the structure, this
-/// is decoded in the `decode` function
-fn code_inner_decode(seq_name: &Ident) -> TokenStream {
+/// Function to write the `_inner_parse` function (called from `parse`) of
+/// the structure, which parses the structure tag and length, and calls
+/// parse_value. In case of an application tag in the structure, this
+/// is parsed in the `parse` function
+fn code_inner_parse(seq_name: &Ident) -> TokenStream {
     return quote! {
-        fn _inner_decode(&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
-            let (mut consumed_octets, decoded_tag) = Tag::decode(raw).or_else( |error|
+        fn _inner_parse(&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
+            let (mut consumed_octets, parsed_tag) = Tag::parse(raw).or_else( |error|
                 Err(red_asn1::Error::SequenceError(
                     stringify!(#seq_name).to_string(),
                     Box::new(error.clone())
                 ))
             )?;
 
-            if decoded_tag != Self::tag() {
+            if parsed_tag != Self::tag() {
                 return Err(red_asn1::Error::SequenceError(
                     stringify!(#seq_name).to_string(),
                     Box::new(red_asn1::Error::UnmatchedTag(TagClass::Universal))
@@ -149,7 +149,7 @@ fn code_inner_decode(seq_name: &Ident) -> TokenStream {
 
             let (_, raw_length) = raw.split_at(consumed_octets);
 
-            let (value_length, consumed_octets_by_length) = red_asn1::decode_length(raw_length).or_else( |error|
+            let (value_length, consumed_octets_by_length) = red_asn1::parse_length(raw_length).or_else( |error|
                 Err(red_asn1::Error::SequenceError(
                     stringify!(#seq_name).to_string(),
                     Box::new(error.clone())
@@ -169,7 +169,7 @@ fn code_inner_decode(seq_name: &Ident) -> TokenStream {
 
             let (raw_value, _) = raw_value.split_at(value_length);
 
-            self.decode_value(raw_value)?;
+            self.parse_value(raw_value)?;
             consumed_octets += value_length;
 
             return Ok(consumed_octets);
@@ -177,35 +177,35 @@ fn code_inner_decode(seq_name: &Ident) -> TokenStream {
     };
 }
 
-/// Function to write the code of the Asn1Object `encode` function for Sequence
+/// Function to write the code of the Asn1Object `build` function for Sequence
 /// in case of having an application tag defined by the seq tag
-fn code_encode_with_application_tag(app_tag_number: u8) -> TokenStream {
+fn code_build_with_application_tag(app_tag_number: u8) -> TokenStream {
     return quote! {
-        fn encode(&self) -> Vec<u8> {
-            let mut encoded = Tag::new(
+        fn build(&self) -> Vec<u8> {
+            let mut built = Tag::new(
                 #app_tag_number,
                 TagType::Constructed,
                 TagClass::Application
-            ).encode();
-            
-            let mut encoded_value = self._inner_encode();
-            let mut encoded_length = red_asn1::encode_length(encoded_value.len());
+            ).build();
 
-            encoded.append(&mut encoded_length);
-            encoded.append(&mut encoded_value);
+            let mut built_value = self._inner_build();
+            let mut built_length = red_asn1::build_length(built_value.len());
 
-            return encoded;
+            built.append(&mut built_length);
+            built.append(&mut built_value);
+
+            return built;
         }
     };
 }
 
-/// Function to write the code of the Asn1Object decode function for Sequence
+/// Function to write the code of the Asn1Object parse function for Sequence
 /// in case of having an application tag defined by the seq tag
-fn code_decode_with_application_tag(seq_name: &Ident) -> TokenStream {
+fn code_parse_with_application_tag(seq_name: &Ident) -> TokenStream {
     return quote! {
-        fn decode(raw: &[u8]) -> red_asn1::Result<(usize, Self)> {
+        fn parse(raw: &[u8]) -> red_asn1::Result<(usize, Self)> {
             let mut sequence = Self::default();
-            let mut consumed_octets = sequence._decode_application_tag(raw).or_else(
+            let mut consumed_octets = sequence._parse_application_tag(raw).or_else(
                 |error|
                 Err(red_asn1::Error::SequenceError(
                     stringify!(#seq_name).to_string(),
@@ -213,7 +213,7 @@ fn code_decode_with_application_tag(seq_name: &Ident) -> TokenStream {
                 ))
             )?;
             let (_, raw_length) = raw.split_at(consumed_octets);
-            let (value_length, consumed_octets_by_length) = red_asn1::decode_length(raw_length).or_else(
+            let (value_length, consumed_octets_by_length) = red_asn1::parse_length(raw_length).or_else(
                 |error|
                 Err(red_asn1::Error::SequenceError(
                     stringify!(#seq_name).to_string(),
@@ -232,7 +232,7 @@ fn code_decode_with_application_tag(seq_name: &Ident) -> TokenStream {
 
             let (raw_value, _) = raw_value.split_at(value_length);
 
-            sequence._inner_decode(raw_value)?;
+            sequence._inner_parse(raw_value)?;
             consumed_octets += value_length;
 
             return Ok((consumed_octets, sequence));
@@ -244,23 +244,23 @@ pub fn code_sequence_inner_calls(
     sequence: &SequenceDefinition,
 ) -> SequenceInnerCallsCode {
     let mut components_unit_functions = quote! {};
-    let mut encode_calls = quote! {};
-    let mut decode_calls = quote! {};
+    let mut build_calls = quote! {};
+    let mut parse_calls = quote! {};
     let seq_name = &sequence.name;
 
     for field in &sequence.fields {
-        let encoder_name = field.encoder_name();
-        let decoder_name = field.decoder_name();
+        let builder_name = field.builder_name();
+        let parser_name = field.parser_name();
         let field_name = &field.id;
 
-        encode_calls = quote! {
-            #encode_calls
-            value.append(&mut self.#encoder_name());
+        build_calls = quote! {
+            #build_calls
+            value.append(&mut self.#builder_name());
         };
 
-        decode_calls = quote! {
-            #decode_calls
-            consumed_octets += self.#decoder_name(&raw[consumed_octets..]).or_else(
+        parse_calls = quote! {
+            #parse_calls
+            consumed_octets += self.#parser_name(&raw[consumed_octets..]).or_else(
                 |error| Err(red_asn1::Error::SequenceFieldError(
                     stringify!(#seq_name).to_string(),
                     stringify!(#field_name).to_string(),
@@ -269,20 +269,20 @@ pub fn code_sequence_inner_calls(
         };
 
         let field_code = code_field(field);
-        let encoder = &field_code.encoder;
-        let decoder = &field_code.decoder;
+        let builder = &field_code.builder;
+        let parser = &field_code.parser;
 
         components_unit_functions = quote! {
             #components_unit_functions
 
-            #encoder
-            #decoder
+            #builder
+            #parser
         };
     }
 
     return SequenceInnerCallsCode {
-        encode_calls,
-        decode_calls,
+        build_calls,
+        parse_calls,
         components_unit_functions,
     };
 }
