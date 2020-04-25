@@ -1,5 +1,6 @@
 use super::{TagClass, TagType};
 use crate::error as asn1err;
+use nom::number::complete::be_u8;
 
 /// Class to represent DER-ASN1 tags of the different types.
 ///
@@ -65,52 +66,52 @@ impl Tag {
     }
 
     /// Set the Tag values from a array of bytes
-    pub fn parse(raw: &[u8]) -> asn1err::Result<(usize, Self)> {
-        let raw_len = raw.len();
-        if raw_len == 0 {
-            return Err(asn1err::Error::EmptyTag(TagClass::Universal))?;
-        }
-
-        let mut consumed_octets = 1;
-        let octet = raw[0];
+    pub fn parse(raw: &[u8]) -> asn1err::Result<(&[u8], Self)> {
+        let (raw, octet) = be_u8(raw).map_err(
+            |_|
+            asn1err::Error::EmptyTag(TagClass::Universal)                  
+        )?;
 
         let tag_class = (octet & 0xc0) >> 6;
         let tag_type = (octet & 0x20) >> 5;
         let mut tag_number = octet & 0x1f;
 
         if tag_number == 0x1f {
-            let (tag_number_long_form, octets_consumed_long_form) =
+            let (raw_tmp, tag_number_long_form) =
                 Self::parse_high_tag_number(raw)?;
-            consumed_octets += octets_consumed_long_form;
             tag_number = tag_number_long_form;
+            raw = raw_tmp;
         }
 
-        return Ok((
-            consumed_octets,
-            Tag::new(
-                tag_number,
-                TagType::from(tag_type),
-                TagClass::from(tag_class),
-            ),
-        ));
+        let tag = Self::new(
+            tag_number,
+            TagType::from(tag_type),
+            TagClass::from(tag_class),
+        );
+
+        return Ok((raw, tag));
     }
 
-    fn parse_high_tag_number(raw: &[u8]) -> asn1err::Result<(u8, usize)> {
+    fn parse_high_tag_number(raw: &[u8]) -> asn1err::Result<(&[u8], u8)> {
         let mut consumed_octets = 1;
         let mut tag_number: u8 = 0;
-        while consumed_octets < raw.len() {
-            let next_octet = raw[consumed_octets];
-            tag_number += (next_octet & 0b01111111) << (7 * (consumed_octets - 1));
+        loop {
+            let (raw_tmp, next_octet) = be_u8(raw).map_err(
+                |_|
+                asn1err::Error::NotEnoughTagOctets(TagClass::Universal)
+
+            )?;
+            raw = raw_tmp;
+            tag_number +=
+                (next_octet & 0b01111111) << (7 * (consumed_octets - 1));
             if next_octet & 0b10000000 == 0 {
                 break;
             }
             consumed_octets += 1;
         }
-        if consumed_octets == raw.len() {
-            return Err(asn1err::Error::NotEnoughTagOctets(TagClass::Universal))?;
-        }
 
-        return Ok((tag_number, consumed_octets));
+        return Ok((raw, tag_number));
+
     }
 }
 

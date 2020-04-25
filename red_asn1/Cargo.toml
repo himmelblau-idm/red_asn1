@@ -12,3 +12,4 @@ documentation = "https://docs.rs/red_asn1/"
 ascii = "1"
 chrono = "0.4"
 red_asn1_derive = { path = "../red_asn1_derive", version = "0.1" }
+nom = "5"
