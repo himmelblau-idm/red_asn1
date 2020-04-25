@@ -9,7 +9,9 @@ pub enum ParseError {
     /// The field has not attribute tag seq_field
     NotFoundAttributeTag,
     InvalidTagNumberValue,
-    UnknownAttribute,
+
+    AttributeInvalidFormat(String),
+    AttributeUnknown(String),
     /// The data type with [derive(Sequence)] it is not an struct
     NotStruct
 }

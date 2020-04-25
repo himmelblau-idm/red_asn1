@@ -184,11 +184,15 @@ fn parse_field_attr(attr: &Attribute) -> ParseResult<Option<u8>> {
                                 }
                             }
                         } else {
-                            return Err(ParseError::UnknownAttribute);
+                            return Err(ParseError::AttributeUnknown(
+                                name_value.ident.to_string(),
+                            ));
                         }
                     }
                     _ => {
-                        return Err(ParseError::UnknownAttribute);
+                        return Err(ParseError::AttributeInvalidFormat(
+                            attr.tts.to_string()
+                        ));
                     }
                 };
             }
@@ -237,11 +241,15 @@ fn parse_seq_attr(attr: &Attribute) -> ParseResult<Option<u8>> {
                                 }
                             }
                         } else {
-                            return Err(ParseError::UnknownAttribute);
+                            return Err(ParseError::AttributeUnknown(
+                                name_value.ident.to_string(),
+                            ));
                         }
                     }
                     _ => {
-                        return Err(ParseError::UnknownAttribute);
+                        return Err(ParseError::AttributeInvalidFormat(
+                            attr.tts.to_string()
+                        ));
                     }
                 };
             }
