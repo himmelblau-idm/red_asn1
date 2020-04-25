@@ -5,7 +5,7 @@ use ascii::{AsciiChar, AsciiString};
 
 pub static IA5STRING_TAG_NUMBER: u8 = 0x16;
 
-/// Class to encode/decode IA5String ASN1
+/// Class to build/parse IA5String ASN1
 pub type IA5String = AsciiString;
 
 impl Asn1Object for IA5String {
@@ -13,7 +13,7 @@ impl Asn1Object for IA5String {
         return Tag::new_primitive_universal(IA5STRING_TAG_NUMBER);
     }
 
-    fn encode_value(&self) -> Vec<u8> {
+    fn build_value(&self) -> Vec<u8> {
         let mut encoded_value: Vec<u8> = Vec::with_capacity(self.len());
 
         for ch in self.chars() {
@@ -23,7 +23,7 @@ impl Asn1Object for IA5String {
         return encoded_value;
     }
 
-    fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
+    fn parse_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         let mut value = AsciiString::with_capacity(raw.len());
 
         for byte in raw.iter() {
@@ -41,19 +41,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_encode_ia5string() {
+    fn test_build_ia5string() {
         assert_eq!(
             vec![
                 0x16, 0x0d, 0x74, 0x65, 0x73, 0x74, 0x31, 0x40, 0x72, 0x73,
                 0x61, 0x2e, 0x63, 0x6f, 0x6d
             ],
             IA5String::from(AsciiString::from_ascii("test1@rsa.com").unwrap())
-                .encode()
+                .build()
         );
     }
 
     #[test]
-    fn test_decode() {
+    fn test_parse() {
         assert_eq!(
             IA5String::from(AsciiString::from_ascii("test1@rsa.com").unwrap()),
             _parse(&[
@@ -64,7 +64,7 @@ mod tests {
     }
 
     #[test]
-    fn test_decode_empty_value() {
+    fn test_parse_empty_value() {
         assert_eq!(
             IA5String::from(AsciiString::from_ascii("").unwrap()),
             _parse(&[0x16, 0x00])
@@ -72,7 +72,7 @@ mod tests {
     }
 
     #[test]
-    fn test_decode_with_excesive_bytes() {
+    fn test_parse_with_excesive_bytes() {
         assert_eq!(
             (
                 IA5String::from(
@@ -89,13 +89,13 @@ mod tests {
 
     #[should_panic(expected = "UnmatchedTag")]
     #[test]
-    fn test_decode_with_invalid_tag() {
+    fn test_parse_with_invalid_tag() {
         _parse(&[0x7, 0x1, 0x0]);
     }
 
     #[should_panic(expected = "AsciiError")]
     #[test]
-    fn test_decode_non_ascii_characters() {
+    fn test_parse_non_ascii_characters() {
         _parse(&[0x16, 0x1, 0x80]);
     }
 
@@ -104,7 +104,7 @@ mod tests {
     }
 
     fn _parse_with_consumed_octets(raw: &[u8]) -> (IA5String, usize) {
-        let (consumed_octets, b) = IA5String::decode(raw).unwrap();
+        let (consumed_octets, b) = IA5String::parse(raw).unwrap();
         return (b, consumed_octets);
     }
 }

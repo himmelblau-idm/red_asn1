@@ -68,6 +68,6 @@ mod types;
 pub use types::*;
 
 mod length;
-pub use length::{encode_length, decode_length};
+pub use length::{build_length, parse_length};
 
 pub use red_asn1_derive::*;

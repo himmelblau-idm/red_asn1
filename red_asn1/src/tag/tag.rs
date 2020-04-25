@@ -36,7 +36,7 @@ impl Tag {
     }
 
     /// Produces an DER version of the tag in bytes
-    pub fn encode(&self) -> Vec<u8> {
+    pub fn build(&self) -> Vec<u8> {
         let mut encoded_tag: u8 = 0;
 
         encoded_tag += self.class as u8;
@@ -65,7 +65,7 @@ impl Tag {
     }
 
     /// Set the Tag values from a array of bytes
-    pub fn decode(raw: &[u8]) -> asn1err::Result<(usize, Self)> {
+    pub fn parse(raw: &[u8]) -> asn1err::Result<(usize, Self)> {
         let raw_len = raw.len();
         if raw_len == 0 {
             return Err(asn1err::Error::EmptyTag(TagClass::Universal))?;
@@ -80,7 +80,7 @@ impl Tag {
 
         if tag_number == 0x1f {
             let (tag_number_long_form, octets_consumed_long_form) =
-                Self::decode_high_tag_number(raw)?;
+                Self::parse_high_tag_number(raw)?;
             consumed_octets += octets_consumed_long_form;
             tag_number = tag_number_long_form;
         }
@@ -95,7 +95,7 @@ impl Tag {
         ));
     }
 
-    fn decode_high_tag_number(raw: &[u8]) -> asn1err::Result<(u8, usize)> {
+    fn parse_high_tag_number(raw: &[u8]) -> asn1err::Result<(u8, usize)> {
         let mut consumed_octets = 1;
         let mut tag_number: u8 = 0;
         while consumed_octets < raw.len() {
@@ -119,89 +119,89 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_encode_tag() {
+    fn test_build_tag() {
         assert_eq!(
             vec![0x00],
-            Tag::new(0, TagType::Primitive, TagClass::Universal).encode()
+            Tag::new(0, TagType::Primitive, TagClass::Universal).build()
         );
         assert_eq!(
             vec![0x40],
-            Tag::new(0, TagType::Primitive, TagClass::Application).encode()
+            Tag::new(0, TagType::Primitive, TagClass::Application).build()
         );
         assert_eq!(
             vec![0x80],
-            Tag::new(0, TagType::Primitive, TagClass::Context).encode()
+            Tag::new(0, TagType::Primitive, TagClass::Context).build()
         );
         assert_eq!(
             vec![0xc0],
-            Tag::new(0, TagType::Primitive, TagClass::Private).encode()
+            Tag::new(0, TagType::Primitive, TagClass::Private).build()
         );
         assert_eq!(
             vec![0x20],
-            Tag::new(0, TagType::Constructed, TagClass::Universal).encode()
+            Tag::new(0, TagType::Constructed, TagClass::Universal).build()
         );
         assert_eq!(
             vec![0x60],
-            Tag::new(0, TagType::Constructed, TagClass::Application).encode()
+            Tag::new(0, TagType::Constructed, TagClass::Application).build()
         );
         assert_eq!(
             vec![0xa0],
-            Tag::new(0, TagType::Constructed, TagClass::Context).encode()
+            Tag::new(0, TagType::Constructed, TagClass::Context).build()
         );
         assert_eq!(
             vec![0xe0],
-            Tag::new(0, TagType::Constructed, TagClass::Private).encode()
+            Tag::new(0, TagType::Constructed, TagClass::Private).build()
         );
 
         assert_eq!(
             vec![0x1E],
-            Tag::new(30, TagType::Primitive, TagClass::Universal).encode()
+            Tag::new(30, TagType::Primitive, TagClass::Universal).build()
         );
         assert_eq!(
             vec![0x1F, 0x1F],
-            Tag::new(31, TagType::Primitive, TagClass::Universal).encode()
+            Tag::new(31, TagType::Primitive, TagClass::Universal).build()
         );
         assert_eq!(
             vec![0x1F, 0x7F],
-            Tag::new(127, TagType::Primitive, TagClass::Universal).encode()
+            Tag::new(127, TagType::Primitive, TagClass::Universal).build()
         );
         assert_eq!(
             vec![0x1F, 0x80, 0x01],
-            Tag::new(128, TagType::Primitive, TagClass::Universal).encode()
+            Tag::new(128, TagType::Primitive, TagClass::Universal).build()
         );
         assert_eq!(
             vec![0x1F, 0xFF, 0x01],
-            Tag::new(255, TagType::Primitive, TagClass::Universal).encode()
+            Tag::new(255, TagType::Primitive, TagClass::Universal).build()
         );
 
         assert_eq!(
             vec![0xdf, 0xc6, 0x01],
-            Tag::new(198, TagType::Primitive, TagClass::Private).encode()
+            Tag::new(198, TagType::Primitive, TagClass::Private).build()
         );
         assert_eq!(
             vec![0xff, 0x6a],
-            Tag::new(106, TagType::Constructed, TagClass::Private).encode()
+            Tag::new(106, TagType::Constructed, TagClass::Private).build()
         );
         assert_eq!(
             vec![0x3f, 0x39],
-            Tag::new(57, TagType::Constructed, TagClass::Universal).encode()
+            Tag::new(57, TagType::Constructed, TagClass::Universal).build()
         );
         assert_eq!(
             vec![0xbf, 0x24],
-            Tag::new(36, TagType::Constructed, TagClass::Context).encode()
+            Tag::new(36, TagType::Constructed, TagClass::Context).build()
         );
         assert_eq!(
             vec![0xf4],
-            Tag::new(20, TagType::Constructed, TagClass::Private).encode()
+            Tag::new(20, TagType::Constructed, TagClass::Private).build()
         );
         assert_eq!(
             vec![0x6b],
-            Tag::new(11, TagType::Constructed, TagClass::Application).encode()
+            Tag::new(11, TagType::Constructed, TagClass::Application).build()
         );
     }
 
     #[test]
-    fn test_decode_tag() {
+    fn test_parse_tag() {
         assert_eq!(
             Tag::new(0, TagType::Primitive, TagClass::Universal),
             _parse_tag(vec![0x00])
@@ -283,7 +283,7 @@ mod tests {
     }
 
     #[test]
-    fn test_decode_tag_with_excesive_bytes() {
+    fn test_parse_tag_with_excesive_bytes() {
         assert_eq!(
             (Tag::new(0, TagType::Primitive, TagClass::Application), 1),
             _parse_tag_with_consumed_octets(vec![0x40, 0x01])
@@ -300,23 +300,23 @@ mod tests {
 
     #[should_panic(expected = "EmptyTag")]
     #[test]
-    fn test_decode_empty_tag() {
+    fn test_parse_empty_tag() {
         _parse_tag(vec![]);
     }
 
     #[should_panic(expected = "NotEnoughTagOctets")]
     #[test]
-    fn test_decode_invalid_tag_with_unfinished_tag_number() {
+    fn test_parse_invalid_tag_with_unfinished_tag_number() {
         _parse_tag(vec![0x1F, 0x80, 0x81]);
     }
 
     fn _parse_tag(raw: Vec<u8>) -> Tag {
-        let (_, tag) = Tag::decode(&raw).unwrap();
+        let (_, tag) = Tag::parse(&raw).unwrap();
         return tag;
     }
 
     fn _parse_tag_with_consumed_octets(raw: Vec<u8>) -> (Tag, usize) {
-        let (consumed_octets, tag) = Tag::decode(&raw).unwrap();
+        let (consumed_octets, tag) = Tag::parse(&raw).unwrap();
         return (tag, consumed_octets);
     }
 }

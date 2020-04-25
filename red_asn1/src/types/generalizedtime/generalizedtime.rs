@@ -7,7 +7,7 @@ use std::str;
 
 pub static GENERALIZED_TIME_TAG_NUMBER: u8 = 0x18;
 
-/// Class to encode/decode GeneralizedTime ASN1
+/// Class to build/parse GeneralizedTime ASN1
 #[derive(Debug, PartialEq)]
 pub struct GeneralizedTime {
     pub time: DateTime<Utc>,
@@ -19,11 +19,11 @@ impl Asn1Object for GeneralizedTime {
         return Tag::new_primitive_universal(GENERALIZED_TIME_TAG_NUMBER);
     }
 
-    fn encode_value(&self) -> Vec<u8> {
+    fn build_value(&self) -> Vec<u8> {
         return self.format.format_to_string(&self.time).into_bytes();
     }
 
-    fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
+    fn parse_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         if raw.len() < 15 {
             return Err(asn1err::Error::NoDataForType)?;
         }
@@ -59,7 +59,7 @@ impl Asn1Object for GeneralizedTime {
             );
         } else {
             return Err(asn1err::Error::ImplementationError(
-                "Local time decode is not implemented yet".to_string(),
+                "Local time parse is not implemented yet".to_string(),
             ))?;
         }
 
@@ -112,7 +112,7 @@ mod tests {
     }
 
     #[test]
-    fn test_encode_generalized_time() {
+    fn test_build_generalized_time() {
         assert_eq!(
             vec![
                 0x18, 0x11, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36,
@@ -121,12 +121,12 @@ mod tests {
             GeneralizedTime::from(
                 Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)
             )
-            .encode()
+            .build()
         );
     }
 
     #[test]
-    fn test_encode_generalized_time_without_deciseconds() {
+    fn test_build_generalized_time_without_deciseconds() {
         let mut gen_time = GeneralizedTime::from(
             Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000),
         );
@@ -136,12 +136,12 @@ mod tests {
                 0x18, 0xf, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36,
                 0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x5a
             ],
-            gen_time.encode()
+            gen_time.build()
         );
     }
 
     #[test]
-    fn test_decode() {
+    fn test_parse() {
         assert_eq!(
             GeneralizedTime::from(
                 Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)
@@ -154,7 +154,7 @@ mod tests {
     }
 
     #[test]
-    fn test_encode_without_deciseconds() {
+    fn test_build_without_deciseconds() {
         assert_eq!(
             GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms(21, 6, 27)),
             _parse(&[
@@ -165,7 +165,7 @@ mod tests {
     }
 
     #[test]
-    fn test_decode_with_excesive_bytes() {
+    fn test_parse_with_excesive_bytes() {
         assert_eq!(
             (
                 GeneralizedTime::from(
@@ -183,7 +183,7 @@ mod tests {
 
     #[should_panic(expected = "NoDataForType")]
     #[test]
-    fn test_decode_without_enough_value_octets() {
+    fn test_parse_without_enough_value_octets() {
         _parse(&[
             0x18, 0x0e, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32,
             0x31, 0x30, 0x36, 0x32, 0x37,
@@ -192,13 +192,13 @@ mod tests {
 
     #[should_panic(expected = "UnmatchedTag")]
     #[test]
-    fn test_decode_with_invalid_tag() {
+    fn test_parse_with_invalid_tag() {
         _parse(&[0x7, 0x1, 0x0]);
     }
 
     #[should_panic(expected = "ParseIntError")]
     #[test]
-    fn test_decode_with_no_number_characters() {
+    fn test_parse_with_no_number_characters() {
         _parse(&[
             0x18, 0x11, 0x41, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32,
             0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33, 0x5a,
@@ -207,7 +207,7 @@ mod tests {
 
     #[should_panic(expected = "ImplementationError")]
     #[test]
-    fn test_decode_local_time() {
+    fn test_parse_local_time() {
         _parse(&[
             0x18, 0x10, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32,
             0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33,
@@ -219,7 +219,7 @@ mod tests {
     }
 
     fn _parse_with_consumed_octets(raw: &[u8]) -> (GeneralizedTime, usize) {
-        let (consumed_octets, b) = GeneralizedTime::decode(raw).unwrap();
+        let (consumed_octets, b) = GeneralizedTime::parse(raw).unwrap();
         return (b, consumed_octets);
     }
 }

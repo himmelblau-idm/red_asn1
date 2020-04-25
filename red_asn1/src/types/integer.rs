@@ -4,7 +4,7 @@ use crate::traits::*;
 
 pub static INTEGER_TAG_NUMBER: u8 = 0x2;
 
-/// Class to encode/decode Integer ASN1
+/// Class to build/parse Integer ASN1
 pub type Integer = i128;
 
 impl Asn1Object for Integer {
@@ -12,7 +12,7 @@ impl Asn1Object for Integer {
         return Tag::new_primitive_universal(INTEGER_TAG_NUMBER);
     }
 
-    fn encode_value(&self) -> Vec<u8> {
+    fn build_value(&self) -> Vec<u8> {
         let mut shifted_value = *self;
         let length = calculate_integer_size(*self);
 
@@ -28,7 +28,7 @@ impl Asn1Object for Integer {
         return encoded_value;
     }
 
-    fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
+    fn parse_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         if raw.len() == 0 {
             return Err(asn1err::Error::NoDataForType)?;
         }
@@ -89,29 +89,29 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_encode() {
-        assert_eq!(vec![0x2, 0x1, 0x0], Integer::from(0).encode());
-        assert_eq!(vec![0x2, 0x1, 0x1], Integer::from(1).encode());
-        assert_eq!(vec![0x2, 0x1, 0xff], Integer::from(-1).encode());
+    fn test_build() {
+        assert_eq!(vec![0x2, 0x1, 0x0], Integer::from(0).build());
+        assert_eq!(vec![0x2, 0x1, 0x1], Integer::from(1).build());
+        assert_eq!(vec![0x2, 0x1, 0xff], Integer::from(-1).build());
 
-        assert_eq!(vec![0x2, 0x1, 0x7F], Integer::from(127).encode());
-        assert_eq!(vec![0x2, 0x2, 0x00, 0x80], Integer::from(128).encode());
-        assert_eq!(vec![0x2, 0x2, 0x01, 0x00], Integer::from(256).encode());
-        assert_eq!(vec![0x2, 0x1, 0x80], Integer::from(-128).encode());
-        assert_eq!(vec![0x2, 0x2, 0xFF, 0x7F], Integer::from(-129).encode());
+        assert_eq!(vec![0x2, 0x1, 0x7F], Integer::from(127).build());
+        assert_eq!(vec![0x2, 0x2, 0x00, 0x80], Integer::from(128).build());
+        assert_eq!(vec![0x2, 0x2, 0x01, 0x00], Integer::from(256).build());
+        assert_eq!(vec![0x2, 0x1, 0x80], Integer::from(-128).build());
+        assert_eq!(vec![0x2, 0x2, 0xFF, 0x7F], Integer::from(-129).build());
 
         assert_eq!(
             vec![0x2, 0x5, 0x00, 0xF8, 0x45, 0x33, 0x8],
-            Integer::from(4165284616i64).encode()
+            Integer::from(4165284616i64).build()
         );
         assert_eq!(
             vec![0x2, 0x5, 0xFF, 0x3A, 0xAC, 0x53, 0xDB],
-            Integer::from(-3310595109i64).encode()
+            Integer::from(-3310595109i64).build()
         );
     }
 
     #[test]
-    fn test_decode() {
+    fn test_parse() {
         assert_eq!(Integer::from(0), _parse(&[0x2, 0x1, 0x0]));
         assert_eq!(Integer::from(1), _parse(&[0x2, 0x1, 0x1]));
         assert_eq!(Integer::from(-1), _parse(&[0x2, 0x1, 0xff]));
@@ -133,7 +133,7 @@ mod tests {
     }
 
     #[test]
-    fn test_decode_with_excesive_bytes() {
+    fn test_parse_with_excesive_bytes() {
         assert_eq!(
             (Integer::from(0), 3),
             _parse_with_consumed_octets(&[0x2, 0x1, 0x0, 0x22])
@@ -184,19 +184,19 @@ mod tests {
 
     #[should_panic(expected = "UnmatchedTag")]
     #[test]
-    fn test_decode_with_invalid_tag() {
+    fn test_parse_with_invalid_tag() {
         _parse(&[0x7, 0x1, 0x0]);
     }
 
     #[should_panic(expected = "NoDataForType")]
     #[test]
-    fn test_decode_without_enough_value_octets() {
+    fn test_parse_without_enough_value_octets() {
         _parse(&[0x2, 0x0]);
     }
 
     #[should_panic(expected = "ImplementationError")]
     #[test]
-    fn test_decode_wit_too_much_value_octets() {
+    fn test_parse_wit_too_much_value_octets() {
         _parse(&[
             0x2, 20, 0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0, 1, 2,
             3, 4, 5, 6, 7, 8, 9,
@@ -208,7 +208,7 @@ mod tests {
     }
 
     fn _parse_with_consumed_octets(raw: &[u8]) -> (Integer, usize) {
-        let (consumed_octets, b) = Integer::decode(raw).unwrap();
+        let (consumed_octets, b) = Integer::parse(raw).unwrap();
         return (b, consumed_octets);
     }
 }

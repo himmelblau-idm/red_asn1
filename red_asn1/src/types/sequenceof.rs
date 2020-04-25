@@ -4,7 +4,7 @@ use crate::traits::Asn1Object;
 
 pub static SEQUENCE_TAG_NUMBER: u8 = 0x10;
 
-/// Class to encode/decode SequenceOf ASN1
+/// Class to build/parse SequenceOf ASN1
 pub type SequenceOf<T> = Vec<T>;
 
 impl<T: Asn1Object> Asn1Object for Vec<T> {
@@ -12,21 +12,21 @@ impl<T: Asn1Object> Asn1Object for Vec<T> {
         return Tag::new_constructed_universal(SEQUENCE_TAG_NUMBER);
     }
 
-    fn encode_value(&self) -> Vec<u8> {
+    fn build_value(&self) -> Vec<u8> {
         let mut value: Vec<u8> = Vec::new();
         for item in self.iter() {
-            value.append(&mut item.encode())
+            value.append(&mut item.build())
         }
         return value;
     }
 
-    fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
+    fn parse_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         let mut components: Vec<T> = Vec::new();
         let mut consumed_octets = 0;
 
         while consumed_octets < raw.len() {
             let (component_consumed_octets, component) =
-                T::decode(&raw[consumed_octets..])?;
+                T::parse(&raw[consumed_octets..])?;
 
             consumed_octets += component_consumed_octets;
             components.push(component);
@@ -43,7 +43,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_encode_sequence_of_integers() {
+    fn test_build_sequence_of_integers() {
         let mut seq_of: SequenceOf<Integer> = SequenceOf::default();
         seq_of.push(Integer::from(9));
         seq_of.push(Integer::from(1000));
@@ -60,20 +60,20 @@ mod tests {
                 0x3,
                 0xe8
             ],
-            seq_of.encode()
+            seq_of.build()
         );
     }
 
     #[test]
-    fn test_encode_empty_sequence_of() {
+    fn test_build_empty_sequence_of() {
         let seq_of: SequenceOf<Integer> = SequenceOf::default();
 
-        assert_eq!(vec![0x30, 0x0], seq_of.encode());
+        assert_eq!(vec![0x30, 0x0], seq_of.build());
     }
 
     #[test]
-    fn test_decode_sequence_of_integers() {
-        let (_, seq_of) = SequenceOf::<Integer>::decode(&[
+    fn test_parse_sequence_of_integers() {
+        let (_, seq_of) = SequenceOf::<Integer>::parse(&[
             0x30,
             0x7,
             INTEGER_TAG_NUMBER,
@@ -91,14 +91,14 @@ mod tests {
     }
 
     #[test]
-    fn test_decode_empty_sequence() {
-        let (_, seq_of) = SequenceOf::<Integer>::decode(&[0x30, 0x0]).unwrap();
+    fn test_parse_empty_sequence() {
+        let (_, seq_of) = SequenceOf::<Integer>::parse(&[0x30, 0x0]).unwrap();
         assert_eq!(0, seq_of.len());
     }
 
     #[test]
-    fn test_decode_integers_with_excesive_bytes() {
-        let (consumed_octets, seq_of) = SequenceOf::<Integer>::decode(&[
+    fn test_parse_integers_with_excesive_bytes() {
+        let (consumed_octets, seq_of) = SequenceOf::<Integer>::parse(&[
             0x30,
             0x7,
             INTEGER_TAG_NUMBER,
@@ -120,13 +120,13 @@ mod tests {
 
     #[should_panic(expected = "UnmatchedTag")]
     #[test]
-    fn test_decode_with_invalid_sequence_of_tag() {
-        SequenceOf::<Integer>::decode(&[0xff, 0x0]).unwrap();
+    fn test_parse_with_invalid_sequence_of_tag() {
+        SequenceOf::<Integer>::parse(&[0xff, 0x0]).unwrap();
     }
 
     #[should_panic(expected = "UnmatchedTag")]
     #[test]
-    fn test_decode_with_invalid_inner_type_tag() {
-        SequenceOf::<Integer>::decode(&[0x30, 0x3, 0xff, 0x1, 0x9]).unwrap();
+    fn test_parse_with_invalid_inner_type_tag() {
+        SequenceOf::<Integer>::parse(&[0x30, 0x3, 0xff, 0x1, 0x9]).unwrap();
     }
 }

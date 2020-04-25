@@ -5,7 +5,7 @@ use crate::error as asn1err;
 
 pub static BIT_STRING_TAG_NUMBER: u8 = 0x3;
 
-/// Class to encode/decode BitSring ASN1
+/// Class to build/parse BitSring ASN1
 #[derive(Debug, PartialEq, Default)]
 pub struct BitString {
     pub bytes: Vec<u8>,
@@ -49,7 +49,7 @@ impl Asn1Object for BitString {
         return Tag::new_primitive_universal(BIT_STRING_TAG_NUMBER);
     }
 
-    fn encode_value(&self) -> Vec<u8> {
+    fn build_value(&self) -> Vec<u8> {
         let mut encoded_value: Vec<u8> = vec![self.padding_length];
 
         let mut values: Vec<u8> = Vec::new();
@@ -62,7 +62,7 @@ impl Asn1Object for BitString {
         return encoded_value;
     }
 
-    fn decode_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
+    fn parse_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         if raw.len() == 0 {
             return Err(asn1err::Error::NoDataForType)?;
         }
@@ -83,15 +83,15 @@ mod tests {
 
 
     #[test]
-    fn test_encode_bit_string() {
-        assert_eq!(vec![0x3, 0x2, 0x0, 0x0], BitString::new(vec![0x0], 0).encode());
-        assert_eq!(vec![0x3, 0x4, 0x6, 0x6e, 0x5d, 0xC0], BitString::new(vec![0x6e, 0x5d, 0xFF], 6).encode());
-        assert_eq!(vec![0x3, 0x2, 0x4, 0xF0], BitString::new(vec![0xF0], 4).encode());
-        assert_eq!(vec![0x3, 0x1, 0x4], BitString::new(vec![], 4).encode());
+    fn test_build_bit_string() {
+        assert_eq!(vec![0x3, 0x2, 0x0, 0x0], BitString::new(vec![0x0], 0).build());
+        assert_eq!(vec![0x3, 0x4, 0x6, 0x6e, 0x5d, 0xC0], BitString::new(vec![0x6e, 0x5d, 0xFF], 6).build());
+        assert_eq!(vec![0x3, 0x2, 0x4, 0xF0], BitString::new(vec![0xF0], 4).build());
+        assert_eq!(vec![0x3, 0x1, 0x4], BitString::new(vec![], 4).build());
     }
 
     #[test]
-    fn test_decode() {
+    fn test_parse() {
         assert_eq!(BitString::new(vec![0x0], 0), _parse(&[0x3, 0x2, 0x0, 0x0]));
         assert_eq!(BitString::new(vec![0x6e, 0x5d, 0xFF], 6), _parse(&[0x3, 0x4, 0x6, 0x6e, 0x5d, 0xFF]));
         assert_eq!(BitString::new(vec![0xF0], 4), _parse(&[0x3, 0x2, 0x4, 0xF0]));
@@ -99,7 +99,7 @@ mod tests {
     }
 
     #[test]
-    fn test_decode_boolean_with_excesive_bytes() {
+    fn test_parse_boolean_with_excesive_bytes() {
         assert_eq!((BitString::new(vec![0x0], 0), 4), 
                     _parse_with_consumed_octets(&[0x3, 0x2, 0x0, 0x0, 0x11, 0x22]));
         assert_eq!((BitString::new(vec![0x6e, 0x5d, 0xFF], 6), 6), 
@@ -112,13 +112,13 @@ mod tests {
 
     #[should_panic (expected = "UnmatchedTag")]
     #[test]
-    fn test_decode_boolean_with_invalid_tag() {
+    fn test_parse_boolean_with_invalid_tag() {
         _parse(&[0x7, 0x1, 0x0]);
     }
 
     #[should_panic (expected = "NoDataForType")]
     #[test]
-    fn test_decode_boolean_without_enough_value_octets() {
+    fn test_parse_boolean_without_enough_value_octets() {
         _parse(&[0x3, 0x0]);
     }
 
@@ -127,7 +127,7 @@ mod tests {
     }
 
     fn _parse_with_consumed_octets(raw: &[u8]) -> (BitString, usize) {
-        let (consumed_octets, b) = BitString::decode(raw).unwrap();
+        let (consumed_octets, b) = BitString::parse(raw).unwrap();
         return (b, consumed_octets);
     }
 
