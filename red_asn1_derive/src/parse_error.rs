@@ -5,6 +5,8 @@ pub type ParseResult<T> = Result<T, ParseError>;
 
 #[derive(Clone, Debug)]
 pub enum ParseError {
+
+    /// The field has not attribute tag seq_field
     NotFoundAttributeTag,
     InvalidTagNumberValue,
     UnknownAttribute,

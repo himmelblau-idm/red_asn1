@@ -5,10 +5,10 @@ use syn::{
     GenericArgument, Ident, Meta, PathArguments, PathSegment, Type,
 };
 
-static SEQUENCE_COMPONENT_TYPE_NAME: &str = "SeqField";
+static OPTIONAL_TYPE: &str = "Optional";
+static OPTION_TYPE: &str = "Option";
 static ASN1_SEQ_ATTR: &str = "seq";
 static ASN1_SEQ_FIELD_ATTR: &str = "seq_field";
-static OPTIONAL_ATTR: &str = "optional";
 static TAG_NUMBER_ATTR: &str = "context_tag";
 static APPLICATION_TAG_ATTR: &str = "application_tag";
 
@@ -16,7 +16,7 @@ static APPLICATION_TAG_ATTR: &str = "application_tag";
 /// derives Sequence
 pub fn parse_sequence(ast: DeriveInput) -> ParseResult<SequenceDefinition> {
     if let Data::Struct(data_struct) = ast.data {
-        return parse_sequence_struct(ast.ident, &ast.attrs, &data_struct);
+        return parse_sequence_struct(ast.ident, &ast.attrs, data_struct);
     } else {
         return Err(ParseError::NotStruct);
     }
@@ -27,7 +27,7 @@ pub fn parse_sequence(ast: DeriveInput) -> ParseResult<SequenceDefinition> {
 fn parse_sequence_struct(
     seq_name: Ident,
     seq_attrs: &Vec<Attribute>,
-    data_struct: &DataStruct,
+    data_struct: DataStruct,
 ) -> ParseResult<SequenceDefinition> {
     let fields = parse_sequence_fields(data_struct)?;
     let mut application_tag_number: Option<u8> = None;
@@ -52,9 +52,9 @@ fn parse_sequence_struct(
 }
 
 fn parse_sequence_fields(
-    data_struct: &DataStruct,
+    data_struct: DataStruct,
 ) -> ParseResult<Vec<FieldDefinition>> {
-    if let Fields::Named(fields_named) = &data_struct.fields {
+    if let Fields::Named(fields_named) = data_struct.fields {
         return parse_structure_fields(fields_named);
     }
 
@@ -63,12 +63,12 @@ fn parse_sequence_fields(
 }
 
 fn parse_structure_fields(
-    fields: &FieldsNamed,
+    fields: FieldsNamed,
 ) -> ParseResult<Vec<FieldDefinition>> {
     let mut fields_defs: Vec<FieldDefinition> = Vec::new();
 
-    for field in fields.named.iter() {
-        match parse_structure_field(&field) {
+    for field in fields.named {
+        match parse_structure_field(field) {
             Ok(field_definition) => {
                 fields_defs.push(field_definition);
             }
@@ -82,25 +82,25 @@ fn parse_structure_fields(
             }
         };
     }
-    
+
     return Ok(fields_defs);
 }
 
-fn parse_structure_field(field: &Field) -> ParseResult<FieldDefinition> {
+fn parse_structure_field(field: Field) -> ParseResult<FieldDefinition> {
     let field_name;
-    if let Some(name) = &field.ident {
+    if let Some(name) = field.ident {
         field_name = name;
     } else {
+        // fields of an struct are named
         unreachable!();
     }
 
-    let field_type = extract_field_type(&field.ty)?;
+    let (field_type, field_sub_types) = parse_field_type(&field.ty);
     let mut context_tag_number = None;
-    let mut optional = false;
+    let optional = is_field_optional(&field_type);
 
     match parse_field_attrs(&field.attrs) {
-        Ok((opt, tag_number)) => {
-            optional = opt;
+        Ok(tag_number) => {
             context_tag_number = tag_number;
         }
         Err(parse_error) => match parse_error {
@@ -112,52 +112,68 @@ fn parse_structure_field(field: &Field) -> ParseResult<FieldDefinition> {
     }
 
     return Ok(FieldDefinition {
-        id: field_name.clone(),
+        id: field_name,
         kind: field_type,
+        sub_kinds: field_sub_types,
         optional,
         context_tag_number,
     });
 }
 
-fn extract_field_type(field_type: &Type) -> ParseResult<PathSegment> {
+fn parse_field_type(field_type: &Type) -> (Ident, Option<PathSegment>) {
     if let Type::Path(path) = &field_type {
-        if path.path.segments[0].ident == SEQUENCE_COMPONENT_TYPE_NAME {
-            if let PathArguments::AngleBracketed(brack_argument) =
-                &path.path.segments[0].arguments
-            {
-                if let GenericArgument::Type(ty) = &brack_argument.args[0] {
-                    if let Type::Path(path) = ty {
-                        return Ok(path.path.segments[0].clone());
-                    }
-                }
-            }
-        } else {
-            return Err(ParseError::InvalidFieldType);
-        }
+        let field_kind = path.path.segments[0].ident.clone();
+        let field_sub_kinds =
+            parse_field_sub_types(&path.path.segments[0].arguments);
+        return (field_kind, field_sub_kinds);
     }
     unreachable!();
 }
 
-fn parse_field_attrs(
-    attrs: &Vec<Attribute>,
-) -> ParseResult<(bool, Option<u8>)> {
+fn parse_field_sub_types(arguments: &PathArguments) -> Option<PathSegment> {
+    if let PathArguments::AngleBracketed(brack_argument) = arguments {
+        if let GenericArgument::Type(ty) = &brack_argument.args[0] {
+            if let Type::Path(path) = ty {
+                return Some(path.path.segments[0].clone());
+            }
+        }
+    }
+
+    return None;
+}
+
+/// Check if a sequence field is optional based on its type.
+/// If type is "Option" or "Optional", then the field is optional.
+fn is_field_optional(field_type: &Ident) -> bool {
+    if field_type == OPTION_TYPE {
+        return true;
+    }
+
+    if field_type == OPTIONAL_TYPE {
+        return true;
+    }
+
+    return false;
+}
+
+fn parse_field_attrs(attrs: &Vec<Attribute>) -> ParseResult<Option<u8>> {
     for attr in attrs {
         if attr.path.segments.len() > 0
             && attr.path.segments[0].ident == ASN1_SEQ_FIELD_ATTR
         {
-            return parse_component_attr(attr);
+            return parse_field_attr(attr);
         }
     }
     return Err(ParseError::NotFoundAttributeTag);
 }
 
-fn parse_component_attr(attr: &Attribute) -> ParseResult<(bool, Option<u8>)> {
-    let mut optional = false;
+fn parse_field_attr(attr: &Attribute) -> ParseResult<Option<u8>> {
     let mut tag_number = None;
 
     if let Ok(Meta::List(ref meta)) = attr.parse_meta() {
         let subattrs: Vec<syn::NestedMeta> =
             meta.nested.iter().cloned().collect();
+
         for subattr in subattrs {
             if let syn::NestedMeta::Meta(ref a) = subattr {
                 match a {
@@ -183,13 +199,6 @@ fn parse_component_attr(attr: &Attribute) -> ParseResult<(bool, Option<u8>)> {
                             return Err(ParseError::UnknownAttribute);
                         }
                     }
-                    Meta::Word(ident) => {
-                        if ident == OPTIONAL_ATTR {
-                            optional = true;
-                        } else {
-                            return Err(ParseError::UnknownAttribute);
-                        }
-                    }
                     _ => {
                         return Err(ParseError::UnknownAttribute);
                     }
@@ -198,7 +207,7 @@ fn parse_component_attr(attr: &Attribute) -> ParseResult<(bool, Option<u8>)> {
         }
     }
 
-    return Ok((optional, tag_number));
+    return Ok(tag_number);
 }
 
 fn parse_sequence_attrs(attrs: &Vec<Attribute>) -> ParseResult<Option<u8>> {

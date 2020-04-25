@@ -9,7 +9,8 @@ pub struct SequenceDefinition {
 
 pub struct FieldDefinition {
     pub id: Ident,
-    pub kind: PathSegment,
+    pub kind: Ident,
+    pub sub_kinds: Option<PathSegment>,
     pub optional: bool,
     pub context_tag_number: Option<u8>
 }
