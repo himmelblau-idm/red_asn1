@@ -14,7 +14,7 @@ mod parse_definitions;
 mod field_coder;
 mod sequence_coder;
 
-use parser::extract_sequence_definition;
+use parser::parse_sequence;
 use sequence_coder::code_sequence;
 
 
@@ -84,7 +84,7 @@ use sequence_coder::code_sequence;
 pub fn sequence_macro_derive(input: TokenStream) -> TokenStream {    
     let ast = parse_macro_input!(input as DeriveInput);
 
-    let sequence_definition = extract_sequence_definition(&ast).unwrap();
+    let sequence_definition =  parse_sequence(ast).unwrap();
     let sequence_code = code_sequence(&sequence_definition);
 
     return TokenStream::from(sequence_code);
