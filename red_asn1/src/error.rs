@@ -6,16 +6,16 @@ use crate::tag::TagClass;
 /// Result that encapsulates the Error type of this library
 pub type Result<T> = result::Result<T, Error>;
 
-/// Error in ASN1-DER decode/encode operations
+/// Error in ASN1-DER parse/build operations
 #[derive(Clone, Debug, PartialEq)]
 pub enum Error {
-    /// Tag cannot be decoded because there are no data
+    /// Tag cannot be parsed because there are no data
     EmptyTag(TagClass),
 
     /// All data was consumed but tag length octets did not finished (high tag number form)
     NotEnoughTagOctets(TagClass),
 
-    /// Tag decoded is not the expected for the type
+    /// Tag parsed is not the expected for the type
     UnmatchedTag(TagClass),
 
     /// No length was provided
@@ -24,7 +24,7 @@ pub enum Error {
     /// The size of the length is higher than the available octets
     NotEnoughLengthOctects,
 
-    /// No value was provided to encode
+    /// No value was provided to build
     NoValue,
 
     /// No found component with the identifier specified
