@@ -68,19 +68,7 @@ fn parse_structure_fields(
     let mut fields_defs: Vec<FieldDefinition> = Vec::new();
 
     for field in fields.named {
-        match parse_structure_field(field) {
-            Ok(field_definition) => {
-                fields_defs.push(field_definition);
-            }
-            Err(parse_error) => {
-                match parse_error {
-                    ParseError::InvalidFieldType => {}
-                    _ => {
-                        return Err(parse_error);
-                    }
-                };
-            }
-        };
+        fields_defs.push(parse_structure_field(field)?);
     }
 
     return Ok(fields_defs);

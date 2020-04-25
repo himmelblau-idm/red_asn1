@@ -10,8 +10,6 @@ pub enum ParseError {
     NotFoundAttributeTag,
     InvalidTagNumberValue,
     UnknownAttribute,
-    InvalidFieldType,
-
     /// The data type with [derive(Sequence)] it is not an struct
     NotStruct
 }
