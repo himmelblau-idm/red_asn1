@@ -24,7 +24,7 @@ fn code_field_decoder(field: &FieldDefinition) -> TokenStream {
             }
         },
 
-        None => code_field_decoder_without_context_flag(field),
+        None => code_field_decoder_without_context_tag(field),
     }
 }
 
@@ -86,6 +86,11 @@ fn code_required_field_decoder_with_context_tag(
     };
 }
 
+/// Write the code for decode a field in case of having a context tag
+/// and being optional. In this case the decode fails in case the
+/// context tag matchs but the type tag is incorrect, or the type
+/// data is invalid. However is context tag doesn't match, then,
+/// the field is set to None.
 fn code_optional_field_decoder_with_context_tag(
     field: &FieldDefinition,
     context_tag_number: u8,
@@ -143,7 +148,7 @@ fn code_optional_field_decoder_with_context_tag(
     };
 }
 
-fn code_field_decoder_without_context_flag(
+fn code_field_decoder_without_context_tag(
     field: &FieldDefinition,
 ) -> TokenStream {
     let decoder_name = field.decoder_name();
@@ -161,31 +166,88 @@ fn code_field_decoder_without_context_flag(
 /// Method to create the code of the encode method of a
 /// structure field
 fn code_field_encoder(field: &FieldDefinition) -> TokenStream {
+    match field.context_tag_number {
+        Some(context_tag_number) => match field.optional {
+            true => code_optional_field_encoder_with_context_tag(
+                field,
+                context_tag_number,
+            ),
+            false => code_required_field_encoder_with_context_tag(
+                field,
+                context_tag_number,
+            ),
+        },
+        None => code_field_encoder_without_context_tag(field),
+    }
+}
+
+fn code_optional_field_encoder_with_context_tag(
+    field: &FieldDefinition,
+    ctx_tag: u8,
+) -> TokenStream {
     let encoder_name = field.encoder_name();
     let field_name = &field.id;
 
-    if let Some(context_tag_number) = field.context_tag_number {
-        return quote! {
-            fn #encoder_name (&self) -> Vec<u8> {
-                let tag = Tag::new
-                    (#context_tag_number, TagType::Constructed, TagClass::Context);
-                let mut encoded = tag.encode();
-                let mut encoded_value = self.#field_name.encode();
-                let mut encoded_length = red_asn1::encode_length(encoded_value.len());
-
-                encoded.append(&mut encoded_length);
-                encoded.append(&mut encoded_value);
-
-                return encoded;
+    return quote! {
+        fn #encoder_name (&self) -> Vec<u8> {
+            if self.#field_name == None {
+                return Vec::new();
             }
-        };
-    } else {
-        return quote! {
-            fn #encoder_name (&self) -> Vec<u8> {
-                return self.#field_name.encode();
-            }
-        };
-    }
+
+            let tag = Tag::new(
+                #ctx_tag,
+                TagType::Constructed,
+                TagClass::Context
+            );
+            let mut encoded = tag.encode();
+            let mut encoded_value = self.#field_name.encode();
+            let mut encoded_length = red_asn1::encode_length(encoded_value.len());
+
+            encoded.append(&mut encoded_length);
+            encoded.append(&mut encoded_value);
+
+            return encoded;
+        }
+    };
+}
+
+fn code_required_field_encoder_with_context_tag(
+    field: &FieldDefinition,
+    ctx_tag: u8,
+) -> TokenStream {
+    let encoder_name = field.encoder_name();
+    let field_name = &field.id;
+
+    return quote! {
+        fn #encoder_name (&self) -> Vec<u8> {
+            let tag = Tag::new(
+                #ctx_tag,
+                TagType::Constructed,
+                TagClass::Context
+            );
+            let mut encoded = tag.encode();
+            let mut encoded_value = self.#field_name.encode();
+            let mut encoded_length = red_asn1::encode_length(encoded_value.len());
+
+            encoded.append(&mut encoded_length);
+            encoded.append(&mut encoded_value);
+
+            return encoded;
+        }
+    };
+}
+
+fn code_field_encoder_without_context_tag(
+    field: &FieldDefinition,
+) -> TokenStream {
+    let encoder_name = field.encoder_name();
+    let field_name = &field.id;
+
+    return quote! {
+        fn #encoder_name (&self) -> Vec<u8> {
+            return self.#field_name.encode();
+        }
+    };
 }
 
 /// Function to compose the path to call Self functions. Simple types
