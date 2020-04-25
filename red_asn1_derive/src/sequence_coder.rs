@@ -3,6 +3,8 @@ use crate::field_coder::code_field;
 use proc_macro2::TokenStream;
 use syn::Ident;
 
+/// Function to write the code of the methods to encode/decode a Sequence
+/// used by Asn1Object.
 pub fn code_sequence(sequence: &SequenceDefinition) -> TokenStream {
     let seq_name = &sequence.name;
 
