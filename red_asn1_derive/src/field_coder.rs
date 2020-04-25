@@ -167,21 +167,14 @@ fn code_field_decoder_without_context_tag(
 /// structure field
 fn code_field_encoder(field: &FieldDefinition) -> TokenStream {
     match field.context_tag_number {
-        Some(context_tag_number) => match field.optional {
-            true => code_optional_field_encoder_with_context_tag(
-                field,
-                context_tag_number,
-            ),
-            false => code_required_field_encoder_with_context_tag(
-                field,
-                context_tag_number,
-            ),
-        },
+        Some(context_tag_number) => {
+            code_field_encoder_with_context_tag(field, context_tag_number)
+        }
         None => code_field_encoder_without_context_tag(field),
     }
 }
 
-fn code_optional_field_encoder_with_context_tag(
+fn code_field_encoder_with_context_tag(
     field: &FieldDefinition,
     ctx_tag: u8,
 ) -> TokenStream {
@@ -190,8 +183,9 @@ fn code_optional_field_encoder_with_context_tag(
 
     return quote! {
         fn #encoder_name (&self) -> Vec<u8> {
-            if self.#field_name == None {
-                return Vec::new();
+            let mut encoded_value = self.#field_name.encode();
+            if encoded_value.len() == 0 {
+                return encoded_value;
             }
 
             let tag = Tag::new(
@@ -200,33 +194,6 @@ fn code_optional_field_encoder_with_context_tag(
                 TagClass::Context
             );
             let mut encoded = tag.encode();
-            let mut encoded_value = self.#field_name.encode();
-            let mut encoded_length = red_asn1::encode_length(encoded_value.len());
-
-            encoded.append(&mut encoded_length);
-            encoded.append(&mut encoded_value);
-
-            return encoded;
-        }
-    };
-}
-
-fn code_required_field_encoder_with_context_tag(
-    field: &FieldDefinition,
-    ctx_tag: u8,
-) -> TokenStream {
-    let encoder_name = field.encoder_name();
-    let field_name = &field.id;
-
-    return quote! {
-        fn #encoder_name (&self) -> Vec<u8> {
-            let tag = Tag::new(
-                #ctx_tag,
-                TagType::Constructed,
-                TagClass::Context
-            );
-            let mut encoded = tag.encode();
-            let mut encoded_value = self.#field_name.encode();
             let mut encoded_length = red_asn1::encode_length(encoded_value.len());
 
             encoded.append(&mut encoded_length);
