@@ -16,14 +16,12 @@ pub fn code_field(field: &FieldDefinition) -> FieldCode {
 fn code_field_decoder(field: &FieldDefinition) -> TokenStream {
     match field.context_tag_number {
         Some(ctx_tag) => match field.optional {
-            true => code_optional_field_decoder_with_context_tag(
-                field,
-                ctx_tag,
-            ),
-            false => code_required_field_decoder_with_context_tag(
-                field,
-                ctx_tag,
-            ),
+            true => {
+                code_optional_field_decoder_with_context_tag(field, ctx_tag)
+            }
+            false => {
+                code_required_field_decoder_with_context_tag(field, ctx_tag)
+            }
         },
 
         None => code_field_decoder_without_context_flag(field),
@@ -107,22 +105,14 @@ fn code_optional_field_decoder_with_context_tag(
                     decoded_tag = tag;
                 },
                 Err(error) => {
-                    match error.clone() {
-                        red_asn1::Error::NotEnoughTagOctets(_) => {
-                            return Err(red_asn1::Error::NotEnoughTagOctets(TagClass::Context))?;
-                        }
-                        red_asn1::Error::EmptyTag(_) => {
-                            return Err(red_asn1::Error::EmptyTag(TagClass::Context))?;
-                        }
-                        _ => {
-                            return Err(error);
-                        }
-                    }
+                    self.#field_name = None;
+                    return Ok(0);
                 }
             }
 
             if decoded_tag != Tag::new(#context_tag_number, TagType::Constructed, TagClass::Context) {
-                return Err(red_asn1::Error::UnmatchedTag(TagClass::Context))?;
+                self.#field_name = None;
+                return Ok(0);
             }
 
             let (_, raw_length) = raw.split_at(consumed_octets);
@@ -137,8 +127,15 @@ fn code_optional_field_decoder_with_context_tag(
 
             let (raw_value, _) = raw_value.split_at(value_length);
 
+            let (_, type_tag) = Tag::decode(raw_value)?;
+            if type_tag != #field_type::tag() {
+                return Err(red_asn1::Error::UnmatchedTag(TagClass::Universal));
+            }
+
+
             let (_, field) = #field_type::decode(raw_value)?;
             consumed_octets += value_length;
+
             self.#field_name = field;
 
             return Ok(consumed_octets);

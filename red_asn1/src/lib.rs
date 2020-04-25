@@ -17,17 +17,17 @@
 //! #[seq(application_tag = 1)]
 //! struct Person {
 //!     #[seq_field(context_tag = 0)]
-//!     pub name: SeqField<GeneralString>,
+//!     pub name: GeneralString,
 //!     #[seq_field(context_tag = 1)]
-//!     pub age: SeqField<Integer>,
-//!     #[seq_field(context_tag = 2, optional)]
-//!     pub address: SeqField<GeneralString>
+//!     pub age: Integer,
+//!     #[seq_field(context_tag = 2)]
+//!     pub address: Option<GeneralString>
 //! }
 //! 
 //! let john = Person{
 //!     name: GeneralString::from("John").into(),
 //!     age: Integer::from(18).into(),
-//!     address: SeqField::default()
+//!     address: None
 //! };
 //! 
 //! assert_eq!(
@@ -46,9 +46,9 @@
 //!     0xa2, 0x8, 0x1b, 0x6, 0x48, 0x61, 0x77, 0x61, 0x69, 0x69 // "Hawaii"
 //! ]).unwrap();
 //! 
-//! assert_eq!("Rachel", *rachel.name);
-//! assert_eq!(30, *rachel.age);
-//! assert_eq!("Hawaii", *rachel.address);
+//! assert_eq!("Rachel", rachel.name);
+//! assert_eq!(30, rachel.age);
+//! assert_eq!(Some("Hawaii".to_string()), rachel.address);
 //! 
 //! ```
 //! 
