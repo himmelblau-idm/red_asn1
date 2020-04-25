@@ -99,6 +99,18 @@ fn test_encode_with_optional_without_value_component() {
 }
 
 #[test]
+fn test_encode_with_optional_without_value_and_context_tag() {
+    #[derive(Sequence, Default)]
+    struct Person {
+        #[seq_field(context_tag = 0)]
+        age: Option<Integer>,
+    }
+
+    let p = Person::default();
+    assert_eq!(vec![0x30, 0x0], p.encode());
+}
+
+#[test]
 fn test_encode_with_inner_sequence() {
     #[derive(Sequence, Default)]
     #[seq(application_tag = 7)]
