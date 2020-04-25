@@ -87,6 +87,9 @@ fn code_encode_value(encode_calls: &TokenStream) -> TokenStream {
     };
 }
 
+/// To write the `decode_value` function of Asn1Object for Sequence.
+/// In `decode_value` all the decode functions of the members of
+/// the Sequence are called.
 fn code_decode_value(
     decode_calls: &TokenStream,
     seq_name: &Ident,
@@ -123,6 +126,10 @@ fn code_inner_encode() -> TokenStream {
     };
 }
 
+/// Function to write the `_inner_decode` function (called from `decode`) of
+/// the structure, which decodes the structure tag and length, and calls
+/// decode_value. In case of an application tag in the structure, this
+/// is decoded in the `decode` function
 fn code_inner_decode(seq_name: &Ident) -> TokenStream {
     return quote! {
         fn _inner_decode(&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
@@ -170,11 +177,17 @@ fn code_inner_decode(seq_name: &Ident) -> TokenStream {
     };
 }
 
+/// Function to write the code of the Asn1Object `encode` function for Sequence
+/// in case of having an application tag defined by the seq tag
 fn code_encode_with_application_tag(app_tag_number: u8) -> TokenStream {
     return quote! {
         fn encode(&self) -> Vec<u8> {
-            let mut encoded = Tag::new(#app_tag_number,
-                                        TagType::Constructed, TagClass::Application).encode();
+            let mut encoded = Tag::new(
+                #app_tag_number,
+                TagType::Constructed,
+                TagClass::Application
+            ).encode();
+            
             let mut encoded_value = self._inner_encode();
             let mut encoded_length = red_asn1::encode_length(encoded_value.len());
 
@@ -186,6 +199,8 @@ fn code_encode_with_application_tag(app_tag_number: u8) -> TokenStream {
     };
 }
 
+/// Function to write the code of the Asn1Object decode function for Sequence
+/// in case of having an application tag defined by the seq tag
 fn code_decode_with_application_tag(seq_name: &Ident) -> TokenStream {
     return quote! {
         fn decode(raw: &[u8]) -> red_asn1::Result<(usize, Self)> {
@@ -243,23 +258,15 @@ pub fn code_sequence_inner_calls(
             value.append(&mut self.#encoder_name());
         };
 
-        if field.optional {
-            let opt_decode_call = code_optional_decode(field, seq_name);
-            decode_calls = quote! {
-                #decode_calls
-                #opt_decode_call
-            };
-        } else {
-            decode_calls = quote! {
-                #decode_calls
-                consumed_octets += self.#decoder_name(&raw[consumed_octets..]).or_else(
-                    |error| Err(red_asn1::Error::SequenceFieldError(
-                                stringify!(#seq_name).to_string(),
-                                stringify!(#field_name).to_string(),
-                                Box::new(error.clone())
-                                )))?;
-            };
-        }
+        decode_calls = quote! {
+            #decode_calls
+            consumed_octets += self.#decoder_name(&raw[consumed_octets..]).or_else(
+                |error| Err(red_asn1::Error::SequenceFieldError(
+                    stringify!(#seq_name).to_string(),
+                    stringify!(#field_name).to_string(),
+                    Box::new(error.clone())
+                )))?;
+        };
 
         let field_code = code_field(field);
         let encoder = &field_code.encoder;
@@ -278,61 +285,4 @@ pub fn code_sequence_inner_calls(
         decode_calls,
         components_unit_functions,
     };
-}
-
-pub fn code_optional_decode(
-    field: &FieldDefinition,
-    seq_name: &Ident,
-) -> TokenStream {
-    let decoder_name = field.decoder_name();
-    let field_name = &field.id;
-    let invalid_tag_errors_handlers;
-
-    let return_seq_field_error = quote! {
-        return Err(red_asn1::Error::SequenceFieldError(
-            stringify!(#seq_name).to_string(),
-            stringify!(#field_name).to_string(),
-            Box::new(error.clone())
-        ))?;
-    };
-
-    if let Some(_) = field.context_tag_number {
-        invalid_tag_errors_handlers = quote! {
-            if tag_class != red_asn1::TagClass::Context {
-                #return_seq_field_error
-            }
-        };
-    } else {
-        invalid_tag_errors_handlers = quote! {
-            if tag_class == red_asn1::TagClass::Context {
-                #return_seq_field_error
-            }
-        };
-    }
-
-    let decode_call = quote! {
-        match self.#decoder_name(&raw[consumed_octets..]) {
-            Ok(num_octets) => {
-                consumed_octets += num_octets;
-            },
-            Err(error) => {
-                match error.clone() {
-                    Error::EmptyTag(tag_class) => {
-                        #invalid_tag_errors_handlers
-                    }
-                    Error::NotEnoughTagOctets(tag_class) => {
-                        #invalid_tag_errors_handlers
-                    }
-                    Error::UnmatchedTag(tag_class) => {
-                        #invalid_tag_errors_handlers
-                    }
-                    _ => {
-                        #return_seq_field_error
-                    }
-                }
-            }
-        };
-    };
-
-    return decode_call;
 }
