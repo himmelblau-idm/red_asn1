@@ -17,16 +17,6 @@ fn test_define_simple() {
 }
 
 #[test]
-fn test_define_with_not_all_sequence_fields() {
-    #[derive(Sequence, Default)]
-    struct TestSequence {
-        id: Integer,
-        #[no_seq_field]
-        _flag: u32,
-    }
-}
-
-#[test]
 fn test_define_with_inner_sequenceof() {
     #[derive(Sequence, Default)]
     struct TestSequence {
