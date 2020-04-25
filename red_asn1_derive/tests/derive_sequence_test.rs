@@ -4,23 +4,24 @@ use red_asn1::*;
 fn test_define_simple() {
     #[derive(Sequence, Default)]
     struct TestSequence {
-        id: SeqField<Integer>,
-        data: SeqField<OctetString>,
+        id: Integer,
+        data: OctetString,
     }
 
     let mut seq = TestSequence::default();
-    *seq.id = 9;
-    *seq.data = vec![1, 2, 3, 4];
+    seq.id = 9;
+    seq.data = vec![1, 2, 3, 4];
 
-    assert_eq!(Integer::from(9), *seq.id);
-    assert_eq!(OctetString::from(vec![1, 2, 3, 4]), *seq.data);
+    assert_eq!(Integer::from(9), seq.id);
+    assert_eq!(OctetString::from(vec![1, 2, 3, 4]), seq.data);
 }
 
 #[test]
 fn test_define_with_not_all_sequence_fields() {
     #[derive(Sequence, Default)]
     struct TestSequence {
-        id: SeqField<Integer>,
+        id: Integer,
+        #[no_seq_field]
         _flag: u32,
     }
 }
@@ -29,8 +30,8 @@ fn test_define_with_not_all_sequence_fields() {
 fn test_define_with_inner_sequenceof() {
     #[derive(Sequence, Default)]
     struct TestSequence {
-        id: SeqField<Integer>,
-        attrs: SeqField<SequenceOf<Integer>>,
+        id: Integer,
+        attrs: SequenceOf<Integer>,
     }
 }
 
@@ -57,11 +58,11 @@ fn test_encode_empty_with_application_tag() {
 fn test_encode() {
     #[derive(Sequence, Default)]
     struct Person {
-        age: SeqField<Integer>,
+        age: Integer,
     }
 
     let mut p = Person::default();
-    *p.age = 9;
+    p.age = 9;
 
     assert_eq!(vec![0x30, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x9], p.encode());
 }
@@ -71,11 +72,11 @@ fn test_encode_with_context_tags() {
     #[derive(Sequence, Default)]
     struct Person {
         #[seq_field(context_tag = 0)]
-        age: SeqField<Integer>,
+        age: Integer,
     }
 
     let mut p = Person::default();
-    *p.age = 9;
+    p.age = 9;
 
     assert_eq!(
         vec![0x30, 0x5, 0xa0, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x9],
@@ -87,30 +88,23 @@ fn test_encode_with_context_tags() {
 fn test_encode_with_optional_component() {
     #[derive(Sequence, Default)]
     struct Person {
-        #[seq_field(optional)]
-        age: SeqField<Integer>,
+        age: Option<Integer>,
     }
 
-    let mut p = Person {
-        age: SeqField::default(),
-    };
-    *p.age = Integer::from(9);
+    let mut p = Person::default();
+    p.age = Some(Integer::from(9));
 
-    assert_eq!(9, *p.age);
+    assert_eq!(Some(9), p.age);
 }
 
 #[test]
 fn test_encode_with_optional_without_value_component() {
     #[derive(Sequence, Default)]
     struct Person {
-        #[seq_field(optional)]
-        age: SeqField<Integer>,
+        age: Option<Integer>,
     }
 
-    let p = Person {
-        age: SeqField::default(),
-    };
-
+    let p = Person::default();
     assert_eq!(vec![0x30, 0x0], p.encode());
 }
 
@@ -122,15 +116,10 @@ fn test_encode_with_inner_sequence() {
 
     #[derive(Sequence, Default)]
     struct SuperTestSequence {
-        inner: SeqField<TestSequence>,
+        inner: TestSequence,
     }
 
-    let mut seq = SuperTestSequence {
-        inner: SeqField::default(),
-    };
-
-    *seq.inner = TestSequence::default();
-
+    let seq = SuperTestSequence::default();
     assert_eq!(vec![0x30, 0x4, 0x67, 0x2, 0x30, 0x0], seq.encode());
 }
 
@@ -138,16 +127,14 @@ fn test_encode_with_inner_sequence() {
 fn test_encode_with_inner_sequenceof() {
     #[derive(Sequence, Default)]
     struct TestSequence {
-        attrs: SeqField<SequenceOf<Integer>>,
+        attrs: SequenceOf<Integer>,
     }
 
-    let mut seq = TestSequence {
-        attrs: SeqField::default(),
-    };
+    let mut seq = TestSequence::default();
     let mut seqof_ints: SequenceOf<Integer> = SequenceOf::default();
     seqof_ints.push(Integer::from(1));
 
-    *seq.attrs = seqof_ints;
+    seq.attrs = seqof_ints;
 
     assert_eq!(
         vec![0x30, 0x5, 0x30, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x1],
@@ -198,14 +185,14 @@ fn test_decode_with_context_tags() {
     #[derive(Sequence, Default)]
     struct Person {
         #[seq_field(context_tag = 0)]
-        age: SeqField<Integer>,
+        age: Integer,
     }
 
     let (_, p) =
         Person::decode(&[0x30, 0x5, 0xa0, 0x3, INTEGER_TAG_NUMBER, 0x1, 0x9])
             .unwrap();
 
-    assert_eq!(9, *p.age);
+    assert_eq!(9, p.age);
 }
 
 #[should_panic(expected = "SequenceError(\"Person\", NoAllDataConsumed)")]
@@ -213,8 +200,7 @@ fn test_decode_with_context_tags() {
 fn test_decode_with_optional_with_bad_type_tag() {
     #[derive(Sequence, Default)]
     struct Person {
-        #[seq_field(optional)]
-        age: SeqField<Integer>,
+        age: Option<Integer>,
     }
 
     Person::decode(&[0x30, 0x1, 0xee]).unwrap();
@@ -225,8 +211,7 @@ fn test_decode_with_optional_with_bad_type_tag() {
 fn test_decode_with_optional_with_bad_number_type_tag() {
     #[derive(Sequence, Default)]
     struct Person {
-        #[seq_field(optional)]
-        age: SeqField<Integer>,
+        age: Option<Integer>,
     }
 
     Person::decode(&[0x30, 0x1, 0xff]).unwrap();
@@ -236,12 +221,12 @@ fn test_decode_with_optional_with_bad_number_type_tag() {
 fn test_decode_with_optional_and_context_tag() {
     #[derive(Sequence, Default)]
     struct Person {
-        #[seq_field(optional, context_tag = 0)]
-        age: SeqField<Integer>,
+        #[seq_field(context_tag = 0)]
+        age: Option<Integer>,
     }
 
     let (_, p) = Person::decode(&[0x30, 0x0]).unwrap();
-    assert_eq!(None, p.get_age());
+    assert_eq!(None, p.age);
 }
 
 #[should_panic(
@@ -251,8 +236,8 @@ fn test_decode_with_optional_and_context_tag() {
 fn test_decode_with_optional_and_context_tag_bad_context_length() {
     #[derive(Sequence, Default)]
     struct Person {
-        #[seq_field(optional, context_tag = 0)]
-        age: SeqField<Integer>,
+        #[seq_field(context_tag = 0)]
+        age: Option<Integer>,
     }
 
     Person::decode(&[0x30, 0x2, 0xa0, 0x0]).unwrap();
@@ -263,8 +248,8 @@ fn test_decode_with_optional_and_context_tag_bad_context_length() {
 fn test_bad_decode_optional_context_tag_bad_context_tag() {
     #[derive(Sequence, Default)]
     struct Person {
-        #[seq_field(optional, context_tag = 0)]
-        age: SeqField<Integer>,
+        #[seq_field(context_tag = 0)]
+        age: Option<Integer>,
     }
 
     Person::decode(&[0x30, 0x1, 0xee]).unwrap();
@@ -317,8 +302,8 @@ fn test_decode_sequence_application_tag_bad_length() {
 fn test_bad_decode_optional_context_tag_bad_type_tag() {
     #[derive(Sequence, Default)]
     struct Person {
-        #[seq_field(optional, context_tag = 0)]
-        age: SeqField<Integer>,
+        #[seq_field(context_tag = 0)]
+        age: Option<Integer>,
     }
 
     Person::decode(&[0x30, 0x3, 0xa0, 0x1, 0xee]).unwrap();
@@ -347,8 +332,8 @@ fn test_bad_decode_not_enough_data_for_length_with_application_tag() {
 fn test_decode_without_context_tags() {
     #[derive(Sequence, Default)]
     struct Person {
-        id: SeqField<Integer>,
-        data: SeqField<OctetString>,
+        id: Integer,
+        data: OctetString,
     }
 
     let (_, p) = Person::decode(&[
@@ -366,18 +351,18 @@ fn test_decode_without_context_tags() {
     ])
     .unwrap();
 
-    assert_eq!(9, *p.id);
-    assert_eq!(vec![0x1, 0x2, 0x3, 0x4], *p.data);
+    assert_eq!(9, p.id);
+    assert_eq!(vec![0x1, 0x2, 0x3, 0x4], p.data);
 }
 
 #[test]
 fn test_decode_with_optional() {
     #[derive(Sequence, Default)]
     struct TestSequence {
-        #[seq_field(optional, context_tag = 0)]
-        id: SeqField<Integer>,
+        #[seq_field(context_tag = 0)]
+        id: Option<Integer>,
         #[seq_field(context_tag = 1)]
-        data: SeqField<OctetString>,
+        data: OctetString,
     }
 
     let (_, seq) = TestSequence::decode(&[
@@ -394,17 +379,16 @@ fn test_decode_with_optional() {
     ])
     .unwrap();
 
-    assert_eq!(None, seq.get_id());
-    assert_eq!(vec![0x1, 0x2, 0x3, 0x4], *seq.data);
+    assert_eq!(None, seq.id);
+    assert_eq!(vec![0x1, 0x2, 0x3, 0x4], seq.data);
 }
 
 #[test]
 fn test_decode_with_optional_without_context_tag() {
     #[derive(Sequence, Default)]
     struct TestSequence {
-        #[seq_field(optional)]
-        id: SeqField<Integer>,
-        data: SeqField<OctetString>,
+        id: Option<Integer>,
+        data: OctetString,
     }
 
     let (_, seq) = TestSequence::decode(&[
@@ -419,8 +403,8 @@ fn test_decode_with_optional_without_context_tag() {
     ])
     .unwrap();
 
-    assert_eq!(None, seq.get_id());
-    assert_eq!(vec![0x1, 0x2, 0x3, 0x4], *seq.data);
+    assert_eq!(None, seq.id);
+    assert_eq!(vec![0x1, 0x2, 0x3, 0x4], seq.data);
 }
 
 #[should_panic(
@@ -430,8 +414,8 @@ fn test_decode_with_optional_without_context_tag() {
 fn test_decode_with_optional_and_context_tag_and_bad_type_tag() {
     #[derive(Sequence, Default)]
     struct TestSequence {
-        #[seq_field(optional, context_tag = 0)]
-        id: SeqField<Integer>,
+        #[seq_field(context_tag = 0)]
+        id: Option<Integer>,
     }
 
     TestSequence::decode(&[
@@ -457,32 +441,32 @@ fn test_decode_with_inner_sequence() {
 
     #[derive(Sequence, Default)]
     struct SuperTestSequence {
-        inner: SeqField<TestSequence>,
+        inner: TestSequence,
     }
 
     let (_, seq) =
         SuperTestSequence::decode(&[0x30, 0x4, 0x67, 0x2, 0x30, 0x0]).unwrap();
-    assert_eq!(TestSequence {}, *seq.inner);
+    assert_eq!(TestSequence {}, seq.inner);
 }
 
 #[test]
 fn test_decode_unsetting_optional_value() {
     #[derive(Sequence, Default)]
     struct TestSequence {
-        #[seq_field(optional, context_tag = 0)]
-        id: SeqField<Integer>,
+        #[seq_field(context_tag = 0)]
+        id: Option<Integer>,
     }
 
     let (_, seq) = TestSequence::decode(&[0x30, 0x0]).unwrap();
 
-    assert_eq!(None, seq.get_id());
+    assert_eq!(None, seq.id);
 }
 
 #[test]
 fn test_decode_with_inner_sequenceof() {
     #[derive(Sequence, Default)]
     struct TestSequence {
-        pub attrs: SeqField<SequenceOf<Integer>>,
+        pub attrs: SequenceOf<Integer>,
     }
 
     let (_, seq) = TestSequence::decode(&[
@@ -509,7 +493,7 @@ fn test_decode_without_required_value() {
     #[derive(Sequence, Default)]
     struct TestSequence {
         #[seq_field(context_tag = 0)]
-        id: SeqField<Integer>,
+        id: Integer,
     }
 
     TestSequence::decode(&[0x30, 0x0]).unwrap();
@@ -523,12 +507,12 @@ fn test_decode_without_required_value_with_inner_sequence() {
     #[derive(Sequence, Debug, PartialEq, Default)]
     struct TestSequence {
         #[seq_field(context_tag = 0)]
-        id: SeqField<Integer>,
+        id: Integer,
     }
 
     #[derive(Sequence, Default)]
     struct SuperTestSequence {
-        inner: SeqField<TestSequence>,
+        inner: TestSequence,
     }
 
     SuperTestSequence::decode(&[0x30, 0x2, 0x30, 0x0]).unwrap();
