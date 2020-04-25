@@ -19,9 +19,6 @@ pub use integer::*;
 mod octetstring;
 pub use octetstring::*;
 
-mod sequence;
-pub use sequence::*;
-
 mod sequenceof;
 pub use sequenceof::*;
 
