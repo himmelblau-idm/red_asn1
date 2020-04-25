@@ -327,11 +327,7 @@ pub fn code_optional_decode(
                         #invalid_tag_errors_handlers
                     }
                     _ => {
-                        return Err(red_asn1::Error::SequenceFieldError(
-                            stringify!(#seq_name).to_string(),
-                            stringify!(#field_name).to_string(),
-                            Box::new(error.clone())
-                            ))?;
+                        #return_seq_field_error
                     }
                 }
             }
