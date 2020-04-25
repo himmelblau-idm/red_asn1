@@ -1,4 +1,4 @@
-use syn::*;
+use syn::{Ident, PathSegment};
 use proc_macro2::TokenStream;
 
 pub static SEQUENCE_COMPONENT_TYPE_NAME: &str = "SeqField";
