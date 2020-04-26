@@ -67,7 +67,7 @@ impl Tag {
 
     /// Set the Tag values from a array of bytes
     pub fn parse(raw: &[u8]) -> asn1err::Result<(&[u8], Self)> {
-        let (raw, octet) = be_u8(raw).map_err(
+        let (mut raw, octet) = be_u8(raw).map_err(
             |_: nom::Err<(&[u8], nom::error::ErrorKind)>| {
                 asn1err::Error::EmptyTag(TagClass::Universal)
             },
@@ -96,6 +96,7 @@ impl Tag {
     fn parse_high_tag_number(raw: &[u8]) -> asn1err::Result<(&[u8], u8)> {
         let mut consumed_octets = 1;
         let mut tag_number: u8 = 0;
+        let mut raw = raw;
         loop {
             let (raw_tmp, next_octet) = be_u8(raw).map_err(
                 |_: nom::Err<(&[u8], nom::error::ErrorKind)>| {
@@ -285,17 +286,20 @@ mod tests {
 
     #[test]
     fn test_parse_tag_with_excesive_bytes() {
+        let x: &[u8] = &[];
         assert_eq!(
-            (Tag::new(0, TagType::Primitive, TagClass::Application), 1),
-            _parse_tag_with_consumed_octets(vec![0x40, 0x01])
+            (Tag::new(0, TagType::Primitive, TagClass::Application), x),
+            _parse_tag_with_consumed_octets(&[0x40, 0x01])
         );
         assert_eq!(
-            (Tag::new(31, TagType::Primitive, TagClass::Universal), 2),
-            _parse_tag_with_consumed_octets(vec![0x1F, 0x1F, 0x01])
+            (Tag::new(31, TagType::Primitive, TagClass::Universal), x),
+            _parse_tag_with_consumed_octets(&[0x1F, 0x1F, 0x01])
         );
+
+        let y: &[u8] = &[0x1, 0x2];
         assert_eq!(
-            (Tag::new(198, TagType::Primitive, TagClass::Private), 3),
-            _parse_tag_with_consumed_octets(vec![0xdf, 0xc6, 0x01, 0x01, 0x02])
+            (Tag::new(198, TagType::Primitive, TagClass::Private), y),
+            _parse_tag_with_consumed_octets(&[0xdf, 0xc6, 0x01, 0x01, 0x02])
         );
     }
 
@@ -316,8 +320,8 @@ mod tests {
         return tag;
     }
 
-    fn _parse_tag_with_consumed_octets(raw: Vec<u8>) -> (Tag, usize) {
-        let (consumed_octets, tag) = Tag::parse(&raw).unwrap();
-        return (tag, consumed_octets);
+    fn _parse_tag_with_consumed_octets(raw: &[u8]) -> (Tag, &[u8]) {
+        let (raw, tag) = Tag::parse(raw).unwrap();
+        return (tag, raw);
     }
 }
