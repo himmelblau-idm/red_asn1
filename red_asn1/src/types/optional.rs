@@ -42,10 +42,10 @@ impl<T: Asn1Object> Asn1Object for Option<T> {
         }
 
         let (raw_value, raw_local) = raw_local.split_at(length);
-        let mut asn1obj = Self::default();
+        let mut asn1obj = T::default();
         asn1obj.parse_value(raw_value)?;
 
-        return Ok((raw_local, asn1obj));
+        return Ok((raw_local, Some(asn1obj)));
     }
 
     fn tag() -> Tag {

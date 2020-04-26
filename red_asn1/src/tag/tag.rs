@@ -286,7 +286,7 @@ mod tests {
 
     #[test]
     fn test_parse_tag_with_excesive_bytes() {
-        let x: &[u8] = &[];
+        let x: &[u8] = &[0x1];
         assert_eq!(
             (Tag::new(0, TagType::Primitive, TagClass::Application), x),
             _parse_tag_with_consumed_octets(&[0x40, 0x01])

@@ -96,7 +96,7 @@ mod tests {
 
     #[test]
     fn test_parse_integers_with_excesive_bytes() {
-        let (rest, seq_of) = SequenceOf::<Integer>::parse(&[
+        let raw = [
             0x30,
             0x7,
             INTEGER_TAG_NUMBER,
@@ -108,8 +108,8 @@ mod tests {
             0xe8,
             0xff,
             0xff,
-        ])
-        .unwrap();
+        ];
+        let (rest, seq_of) = SequenceOf::<Integer>::parse(&raw).unwrap();
 
         let x: &[u8] = &[0xff, 0xff];
         assert_eq!(x, rest);

@@ -46,19 +46,19 @@ mod tests {
 
     #[test]
     fn test_parse_with_excesive_bytes() {
-        let x: &[u8] = &[0x0, 0x1];
+        let x: &[u8] = &[0x1];
         assert_eq!((x, false), bool::parse(&[0x1, 0x1, 0x0, 0x1]).unwrap());
         assert_eq!(
             (x, true),
-            bool::parse(&[0x1, 0x1, 0xff, 0x0, 0x1]).unwrap()
+            bool::parse(&[0x1, 0x1, 0xff, 0x1]).unwrap()
         );
         assert_eq!(
             (x, true),
-            bool::parse(&[0x1, 0x1, 0x01, 0x0, 0x1]).unwrap()
+            bool::parse(&[0x1, 0x1, 0x01, 0x1]).unwrap()
         );
         assert_eq!(
             (x, true),
-            bool::parse(&[0x1, 0x1, 0x7b, 0x0, 0x1]).unwrap()
+            bool::parse(&[0x1, 0x1, 0x7b, 0x1]).unwrap()
         );
 
         let y: &[u8] = &[];

@@ -91,6 +91,6 @@ mod tests {
     #[should_panic(expected = "UnmatchedTag")]
     #[test]
     fn test_parse_with_invalid_tag() {
-        OctetString::parse(&[0x7, 0x1, 0x0]);
+        OctetString::parse(&[0x7, 0x1, 0x0]).unwrap();
     }
 }
