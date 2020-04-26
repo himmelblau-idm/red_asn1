@@ -1,7 +1,7 @@
 use super::TimeFormat;
 use crate::error as asn1err;
 use crate::tag::Tag;
-use crate::traits::*;
+use crate::traits::Asn1Object;
 use chrono::prelude::*;
 use std::str;
 
@@ -146,10 +146,12 @@ mod tests {
             GeneralizedTime::from(
                 Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)
             ),
-            _parse(&[
+            GeneralizedTime::parse(&[
                 0x18, 0x11, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36,
                 0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33, 0x5a
             ])
+            .unwrap()
+            .1
         );
     }
 
@@ -157,69 +159,67 @@ mod tests {
     fn test_build_without_deciseconds() {
         assert_eq!(
             GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms(21, 6, 27)),
-            _parse(&[
+            GeneralizedTime::parse(&[
                 0x18, 0xf, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36,
                 0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x5a
             ])
+            .unwrap()
+            .1
         );
     }
 
     #[test]
     fn test_parse_with_excesive_bytes() {
+        let rest: &[u8] = &[0x22, 0x22, 0x22];
         assert_eq!(
             (
+                rest,
                 GeneralizedTime::from(
                     Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)
                 ),
-                19
             ),
-            _parse_with_consumed_octets(&[
+            GeneralizedTime::parse(&[
                 0x18, 0x11, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36,
                 0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33, 0x5a, 0x22,
                 0x22, 0x22
             ])
+            .unwrap()
         );
     }
 
     #[should_panic(expected = "NoDataForType")]
     #[test]
     fn test_parse_without_enough_value_octets() {
-        _parse(&[
+        GeneralizedTime::parse(&[
             0x18, 0x0e, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32,
             0x31, 0x30, 0x36, 0x32, 0x37,
-        ]);
+        ])
+        .unwrap();
     }
 
     #[should_panic(expected = "UnmatchedTag")]
     #[test]
     fn test_parse_with_invalid_tag() {
-        _parse(&[0x7, 0x1, 0x0]);
+        GeneralizedTime::parse(&[0x7, 0x1, 0x0]).unwrap();
     }
 
     #[should_panic(expected = "ParseIntError")]
     #[test]
     fn test_parse_with_no_number_characters() {
-        _parse(&[
+        GeneralizedTime::parse(&[
             0x18, 0x11, 0x41, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32,
             0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33, 0x5a,
-        ]);
+        ])
+        .unwrap();
     }
 
     #[should_panic(expected = "ImplementationError")]
     #[test]
     fn test_parse_local_time() {
-        _parse(&[
+        GeneralizedTime::parse(&[
             0x18, 0x10, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36, 0x32,
             0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33,
-        ]);
-    }
-
-    fn _parse(raw: &[u8]) -> GeneralizedTime {
-        return _parse_with_consumed_octets(raw).0;
-    }
-
-    fn _parse_with_consumed_octets(raw: &[u8]) -> (GeneralizedTime, usize) {
-        let (consumed_octets, b) = GeneralizedTime::parse(raw).unwrap();
-        return (b, consumed_octets);
+        ])
+        .unwrap();
     }
 }
