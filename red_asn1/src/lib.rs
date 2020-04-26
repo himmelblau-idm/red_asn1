@@ -96,9 +96,9 @@
 //! | ASN1            | red_asn1 type   | Rust type                                |
 //! |-----------------|-----------------|------------------------------------------|
 //! | BOOLEAN         | Boolean         | bool                                     |
-//! | INTEGER         | Integer         | i128                                     |
+//! | INTEGER         | Integer         | i128, i64, i32, i16, u32                 |
 //! | BIT STRING      | BitSring        |                                          |
-//! | OCTET STRING    | OctetString     | Vec\<u8\>                                  |
+//! | OCTET STRING    | OctetString     | Vec\<u8\>                                |
 //! | GeneralString   | GeneralString   | String                                   |
 //! | IA5String       | IA5String       | ascii::AsciiString                       |
 //! | GeneralizedTime | GeneralizedTime |                                          |
