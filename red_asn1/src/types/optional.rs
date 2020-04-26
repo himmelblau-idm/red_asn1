@@ -23,11 +23,11 @@ impl<T: Asn1Object> Asn1Object for Option<T> {
 
     fn parse(raw: &[u8]) -> asn1err::Result<(&[u8], Self)> {
         let parsed_tag;
-        let raw_local;
+        let mut raw = raw;
         match Tag::parse(raw) {
             Err(_) => return Ok((raw, None)),
             Ok((raw_tmp, tag)) => {
-                raw_local = raw_tmp;
+                raw = raw_tmp;
                 parsed_tag = tag;
             }
         }
@@ -36,12 +36,12 @@ impl<T: Asn1Object> Asn1Object for Option<T> {
             return Ok((raw, None));
         }
 
-        let (raw_local, length) = parse_length(raw_local)?;
-        if length > raw_local.len() {
+        let (raw, length) = parse_length(raw)?;
+        if length > raw.len() {
             return Err(asn1err::Error::NoDataForLength)?;
         }
 
-        let (raw_value, raw_local) = raw_local.split_at(length);
+        let (raw_value, raw_local) = raw.split_at(length);
         let mut asn1obj = T::default();
         asn1obj.parse_value(raw_value)?;
 
