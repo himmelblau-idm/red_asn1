@@ -1,4 +1,5 @@
 use crate::error::{Error, Result};
+use nom::number::complete::be_u8;
 
 pub fn build_length(value_size: usize) -> Vec<u8> {
     if value_size < 128 {
@@ -23,31 +24,32 @@ pub fn build_length(value_size: usize) -> Vec<u8> {
 }
 
 /// To parse the object value length from DER, should not be overwritten
-pub fn parse_length(raw_length: &[u8]) -> Result<(usize, usize)> {
-    let raw_length_length = raw_length.len();
-    if raw_length_length == 0 {
-        return Err(Error::LengthEmpty)?;
-    }
+pub fn parse_length(raw: &[u8]) -> Result<(&[u8], usize)> {
+    let (raw, len_byte) =
+        be_u8(raw).map_err(|_: nom::Err<(&[u8], nom::error::ErrorKind)>| {
+            Error::LengthEmpty
+        })?;
 
-    let mut consumed_octets: usize = 1;
-    let is_short_form = (raw_length[0] & 0x80) == 0;
+    let is_short_form = (len_byte & 0x80) == 0;
+    let length = (len_byte & 0x7F) as usize;
     if is_short_form {
-        return Ok(((raw_length[0] & 0x7F) as usize, consumed_octets));
+        return Ok((raw, length));
     }
 
-    let length_of_length = (raw_length[0] & 0x7F) as usize;
-    if length_of_length >= raw_length_length {
-        return Err(Error::NotEnoughLengthOctects)?;
-    }
+    let length_of_length = length;
+    let mut length = 0;
 
-    let mut length: usize = 0;
     for i in 1..(length_of_length + 1) {
         length <<= 8;
-        length += raw_length[i] as usize;
+        let (raw_tmp, len_byte) = be_u8(raw).map_err(
+            |_: nom::Err<(&[u8], nom::error::ErrorKind)>| {
+                Error::NotEnoughLengthOctects
+            },
+        )?;
+        length += len_byte as usize;
+        raw = raw_tmp;
     }
-    consumed_octets += length_of_length;
-
-    return Ok((length, consumed_octets));
+    return Ok((raw, length));
 }
 
 #[cfg(test)]
@@ -65,28 +67,56 @@ mod tests {
         assert_eq!(vec![0x82, 0xFF, 0xFF], build_length(65535));
         assert_eq!(vec![0x83, 0x01, 0x00, 0x00], build_length(65536));
 
-        assert_eq!(vec![0x84, 0x10, 0xf3, 0x91, 0xbd], build_length(0x10f391bd));
+        assert_eq!(
+            vec![0x84, 0x10, 0xf3, 0x91, 0xbd],
+            build_length(0x10f391bd)
+        );
         assert_eq!(vec![0x84, 0x0f, 0xc4, 0x69, 0x89], build_length(0xfc46989));
-        assert_eq!(vec![0x84, 0x31, 0xb2, 0x50, 0x42], build_length(0x31b25042));
-        assert_eq!(vec![0x84, 0x13, 0x93, 0xaa, 0x93], build_length(0x1393aa93));
+        assert_eq!(
+            vec![0x84, 0x31, 0xb2, 0x50, 0x42],
+            build_length(0x31b25042)
+        );
+        assert_eq!(
+            vec![0x84, 0x13, 0x93, 0xaa, 0x93],
+            build_length(0x1393aa93)
+        );
         assert_eq!(vec![0x84, 0x05, 0x71, 0x6f, 0xa9], build_length(0x5716fa9));
     }
 
     #[test]
     fn test_parse_length() {
-        assert_eq!((0, 1), parse_length(&[0x0]).unwrap());
-        assert_eq!((1, 1), parse_length(&[0x1]).unwrap());
-        assert_eq!((127, 1), parse_length(&[0x7F]).unwrap());
-        assert_eq!((128, 2), parse_length(&[0x81, 0x80]).unwrap());
-        assert_eq!((255, 2), parse_length(&[0x81, 0xFF]).unwrap());
-        assert_eq!((256, 3), parse_length(&[0x82, 0x01, 0x00]).unwrap());
-        assert_eq!((65535, 3), parse_length(&[0x82, 0xFF, 0xFF]).unwrap());
-        assert_eq!((65536, 4), parse_length(&[0x83, 0x01, 0x00, 0x00]).unwrap());
+        let x: &[u8] = &[];
+        assert_eq!((x, 0), parse_length(&[0x0]).unwrap());
+        assert_eq!((x, 1), parse_length(&[0x1]).unwrap());
+        assert_eq!((x, 127), parse_length(&[0x7F]).unwrap());
+        assert_eq!((x, 128), parse_length(&[0x81, 0x80]).unwrap());
+        assert_eq!((x, 255), parse_length(&[0x81, 0xFF]).unwrap());
+        assert_eq!((x, 256), parse_length(&[0x82, 0x01, 0x00]).unwrap());
+        assert_eq!((x, 65535), parse_length(&[0x82, 0xFF, 0xFF]).unwrap());
+        assert_eq!(
+            (x, 65536),
+            parse_length(&[0x83, 0x01, 0x00, 0x00]).unwrap()
+        );
 
-        assert_eq!((0x10f391bd, 5), parse_length(&[0x84, 0x10, 0xf3, 0x91, 0xbd]).unwrap());
-        assert_eq!((0xfc46989, 5), parse_length(&[0x84, 0x0f, 0xc4, 0x69, 0x89]).unwrap());
-        assert_eq!((0x31b25042, 5), parse_length(&[0x84, 0x31, 0xb2, 0x50, 0x42]).unwrap());
-        assert_eq!((0x1393aa93, 5), parse_length(&[0x84, 0x13, 0x93, 0xaa, 0x93]).unwrap());
-        assert_eq!((0x5716fa9, 5), parse_length(&[0x84, 0x05, 0x71, 0x6f, 0xa9]).unwrap());
+        assert_eq!(
+            (x, 0x10f391bd),
+            parse_length(&[0x84, 0x10, 0xf3, 0x91, 0xbd]).unwrap()
+        );
+        assert_eq!(
+            (x, 0xfc46989),
+            parse_length(&[0x84, 0x0f, 0xc4, 0x69, 0x89]).unwrap()
+        );
+        assert_eq!(
+            (x, 0x31b25042),
+            parse_length(&[0x84, 0x31, 0xb2, 0x50, 0x42]).unwrap()
+        );
+        assert_eq!(
+            (x, 0x1393aa93),
+            parse_length(&[0x84, 0x13, 0x93, 0xaa, 0x93]).unwrap()
+        );
+        assert_eq!(
+            (x, 0x5716fa9),
+            parse_length(&[0x84, 0x05, 0x71, 0x6f, 0xa9]).unwrap()
+        );
     }
 }

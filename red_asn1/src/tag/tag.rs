@@ -68,8 +68,9 @@ impl Tag {
     /// Set the Tag values from a array of bytes
     pub fn parse(raw: &[u8]) -> asn1err::Result<(&[u8], Self)> {
         let (raw, octet) = be_u8(raw).map_err(
-            |_|
-            asn1err::Error::EmptyTag(TagClass::Universal)                  
+            |_: nom::Err<(&[u8], nom::error::ErrorKind)>| {
+                asn1err::Error::EmptyTag(TagClass::Universal)
+            },
         )?;
 
         let tag_class = (octet & 0xc0) >> 6;
@@ -97,9 +98,9 @@ impl Tag {
         let mut tag_number: u8 = 0;
         loop {
             let (raw_tmp, next_octet) = be_u8(raw).map_err(
-                |_|
-                asn1err::Error::NotEnoughTagOctets(TagClass::Universal)
-
+                |_: nom::Err<(&[u8], nom::error::ErrorKind)>| {
+                    asn1err::Error::NotEnoughTagOctets(TagClass::Universal)
+                },
             )?;
             raw = raw_tmp;
             tag_number +=
@@ -111,7 +112,6 @@ impl Tag {
         }
 
         return Ok((raw, tag_number));
-
     }
 }
 
