@@ -22,13 +22,11 @@ impl<T: Asn1Object> Asn1Object for Vec<T> {
 
     fn parse_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         let mut components: Vec<T> = Vec::new();
-        let mut consumed_octets = 0;
+        let mut raw = raw;
 
-        while consumed_octets < raw.len() {
-            let (component_consumed_octets, component) =
-                T::parse(&raw[consumed_octets..])?;
-
-            consumed_octets += component_consumed_octets;
+        while !raw.is_empty() {
+            let (raw_tmp, component) = T::parse(raw)?;
+            raw = raw_tmp;
             components.push(component);
         }
 
@@ -98,7 +96,7 @@ mod tests {
 
     #[test]
     fn test_parse_integers_with_excesive_bytes() {
-        let (consumed_octets, seq_of) = SequenceOf::<Integer>::parse(&[
+        let (rest, seq_of) = SequenceOf::<Integer>::parse(&[
             0x30,
             0x7,
             INTEGER_TAG_NUMBER,
@@ -113,7 +111,8 @@ mod tests {
         ])
         .unwrap();
 
-        assert_eq!(9, consumed_octets);
+        let x: &[u8] = &[0xff, 0xff];
+        assert_eq!(x, rest);
         assert_eq!(Integer::from(9), seq_of[0]);
         assert_eq!(Integer::from(1000), seq_of[1]);
     }
