@@ -1,8 +1,8 @@
 [package]
 name = "red_asn1_derive"
 description = "macros for red_asn1"
-version = "0.1.2"
-authors = ["Zer1t0 <Zer1t0@hotmail.com>"]
+version = "0.2.0"
+authors = ["Eloy Perez <zer1t0ps@protonmail.com>"]
 edition = "2018"
 license = "AGPL-3.0"
 repository = "https://gitlab.com/Zer1t0/red_asn1"
@@ -19,4 +19,4 @@ failure_derive = "0.1.5"
 proc-macro2 = "0.4"
 
 [dev-dependencies]
-red_asn1 = { version = "0.1", path = "../red_asn1" }
+red_asn1 = { version = "*", path = "../red_asn1" }
