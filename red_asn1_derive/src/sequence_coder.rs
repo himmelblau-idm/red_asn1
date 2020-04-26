@@ -30,15 +30,15 @@ pub fn code_sequence(sequence: &SequenceDefinition) -> TokenStream {
                 &self,
                 raw: &'a [u8]
             ) -> red_asn1::Result<&'a [u8]> {
-                let (raw, parsed_tag) = Tag::parse(raw)?;
+                let (raw, parsed_tag) = red_asn1::Tag::parse(raw)?;
 
-                if parsed_tag != Tag::new(
+                if parsed_tag != red_asn1::Tag::new(
                     #app_tag_number,
-                    TagType::Constructed,
-                    TagClass::Application
+                    red_asn1::TagType::Constructed,
+                    red_asn1::TagClass::Application
                 ) {
                     return Err(red_asn1::Error::UnmatchedTag(
-                        TagClass::Application
+                        red_asn1::TagClass::Application
                     ))?;
                 }
 
@@ -64,9 +64,11 @@ pub fn code_sequence(sequence: &SequenceDefinition) -> TokenStream {
     }
 
     let total_exp = quote! {
-        impl Asn1Object for #seq_name {
-            fn tag() -> Tag {
-                return Tag::new_constructed_universal(SEQUENCE_TAG_NUMBER);
+        impl red_asn1::Asn1Object for #seq_name {
+            fn tag() -> red_asn1::Tag {
+                return red_asn1::Tag::new_constructed_universal(
+                    red_asn1::SEQUENCE_TAG_NUMBER
+                );
             }
 
             #build
@@ -146,7 +148,7 @@ fn code_inner_parse(seq_name: &Ident) -> TokenStream {
             &mut self,
             raw: &'a [u8]
         ) -> red_asn1::Result<&'a [u8]> {
-            let (raw, parsed_tag) = Tag::parse(raw).or_else( |error|
+            let (raw, parsed_tag) = red_asn1::Tag::parse(raw).or_else( |error|
                 Err(red_asn1::Error::SequenceError(
                     stringify!(#seq_name).to_string(),
                     Box::new(error.clone())
@@ -156,7 +158,11 @@ fn code_inner_parse(seq_name: &Ident) -> TokenStream {
             if parsed_tag != Self::tag() {
                 return Err(red_asn1::Error::SequenceError(
                     stringify!(#seq_name).to_string(),
-                    Box::new(red_asn1::Error::UnmatchedTag(TagClass::Universal))
+                    Box::new(
+                        red_asn1::Error::UnmatchedTag(
+                            red_asn1::TagClass::Universal
+                        )
+                    )
                 ))
             }
 
@@ -187,10 +193,10 @@ fn code_inner_parse(seq_name: &Ident) -> TokenStream {
 fn code_build_with_application_tag(app_tag_number: u8) -> TokenStream {
     return quote! {
         fn build(&self) -> Vec<u8> {
-            let mut built = Tag::new(
+            let mut built = red_asn1::Tag::new(
                 #app_tag_number,
-                TagType::Constructed,
-                TagClass::Application
+                red_asn1::TagType::Constructed,
+                red_asn1::TagClass::Application
             ).build();
 
             let mut built_value = self._inner_build();

@@ -1,4 +1,5 @@
-use red_asn1::*;
+use red_asn1::{Integer, OctetString, Asn1Object, SequenceOf, INTEGER_TAG_NUMBER, OCTET_STRING_TAG_NUMBER};
+use red_asn1_derive::Sequence;
 
 #[test]
 fn test_define_simple() {

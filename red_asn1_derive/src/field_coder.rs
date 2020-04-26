@@ -42,7 +42,7 @@ fn code_required_field_parser_with_context_tag(
             let parsed_tag;
             let mut raw = raw;
 
-            match Tag::parse(raw) {
+            match red_asn1::Tag::parse(raw) {
                 Ok((raw_tmp, tag)) => {
                     raw = raw_tmp;
                     parsed_tag = tag;
@@ -50,10 +50,18 @@ fn code_required_field_parser_with_context_tag(
                 Err(error) => {
                     match error.clone() {
                         red_asn1::Error::NotEnoughTagOctets(_) => {
-                            return Err(red_asn1::Error::NotEnoughTagOctets(TagClass::Context))?;
+                            return Err(
+                                red_asn1::Error::NotEnoughTagOctets(
+                                    red_asn1::TagClass::Context
+                                )
+                            )?;
                         }
                         red_asn1::Error::EmptyTag(_) => {
-                            return Err(red_asn1::Error::EmptyTag(TagClass::Context))?;
+                            return Err(
+                                red_asn1::Error::EmptyTag(
+                                    red_asn1::TagClass::Context
+                                )
+                            )?;
                         }
                         _ => {
                             return Err(error);
@@ -62,8 +70,16 @@ fn code_required_field_parser_with_context_tag(
                 }
             }
 
-            if parsed_tag != Tag::new(#context_tag_number, TagType::Constructed, TagClass::Context) {
-                return Err(red_asn1::Error::UnmatchedTag(TagClass::Context))?;
+            if parsed_tag != red_asn1::Tag::new(
+                #context_tag_number,
+                red_asn1::TagType::Constructed,
+                red_asn1::TagClass::Context
+            ) {
+                return Err(
+                    red_asn1::Error::UnmatchedTag(
+                        red_asn1::TagClass::Context
+                    )
+                )?;
             }
 
             let (raw, length) = red_asn1::parse_length(raw)?;
@@ -102,7 +118,7 @@ fn code_optional_field_parser_with_context_tag(
             let parsed_tag;
             let mut raw_local = raw;
 
-            match Tag::parse(raw) {
+            match red_asn1::Tag::parse(raw) {
                 Ok((raw_tmp, tag)) => {
                     raw_local = raw_tmp;
                     parsed_tag = tag;
@@ -113,10 +129,10 @@ fn code_optional_field_parser_with_context_tag(
                 }
             }
 
-            if parsed_tag != Tag::new(
+            if parsed_tag != red_asn1::Tag::new(
                 #context_tag_number,
-                TagType::Constructed,
-                TagClass::Context
+                red_asn1::TagType::Constructed,
+                red_asn1::TagClass::Context
             ) {
                 self.#field_name = None;
                 return Ok(raw);
@@ -129,9 +145,13 @@ fn code_optional_field_parser_with_context_tag(
 
             let (raw_value, raw_local) = raw_local.split_at(length);
 
-            let (_, type_tag) = Tag::parse(raw_value)?;
+            let (_, type_tag) = red_asn1::Tag::parse(raw_value)?;
             if type_tag != #field_type::tag() {
-                return Err(red_asn1::Error::UnmatchedTag(TagClass::Universal));
+                return Err(
+                    red_asn1::Error::UnmatchedTag(
+                        red_asn1::TagClass::Universal
+                    )
+                );
             }
 
             let (_, field) = #field_type::parse(raw_value)?;
@@ -185,10 +205,10 @@ fn code_field_builder_with_context_tag(
                 return built_value;
             }
 
-            let tag = Tag::new(
+            let tag = red_asn1::Tag::new(
                 #ctx_tag,
-                TagType::Constructed,
-                TagClass::Context
+                red_asn1::TagType::Constructed,
+                red_asn1::TagClass::Context
             );
             let mut built = tag.build();
             let mut built_length = red_asn1::build_length(built_value.len());
