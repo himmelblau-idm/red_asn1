@@ -1,13 +1,13 @@
 use crate::error as asn1err;
 use crate::tag::Tag;
-use crate::traits::*;
+use crate::traits::Asn1Object;
 
 pub static INTEGER_TAG_NUMBER: u8 = 0x2;
 
 /// Class to build/parse Integer ASN1
 pub type Integer = i128;
 
-impl Asn1Object for Integer {
+impl Asn1Object for i128 {
     fn tag() -> Tag {
         return Tag::new_primitive_universal(INTEGER_TAG_NUMBER);
     }
@@ -112,103 +112,122 @@ mod tests {
 
     #[test]
     fn test_parse() {
-        assert_eq!(Integer::from(0), _parse(&[0x2, 0x1, 0x0]));
-        assert_eq!(Integer::from(1), _parse(&[0x2, 0x1, 0x1]));
-        assert_eq!(Integer::from(-1), _parse(&[0x2, 0x1, 0xff]));
+        assert_eq!(
+            Integer::from(0),
+            Integer::parse(&[0x2, 0x1, 0x0]).unwrap().1
+        );
+        assert_eq!(
+            Integer::from(1),
+            Integer::parse(&[0x2, 0x1, 0x1]).unwrap().1
+        );
+        assert_eq!(
+            Integer::from(-1),
+            Integer::parse(&[0x2, 0x1, 0xff]).unwrap().1
+        );
 
-        assert_eq!(Integer::from(127), _parse(&[0x2, 0x1, 0x7F]));
-        assert_eq!(Integer::from(128), _parse(&[0x2, 0x2, 0x00, 0x80]));
-        assert_eq!(Integer::from(256), _parse(&[0x2, 0x2, 0x01, 0x00]));
-        assert_eq!(Integer::from(-128), _parse(&[0x2, 0x1, 0x80]));
-        assert_eq!(Integer::from(-129), _parse(&[0x2, 0x2, 0xFF, 0x7F]));
+        assert_eq!(
+            Integer::from(127),
+            Integer::parse(&[0x2, 0x1, 0x7F]).unwrap().1
+        );
+        assert_eq!(
+            Integer::from(128),
+            Integer::parse(&[0x2, 0x2, 0x00, 0x80]).unwrap().1
+        );
+        assert_eq!(
+            Integer::from(256),
+            Integer::parse(&[0x2, 0x2, 0x01, 0x00]).unwrap().1
+        );
+        assert_eq!(
+            Integer::from(-128),
+            Integer::parse(&[0x2, 0x1, 0x80]).unwrap().1
+        );
+        assert_eq!(
+            Integer::from(-129),
+            Integer::parse(&[0x2, 0x2, 0xFF, 0x7F]).unwrap().1
+        );
 
         assert_eq!(
             Integer::from(4165284616i64),
-            _parse(&[0x2, 0x5, 0x00, 0xF8, 0x45, 0x33, 0x8])
+            Integer::parse(&[0x2, 0x5, 0x00, 0xF8, 0x45, 0x33, 0x8])
+                .unwrap()
+                .1
         );
         assert_eq!(
             Integer::from(-3310595109i64),
-            _parse(&[0x2, 0x5, 0xFF, 0x3A, 0xAC, 0x53, 0xDB])
+            Integer::parse(&[0x2, 0x5, 0xFF, 0x3A, 0xAC, 0x53, 0xDB])
+                .unwrap()
+                .1
         );
     }
 
     #[test]
     fn test_parse_with_excesive_bytes() {
+        let x: &[u8] = &[0x22];
         assert_eq!(
-            (Integer::from(0), 3),
-            _parse_with_consumed_octets(&[0x2, 0x1, 0x0, 0x22])
+            (x, Integer::from(0)),
+            Integer::parse(&[0x2, 0x1, 0x0, 0x22]).unwrap()
         );
         assert_eq!(
-            (Integer::from(1), 3),
-            _parse_with_consumed_octets(&[0x2, 0x1, 0x1, 0x22])
+            (x, Integer::from(1)),
+            Integer::parse(&[0x2, 0x1, 0x1, 0x22]).unwrap()
         );
         assert_eq!(
-            (Integer::from(-1), 3),
-            _parse_with_consumed_octets(&[0x2, 0x1, 0xff, 0x22])
-        );
-
-        assert_eq!(
-            (Integer::from(127), 3),
-            _parse_with_consumed_octets(&[0x2, 0x1, 0x7F, 0x22])
-        );
-        assert_eq!(
-            (Integer::from(128), 4),
-            _parse_with_consumed_octets(&[0x2, 0x2, 0x00, 0x80, 0x22])
-        );
-        assert_eq!(
-            (Integer::from(256), 4),
-            _parse_with_consumed_octets(&[0x2, 0x2, 0x01, 0x00, 0x22])
-        );
-        assert_eq!(
-            (Integer::from(-128), 3),
-            _parse_with_consumed_octets(&[0x2, 0x1, 0x80, 0x22])
-        );
-        assert_eq!(
-            (Integer::from(-129), 4),
-            _parse_with_consumed_octets(&[0x2, 0x2, 0xFF, 0x7F, 0x22])
+            (x, Integer::from(-1)),
+            Integer::parse(&[0x2, 0x1, 0xff, 0x22]).unwrap()
         );
 
         assert_eq!(
-            (Integer::from(4165284616i64), 7),
-            _parse_with_consumed_octets(&[
-                0x2, 0x5, 0x00, 0xF8, 0x45, 0x33, 0x8, 0x22
-            ])
+            (x, Integer::from(127)),
+            Integer::parse(&[0x2, 0x1, 0x7F, 0x22]).unwrap()
         );
         assert_eq!(
-            (Integer::from(-3310595109i64), 7),
-            _parse_with_consumed_octets(&[
-                0x2, 0x5, 0xFF, 0x3A, 0xAC, 0x53, 0xDB, 0x22
-            ])
+            (x, Integer::from(128)),
+            Integer::parse(&[0x2, 0x2, 0x00, 0x80, 0x22]).unwrap()
+        );
+        assert_eq!(
+            (x, Integer::from(256)),
+            Integer::parse(&[0x2, 0x2, 0x01, 0x00, 0x22]).unwrap()
+        );
+        assert_eq!(
+            (x, Integer::from(-128)),
+            Integer::parse(&[0x2, 0x1, 0x80, 0x22]).unwrap()
+        );
+        assert_eq!(
+            (x, Integer::from(-129)),
+            Integer::parse(&[0x2, 0x2, 0xFF, 0x7F, 0x22]).unwrap()
+        );
+
+        assert_eq!(
+            (x, Integer::from(4165284616i64)),
+            Integer::parse(&[0x2, 0x5, 0x00, 0xF8, 0x45, 0x33, 0x8, 0x22])
+                .unwrap()
+        );
+        assert_eq!(
+            (x, Integer::from(-3310595109i64)),
+            Integer::parse(&[0x2, 0x5, 0xFF, 0x3A, 0xAC, 0x53, 0xDB, 0x22])
+                .unwrap()
         );
     }
 
     #[should_panic(expected = "UnmatchedTag")]
     #[test]
     fn test_parse_with_invalid_tag() {
-        _parse(&[0x7, 0x1, 0x0]);
+        Integer::parse(&[0x7, 0x1, 0x0]).unwrap();
     }
 
     #[should_panic(expected = "NoDataForType")]
     #[test]
     fn test_parse_without_enough_value_octets() {
-        _parse(&[0x2, 0x0]);
+        Integer::parse(&[0x2, 0x0]).unwrap();
     }
 
     #[should_panic(expected = "ImplementationError")]
     #[test]
     fn test_parse_wit_too_much_value_octets() {
-        _parse(&[
+        Integer::parse(&[
             0x2, 20, 0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0, 1, 2,
             3, 4, 5, 6, 7, 8, 9,
-        ]);
-    }
-
-    fn _parse(raw: &[u8]) -> Integer {
-        return _parse_with_consumed_octets(raw).0;
-    }
-
-    fn _parse_with_consumed_octets(raw: &[u8]) -> (Integer, usize) {
-        let (consumed_octets, b) = Integer::parse(raw).unwrap();
-        return (b, consumed_octets);
+        ])
+        .unwrap();
     }
 }
