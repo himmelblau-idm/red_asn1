@@ -50,6 +50,7 @@
 //! */
 //! 
 //! use red_asn1::*;
+//! use red_asn1_derive::Sequence;
 //! 
 //! #[derive(Sequence, Default)]
 //! #[seq(application_tag = 1)]
@@ -124,4 +125,3 @@ pub use types::*;
 mod length;
 pub use length::{build_length, parse_length};
 
-pub use red_asn1_derive::*;
