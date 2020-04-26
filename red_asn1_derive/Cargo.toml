@@ -19,4 +19,4 @@ failure_derive = "0.1.5"
 proc-macro2 = "0.4"
 
 [dev-dependencies]
-red_asn1 = { version = "*", path = "../red_asn1" }
+red_asn1 = { version = "0.2", path = "../red_asn1" }
