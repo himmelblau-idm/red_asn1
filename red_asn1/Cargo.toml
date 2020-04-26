@@ -14,5 +14,3 @@ ascii = "1"
 chrono = "0.4"
 nom = "5"
 
-[dev-dependencies]
-red_asn1_derive = { path = "../red_asn1_derive", version = "0.2" }
