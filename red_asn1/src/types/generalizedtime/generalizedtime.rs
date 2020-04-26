@@ -25,7 +25,9 @@ impl Asn1Object for GeneralizedTime {
 
     fn parse_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         if raw.len() < 15 {
-            return Err(asn1err::Error::NoDataForType)?;
+            return Err(asn1err::Error::IncorrectValue(
+                format!("No octects for GeneralizedTime")
+            ))?;
         }
 
         let year_str = str::from_utf8(&raw[0..4])?;
@@ -187,7 +189,7 @@ mod tests {
         );
     }
 
-    #[should_panic(expected = "NoDataForType")]
+    #[should_panic(expected = "IncorrectValue(\"No octects for GeneralizedTime\")")]
     #[test]
     fn test_parse_without_enough_value_octets() {
         GeneralizedTime::parse(&[

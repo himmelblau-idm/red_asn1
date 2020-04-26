@@ -1,8 +1,8 @@
+use super::general::{build_integer_value, parse_integer_value};
+use super::INTEGER_TAG_NUMBER;
 use crate::error as asn1err;
 use crate::tag::Tag;
 use crate::traits::Asn1Object;
-use super::INTEGER_TAG_NUMBER;
-use super::general::{build_integer_value,parse_integer_value};
 use std::convert::TryInto;
 
 impl Asn1Object for i32 {
@@ -36,7 +36,6 @@ mod tests {
         assert_eq!(vec![0x2, 0x2, 0x01, 0x00], i32::from(256).build());
         assert_eq!(vec![0x2, 0x1, 0x80], i32::from(-128).build());
         assert_eq!(vec![0x2, 0x2, 0xFF, 0x7F], i32::from(-129).build());
-
     }
 
     #[test]
@@ -59,7 +58,6 @@ mod tests {
             i32::from(-129),
             i32::parse(&[0x2, 0x2, 0xFF, 0x7F]).unwrap().1
         );
-
     }
 
     #[test]
@@ -98,7 +96,6 @@ mod tests {
             (x, i32::from(-129)),
             i32::parse(&[0x2, 0x2, 0xFF, 0x7F, 0x22]).unwrap()
         );
-
     }
 
     #[should_panic(expected = "UnmatchedTag")]
@@ -107,18 +104,17 @@ mod tests {
         i32::parse(&[0x7, 0x1, 0x0]).unwrap();
     }
 
-    #[should_panic(expected = "NoDataForType")]
+    #[should_panic(expected = "IncorrectValue(\"No octets for i32\")")]
     #[test]
     fn test_parse_without_enough_value_octets() {
         i32::parse(&[0x2, 0x0]).unwrap();
     }
 
-    #[should_panic(expected = "ImplementationError")]
+    #[should_panic(
+        expected = "IncorrectValue(\"Too many octets for i32: 5 octets\")"
+    )]
     #[test]
     fn test_parse_wit_too_much_value_octets() {
-        i32::parse(&[
-            0x2, 5, 0, 0x1, 0x2, 0x3, 0x4,
-        ])
-        .unwrap();
+        i32::parse(&[0x2, 5, 0, 0x1, 0x2, 0x3, 0x4]).unwrap();
     }
 }

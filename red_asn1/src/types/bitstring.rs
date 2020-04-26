@@ -59,7 +59,9 @@ impl Asn1Object for BitString {
 
     fn parse_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         if raw.len() == 0 {
-            return Err(asn1err::Error::NoDataForType)?;
+            return Err(asn1err::Error::IncorrectValue(
+                format!("No octects for BitString")
+            ))?;
         }
 
         let (padding_length, raw_value) = raw.split_at(1);
@@ -141,7 +143,7 @@ mod tests {
         BitString::parse(&[0x7, 0x1, 0x0]).unwrap();
     }
 
-    #[should_panic(expected = "NoDataForType")]
+    #[should_panic(expected = "IncorrectValue(\"No octects for BitString\")")]
     #[test]
     fn test_parse_boolean_without_enough_value_octets() {
         BitString::parse(&[0x3, 0x0]).unwrap();

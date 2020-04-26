@@ -39,11 +39,11 @@ pub enum Error {
     /// There are no enough data provided for the length specified
     NoDataForLength,
 
-    /// There are not enough data octets for the type to be build
-    NoDataForType,
-
     /// There are octets which were not consumed in decoding
     NoAllDataConsumed,
+
+    /// Problem with received value, such as format or expected length
+    IncorrectValue(String),
 
     /// Error formating non-utf8 characters
     Utf8Error,

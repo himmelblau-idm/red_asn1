@@ -1,8 +1,8 @@
+use super::general::{build_integer_value, parse_integer_value};
+use super::INTEGER_TAG_NUMBER;
 use crate::error as asn1err;
 use crate::tag::Tag;
 use crate::traits::Asn1Object;
-use super::INTEGER_TAG_NUMBER;
-use super::general::{build_integer_value,parse_integer_value};
 
 impl Asn1Object for i128 {
     fn tag() -> Tag {
@@ -136,13 +136,15 @@ mod tests {
         i128::parse(&[0x7, 0x1, 0x0]).unwrap();
     }
 
-    #[should_panic(expected = "NoDataForType")]
+    #[should_panic(expected = "IncorrectValue(\"No octets for i128\")")]
     #[test]
     fn test_parse_without_enough_value_octets() {
         i128::parse(&[0x2, 0x0]).unwrap();
     }
 
-    #[should_panic(expected = "ImplementationError")]
+    #[should_panic(
+        expected = "IncorrectValue(\"Too many octets for i128: 20 octets\")"
+    )]
     #[test]
     fn test_parse_wit_too_much_value_octets() {
         i128::parse(&[

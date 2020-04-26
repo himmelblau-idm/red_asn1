@@ -18,7 +18,9 @@ impl Asn1Object for bool {
 
     fn parse_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         if raw.len() == 0 {
-            return Err(asn1err::Error::NoDataForType)?;
+            return Err(asn1err::Error::IncorrectValue(
+                format!("No octects for bool")
+            ))?;
         }
 
         *self = raw[0] != 0;
@@ -71,7 +73,7 @@ mod tests {
         bool::parse(&[0x7, 0x1, 0x0]).unwrap();
     }
 
-    #[should_panic(expected = "NoDataForType")]
+    #[should_panic(expected = "IncorrectValue(\"No octects for bool\")")]
     #[test]
     fn test_parse_without_enough_value_octets() {
         bool::parse(&[0x1, 0x0]).unwrap();

@@ -1,14 +1,22 @@
 use crate::error as asn1err;
 
-pub fn parse_integer_value(raw: &[u8], max_length: usize) -> asn1err::Result<i128> {
+pub fn parse_integer_value(
+    raw: &[u8],
+    max_length: usize,
+) -> asn1err::Result<i128> {
     if raw.len() == 0 {
-        return Err(asn1err::Error::NoDataForType)?;
+        return Err(asn1err::Error::IncorrectValue(format!(
+            "No octets for i{}",
+            max_length * 8
+        )))?;
     }
 
     if raw.len() > max_length {
-        return Err(asn1err::Error::ImplementationError(
-            "Too much data for implementation".to_string(),
-        ))?;
+        return Err(asn1err::Error::IncorrectValue(format!(
+            "Too many octets for i{}: {} octets",
+            max_length * 8,
+            raw.len()
+        )))?;
     }
 
     let signed_bit = (raw[0] & 0x80) >> 7;
@@ -21,7 +29,6 @@ pub fn parse_integer_value(raw: &[u8], max_length: usize) -> asn1err::Result<i12
 
     return Ok(value);
 }
-
 
 pub fn build_integer_value(int: i128) -> Vec<u8> {
     let mut shifted_value = int;
