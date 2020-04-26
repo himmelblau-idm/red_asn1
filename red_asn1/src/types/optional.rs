@@ -21,40 +21,31 @@ impl<T: Asn1Object> Asn1Object for Option<T> {
         return Vec::new();
     }
 
-    fn parse(raw: &[u8]) -> asn1err::Result<(usize, Self)> {
-        let mut consumed_octets;
+    fn parse(raw: &[u8]) -> asn1err::Result<(&[u8], Self)> {
         let parsed_tag;
+        let raw_local;
         match Tag::parse(raw) {
-            Err(_) => return Ok((0, None)),
-            Ok((octets, tag)) => {
-                consumed_octets = octets;
+            Err(_) => return Ok((raw, None)),
+            Ok((raw_tmp, tag)) => {
+                raw_local = raw_tmp;
                 parsed_tag = tag;
             }
         }
 
         if parsed_tag != Self::tag() {
-            return Ok((0, None));
+            return Ok((raw, None));
         }
 
-        let (_, raw_length) = raw.split_at(consumed_octets);
-
-        let (value_length, consumed_octets_by_length) =
-            parse_length(raw_length)?;
-        consumed_octets += consumed_octets_by_length;
-
-        let (_, raw_value) = raw.split_at(consumed_octets);
-
-        if value_length > raw_value.len() {
+        let (raw_local, length) = parse_length(raw_local)?;
+        if length > raw_local.len() {
             return Err(asn1err::Error::NoDataForLength)?;
         }
 
-        let (raw_value, _) = raw_value.split_at(value_length);
-
-        let mut asn1obj = T::default();
+        let (raw_value, raw_local) = raw_local.split_at(length);
+        let mut asn1obj = Self::default();
         asn1obj.parse_value(raw_value)?;
-        consumed_octets += value_length;
 
-        return Ok((consumed_octets, Some(asn1obj)));
+        return Ok((raw_local, asn1obj));
     }
 
     fn tag() -> Tag {
