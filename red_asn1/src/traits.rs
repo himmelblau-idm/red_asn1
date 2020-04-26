@@ -29,29 +29,22 @@ pub trait Asn1Object: Sized + Default {
 
     /// To parse the object from DER, generally does not need to be overwritten.
     /// Usually, just parse_value should be overwritten
-    fn parse(raw: &[u8]) -> asn1err::Result<(usize, Self)> {
+    fn parse(raw: &[u8]) -> asn1err::Result<(&[u8], Self)> {
         let (raw, parsed_tag) = Tag::parse(raw)?;
         if parsed_tag != Self::tag() {
             return Err(asn1err::Error::UnmatchedTag(TagClass::Universal))?;
         }
 
-
-        let (value_length, consumed_octets_by_length) = parse_length(raw_length)?;
-        consumed_octets += consumed_octets_by_length;
-
-        let (_, raw_value) = raw.split_at(consumed_octets);
-
-        if value_length > raw_value.len() {
+        let (raw, length) = parse_length(raw)?;
+        if length > raw.len() {
             return Err(asn1err::Error::NoDataForLength)?;
         }
 
-        let (raw_value, _) = raw_value.split_at(value_length);
-
+        let (raw_value, raw) = raw.split_at(length);
         let mut asn1obj = Self::default();
         asn1obj.parse_value(raw_value)?;
-        consumed_octets += value_length;
 
-        return Ok((consumed_octets, asn1obj));
+        return Ok((raw, asn1obj));
     }
 
 }
