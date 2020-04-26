@@ -149,8 +149,9 @@ fn test_parse_empty() {
     #[derive(Sequence, Default)]
     struct Person {}
 
-    let (consumed_octets, _) = Person::parse(&[0x30, 0x0]).unwrap();
-    assert_eq!(2, consumed_octets);
+    let x: &[u8] = &[];
+    let (rest, _) = Person::parse(&[0x30, 0x0]).unwrap();
+    assert_eq!(x, rest);
 }
 
 #[test]
@@ -159,9 +160,10 @@ fn test_parse_empty_with_application_tag() {
     #[seq(application_tag = 7)]
     struct TestSequence {}
 
-    let (consumed_octets, _) =
+    let x: &[u8] = &[];
+    let (rest, _) =
         TestSequence::parse(&[0x67, 0x2, 0x30, 0x0]).unwrap();
-    assert_eq!(4, consumed_octets);
+    assert_eq!(x, rest);
 }
 
 #[test]
@@ -169,9 +171,10 @@ fn test_parse_empty_with_excesive_bytes() {
     #[derive(Sequence, Default)]
     struct Person {}
 
-    let (consumed_octets, _) =
+    let x: &[u8] = &[0xff, 0xff];
+    let (rest, _) =
         Person::parse(&[0x30, 0x0, 0xff, 0xff]).unwrap();
-    assert_eq!(2, consumed_octets);
+    assert_eq!(x, rest);
 }
 
 #[should_panic(expected = "SequenceError(\"Person\", UnmatchedTag(Universal))")]

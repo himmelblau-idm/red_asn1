@@ -26,14 +26,23 @@ pub fn code_sequence(sequence: &SequenceDefinition) -> TokenStream {
         inner_parse = quote! {
             #inner_parse
 
-            fn _parse_application_tag(&self, raw_tag: &[u8]) -> red_asn1::Result<usize> {
-                let (consumed_octets, parsed_tag) = Tag::parse(raw_tag)?;
+            fn _parse_application_tag<'a>(
+                &self,
+                raw: &'a [u8]
+            ) -> red_asn1::Result<&'a [u8]> {
+                let (raw, parsed_tag) = Tag::parse(raw)?;
 
-                if parsed_tag != Tag::new(#app_tag_number, TagType::Constructed, TagClass::Application) {
-                    return Err(red_asn1::Error::UnmatchedTag(TagClass::Application))?;
+                if parsed_tag != Tag::new(
+                    #app_tag_number,
+                    TagType::Constructed,
+                    TagClass::Application
+                ) {
+                    return Err(red_asn1::Error::UnmatchedTag(
+                        TagClass::Application
+                    ))?;
                 }
 
-                return Ok(consumed_octets);
+                return Ok(raw);
             }
         };
 
@@ -46,10 +55,10 @@ pub fn code_sequence(sequence: &SequenceDefinition) -> TokenStream {
         };
 
         parse = quote! {
-            fn parse(raw: &[u8]) -> red_asn1::Result<(usize, Self)> {
+            fn parse(raw: &[u8]) -> red_asn1::Result<(&[u8], Self)> {
                 let mut sequence = Self::default();
-                let size = sequence._inner_parse(raw)?;
-                return Ok((size, sequence));
+                let raw = sequence._inner_parse(raw)?;
+                return Ok((raw, sequence));
             }
         }
     }
@@ -96,14 +105,15 @@ fn code_parse_value(
 ) -> TokenStream {
     return quote! {
         fn parse_value(&mut self, raw: &[u8]) -> red_asn1::Result<()> {
-            let mut consumed_octets = 0;
             #parse_calls
 
-            if consumed_octets < raw.len() {
+            if raw.len() > 0 {
                 return Err(red_asn1::Error::SequenceError(
-                                stringify!(#seq_name).to_string(),
-                                Box::new(red_asn1::Error::from(red_asn1::Error::NoAllDataConsumed))
-                        ))?;
+                    stringify!(#seq_name).to_string(),
+                    Box::new(red_asn1::Error::from(
+                        red_asn1::Error::NoAllDataConsumed
+                    ))
+                ))?;
             }
 
             return Ok(());
@@ -132,8 +142,11 @@ fn code_inner_build() -> TokenStream {
 /// is parsed in the `parse` function
 fn code_inner_parse(seq_name: &Ident) -> TokenStream {
     return quote! {
-        fn _inner_parse(&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
-            let (mut consumed_octets, parsed_tag) = Tag::parse(raw).or_else( |error|
+        fn _inner_parse<'a>(
+            &mut self,
+            raw: &'a [u8]
+        ) -> red_asn1::Result<&'a [u8]> {
+            let (raw, parsed_tag) = Tag::parse(raw).or_else( |error|
                 Err(red_asn1::Error::SequenceError(
                     stringify!(#seq_name).to_string(),
                     Box::new(error.clone())
@@ -147,32 +160,24 @@ fn code_inner_parse(seq_name: &Ident) -> TokenStream {
                 ))
             }
 
-            let (_, raw_length) = raw.split_at(consumed_octets);
-
-            let (value_length, consumed_octets_by_length) = red_asn1::parse_length(raw_length).or_else( |error|
+            let (raw, length) = red_asn1::parse_length(raw).or_else( |error|
                 Err(red_asn1::Error::SequenceError(
                     stringify!(#seq_name).to_string(),
                     Box::new(error.clone())
                 ))
             )?;
 
-            consumed_octets += consumed_octets_by_length;
-
-            let (_, raw_value) = raw.split_at(consumed_octets);
-
-            if value_length > raw_value.len() {
+            if length > raw.len() {
                 return Err(red_asn1::Error::SequenceError(
                     stringify!(#seq_name).to_string(),
                     Box::new(red_asn1::Error::from(red_asn1::Error::NoDataForLength))
                 ))?;
             }
 
-            let (raw_value, _) = raw_value.split_at(value_length);
-
+            let (raw_value, raw) = raw.split_at(length);
             self.parse_value(raw_value)?;
-            consumed_octets += value_length;
 
-            return Ok(consumed_octets);
+            return Ok(raw);
         }
     };
 }
@@ -203,39 +208,34 @@ fn code_build_with_application_tag(app_tag_number: u8) -> TokenStream {
 /// in case of having an application tag defined by the seq tag
 fn code_parse_with_application_tag(seq_name: &Ident) -> TokenStream {
     return quote! {
-        fn parse(raw: &[u8]) -> red_asn1::Result<(usize, Self)> {
+        fn parse(raw: &[u8]) -> red_asn1::Result<(&[u8], Self)> {
             let mut sequence = Self::default();
-            let mut consumed_octets = sequence._parse_application_tag(raw).or_else(
+            let raw = sequence._parse_application_tag(raw).or_else(
                 |error|
                 Err(red_asn1::Error::SequenceError(
                     stringify!(#seq_name).to_string(),
                     Box::new(error.clone())
                 ))
             )?;
-            let (_, raw_length) = raw.split_at(consumed_octets);
-            let (value_length, consumed_octets_by_length) = red_asn1::parse_length(raw_length).or_else(
-                |error|
-                Err(red_asn1::Error::SequenceError(
-                    stringify!(#seq_name).to_string(),
-                    Box::new(error.clone())
-                ))
-            )?;
-            consumed_octets += consumed_octets_by_length;
-            let (_, raw_value) = raw.split_at(consumed_octets);
 
-            if value_length > raw_value.len() {
+            let (raw, length) = red_asn1::parse_length(raw).or_else(
+                |error|
+                Err(red_asn1::Error::SequenceError(
+                    stringify!(#seq_name).to_string(),
+                    Box::new(error.clone())
+                ))
+            )?;
+
+            if length > raw.len() {
                 return Err(red_asn1::Error::SequenceError(
                     stringify!(#seq_name).to_string(),
                     Box::new(red_asn1::Error::from(red_asn1::Error::NoDataForLength))
                 ))?;
             }
 
-            let (raw_value, _) = raw_value.split_at(value_length);
-
+            let (raw_value, raw) = raw.split_at(length);
             sequence._inner_parse(raw_value)?;
-            consumed_octets += value_length;
-
-            return Ok((consumed_octets, sequence));
+            return Ok((raw, sequence));
         }
     };
 }
@@ -260,7 +260,7 @@ pub fn code_sequence_inner_calls(
 
         parse_calls = quote! {
             #parse_calls
-            consumed_octets += self.#parser_name(&raw[consumed_octets..]).or_else(
+            let raw = self.#parser_name(raw).or_else(
                 |error| Err(red_asn1::Error::SequenceFieldError(
                     stringify!(#seq_name).to_string(),
                     stringify!(#field_name).to_string(),

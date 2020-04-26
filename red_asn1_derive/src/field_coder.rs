@@ -16,9 +16,7 @@ pub fn code_field(field: &FieldDefinition) -> FieldCode {
 fn code_field_parser(field: &FieldDefinition) -> TokenStream {
     match field.context_tag_number {
         Some(ctx_tag) => match field.optional {
-            true => {
-                code_optional_field_parser_with_context_tag(field, ctx_tag)
-            }
+            true => code_optional_field_parser_with_context_tag(field, ctx_tag),
             false => {
                 code_required_field_parser_with_context_tag(field, ctx_tag)
             }
@@ -37,13 +35,16 @@ fn code_required_field_parser_with_context_tag(
     let field_type = compose_field_type(&field.kind, &field.sub_kinds);
 
     return quote! {
-        fn #parser_name (&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
-            let mut consumed_octets = 0;
+        fn #parser_name<'a>(
+            &mut self,
+            raw: &'a [u8]
+        ) -> red_asn1::Result<&'a [u8]> {
             let parsed_tag;
+            let mut raw = raw;
 
             match Tag::parse(raw) {
-                Ok((octets_count, tag)) => {
-                    consumed_octets += octets_count;
+                Ok((raw_tmp, tag)) => {
+                    raw = raw_tmp;
                     parsed_tag = tag;
                 },
                 Err(error) => {
@@ -65,23 +66,17 @@ fn code_required_field_parser_with_context_tag(
                 return Err(red_asn1::Error::UnmatchedTag(TagClass::Context))?;
             }
 
-            let (_, raw_length) = raw.split_at(consumed_octets);
-
-            let (value_length, consumed_octets_by_length) = red_asn1::parse_length(raw_length)?;
-            consumed_octets += consumed_octets_by_length;
-            let (_, raw_value) = raw.split_at(consumed_octets);
-
-            if value_length > raw_value.len() {
+            let (raw, length) = red_asn1::parse_length(raw)?;
+            if length > raw.len() {
                 return Err(red_asn1::Error::NoDataForLength)?;
             }
 
-            let (raw_value, _) = raw_value.split_at(value_length);
+            let (raw_value, raw) = raw.split_at(length);
 
             let (_, field) = #field_type::parse(raw_value)?;
-            consumed_octets += value_length;
             self.#field_name = field;
 
-            return Ok(consumed_octets);
+            return Ok(raw);
         }
     };
 }
@@ -100,50 +95,49 @@ fn code_optional_field_parser_with_context_tag(
     let field_type = compose_field_type(&field.kind, &field.sub_kinds);
 
     return quote! {
-        fn #parser_name (&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
-            let mut consumed_octets = 0;
+        fn #parser_name<'a>(
+            &mut self,
+            raw: &'a [u8]
+        ) -> red_asn1::Result<&'a [u8]> {
             let parsed_tag;
+            let mut raw_local = raw;
 
             match Tag::parse(raw) {
-                Ok((octets_count, tag)) => {
-                    consumed_octets += octets_count;
+                Ok((raw_tmp, tag)) => {
+                    raw_local = raw_tmp;
                     parsed_tag = tag;
                 },
                 Err(error) => {
                     self.#field_name = None;
-                    return Ok(0);
+                    return Ok(raw);
                 }
             }
 
-            if parsed_tag != Tag::new(#context_tag_number, TagType::Constructed, TagClass::Context) {
+            if parsed_tag != Tag::new(
+                #context_tag_number,
+                TagType::Constructed,
+                TagClass::Context
+            ) {
                 self.#field_name = None;
-                return Ok(0);
+                return Ok(raw);
             }
 
-            let (_, raw_length) = raw.split_at(consumed_octets);
-
-            let (value_length, consumed_octets_by_length) = red_asn1::parse_length(raw_length)?;
-            consumed_octets += consumed_octets_by_length;
-            let (_, raw_value) = raw.split_at(consumed_octets);
-
-            if value_length > raw_value.len() {
+            let (raw_local, length) = red_asn1::parse_length(raw_local)?;
+            if length > raw.len() {
                 return Err(red_asn1::Error::NoDataForLength)?;
             }
 
-            let (raw_value, _) = raw_value.split_at(value_length);
+            let (raw_value, raw_local) = raw_local.split_at(length);
 
             let (_, type_tag) = Tag::parse(raw_value)?;
             if type_tag != #field_type::tag() {
                 return Err(red_asn1::Error::UnmatchedTag(TagClass::Universal));
             }
 
-
             let (_, field) = #field_type::parse(raw_value)?;
-            consumed_octets += value_length;
-
             self.#field_name = field;
 
-            return Ok(consumed_octets);
+            return Ok(raw_local);
         }
     };
 }
@@ -155,10 +149,13 @@ fn code_field_parser_without_context_tag(
     let field_name = &field.id;
     let field_type = compose_field_type(&field.kind, &field.sub_kinds);
     return quote! {
-        fn #parser_name (&mut self, raw: &[u8]) -> red_asn1::Result<usize> {
-            let (size, field) = #field_type::parse(raw)?;
+        fn #parser_name<'a>(
+            &mut self,
+            raw: &'a [u8]
+        ) -> red_asn1::Result<&'a [u8]> {
+            let (raw, field) = #field_type::parse(raw)?;
             self.#field_name = field;
-            return Ok(size);
+            return Ok(raw);
         }
     };
 }
