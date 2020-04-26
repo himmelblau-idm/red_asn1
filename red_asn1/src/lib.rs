@@ -1,8 +1,46 @@
+//! # Red ASN1
 //! A little library to build/parse ASN1 DER
 //! 
-//! # Example
+//! ## Examples
+//! Parsing and building `bool`:
+//! ```rust
+//! use red_asn1::Asn1Object;
 //! 
+//! assert_eq!(true, bool::parse(&[0x1, 0x1, 0xff]).unwrap().1);
+//! assert_eq!(false, bool::parse(&[0x1, 0x1, 0x0]).unwrap().1);
+//! 
+//! assert_eq!(true.build(), vec![0x1, 0x1, 0xff]);
+//! assert_eq!(false.build(), vec![0x1, 0x1, 0x0]);
 //! ```
+//! 
+//! 
+//! Parsing and building `Integer`:
+//! ```rust
+//! use red_asn1::{Integer, Asn1Object};
+//! 
+//! assert_eq!(2, Integer::parse(&[0x2, 0x1, 0x2]).unwrap().1);
+//! assert_eq!(2.build(), vec![0x2, 0x1, 0x2]);
+//! ```
+//! 
+//! Parsing and building `String`:
+//! ```rust
+//! use red_asn1::Asn1Object;
+//! 
+//! assert_eq!(
+//!     "John".to_string(), 
+//!     String::parse(&[0x1b, 0x4, 0x4a, 0x6f, 0x68, 0x6e]).unwrap().1
+//! );
+//! 
+//! assert_eq!(
+//!     "John".to_string().build(), 
+//!     vec![0x1b, 0x4, 0x4a, 0x6f, 0x68, 0x6e]
+//! );
+//! ```
+//! 
+//! 
+//! Creating custom sequences:
+//! 
+//! ```rust
 //! /*
 //! Person ::= [APPLICATION 1] SEQUENCE {
 //!     name:       [0] GeneralString,
@@ -51,7 +89,23 @@
 //! assert_eq!(Some("Hawaii".to_string()), rachel.address);
 //! 
 //! ```
+//!
+//! ## Implemented types
 //! 
+//! | ASN1            | red_asn1 type   | Rust type                                |
+//! |-----------------|-----------------|------------------------------------------|
+//! | BOOLEAN         | Boolean         | bool                                     |
+//! | INTEGER         | Integer         | i128                                     |
+//! | BIT STRING      | BitSring        |                                          |
+//! | OCTET STRING    | OctetString     | Vec\<u8\>                                  |
+//! | GeneralString   | GeneralString   | String                                   |
+//! | IA5String       | IA5String       | ascii::AsciiString                       |
+//! | GeneralizedTime | GeneralizedTime |                                          |
+//! | SEQUENCE OF     | SequenceOf      | Vec<T: Asn1Object>                       |
+//! | SEQUENCE        |                 | struct with #[derive(Sequence, Default)] |
+//! | OPTIONAL        | Optional        | Option                                   |
+//! |                 |                 |                                          |
+
 
 
 mod error;
