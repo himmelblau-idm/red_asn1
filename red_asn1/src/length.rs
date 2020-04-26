@@ -25,7 +25,7 @@ pub fn build_length(value_size: usize) -> Vec<u8> {
 
 /// To parse the object value length from DER, should not be overwritten
 pub fn parse_length(raw: &[u8]) -> Result<(&[u8], usize)> {
-    let (raw, len_byte) =
+    let (mut raw, len_byte) =
         be_u8(raw).map_err(|_: nom::Err<(&[u8], nom::error::ErrorKind)>| {
             Error::LengthEmpty
         })?;
@@ -39,7 +39,7 @@ pub fn parse_length(raw: &[u8]) -> Result<(&[u8], usize)> {
     let length_of_length = length;
     let mut length = 0;
 
-    for i in 1..(length_of_length + 1) {
+    for _ in 1..(length_of_length + 1) {
         length <<= 8;
         let (raw_tmp, len_byte) = be_u8(raw).map_err(
             |_: nom::Err<(&[u8], nom::error::ErrorKind)>| {
