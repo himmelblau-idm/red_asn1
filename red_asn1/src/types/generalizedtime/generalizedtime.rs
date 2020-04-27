@@ -1,17 +1,30 @@
-use super::TimeFormat;
 use crate::error as asn1err;
 use crate::tag::Tag;
 use crate::traits::Asn1Object;
 use chrono::prelude::*;
+use std::ops::{Deref, DerefMut};
 use std::str;
 
 pub static GENERALIZED_TIME_TAG_NUMBER: u8 = 0x18;
 
 /// Class to build/parse GeneralizedTime ASN1
-#[derive(Debug, PartialEq)]
+
+#[derive(Debug, PartialEq, Clone)]
 pub struct GeneralizedTime {
-    pub time: DateTime<Utc>,
-    pub format: TimeFormat,
+    time: DateTime<Utc>,
+}
+
+impl Deref for GeneralizedTime {
+    type Target = DateTime<Utc>;
+    fn deref(&self) -> &Self::Target {
+        &self.time
+    }
+}
+
+impl DerefMut for GeneralizedTime {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.time
+    }
 }
 
 impl Asn1Object for GeneralizedTime {
@@ -20,14 +33,30 @@ impl Asn1Object for GeneralizedTime {
     }
 
     fn build_value(&self) -> Vec<u8> {
-        return self.format.format_to_string(&self.time).into_bytes();
+        let formatted_string = if self.nanosecond() != 0 {
+            let decisecond: u8 = (self.nanosecond() / 100000000) as u8;
+            format!(
+                "{:04}{:02}{:02}{:02}{:02}{:02}.{}Z",
+                self.year(),
+                self.month(),
+                self.day(),
+                self.hour(),
+                self.minute(),
+                self.second(),
+                decisecond
+            )
+        } else {
+            self.format("%Y%m%d%H%M%SZ").to_string()
+        };
+
+        return formatted_string.into_bytes();
     }
 
     fn parse_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
         if raw.len() < 15 {
-            return Err(asn1err::Error::IncorrectValue(
-                format!("No octects for GeneralizedTime")
-            ))?;
+            return Err(asn1err::Error::IncorrectValue(format!(
+                "No octects for GeneralizedTime"
+            )))?;
         }
 
         let year_str = str::from_utf8(&raw[0..4])?;
@@ -44,12 +73,10 @@ impl Asn1Object for GeneralizedTime {
         let minute: u32 = minute_str.parse()?;
         let second: u32 = second_str.parse()?;
         let mut decisecond: u32 = 0;
-        self.format = TimeFormat::YYYYmmddHHMMSSZ;
 
         if raw.len() >= 17 {
             let decisecond_str = str::from_utf8(&raw[15..16])?;
             decisecond = decisecond_str.parse()?;
-            self.format = TimeFormat::YYYYmmddHHMMSS_DZ;
         }
 
         let is_utc: bool = raw[raw.len() - 1] == 'Z' as u8;
@@ -75,17 +102,13 @@ impl Default for GeneralizedTime {
     fn default() -> Self {
         return Self {
             time: Utc.timestamp(0, 0),
-            format: TimeFormat::default(),
         };
     }
 }
 
 impl From<DateTime<Utc>> for GeneralizedTime {
     fn from(time: DateTime<Utc>) -> Self {
-        return Self {
-            time,
-            format: TimeFormat::default(),
-        };
+        return Self { time };
     }
 }
 
@@ -109,7 +132,6 @@ mod tests {
         assert_eq!(
             GeneralizedTime {
                 time: Utc.timestamp(0, 0),
-                format: TimeFormat::default()
             },
             GeneralizedTime::default()
         )
@@ -130,31 +152,14 @@ mod tests {
     }
 
     #[test]
-    fn test_build_generalized_time_without_deciseconds() {
-        let mut gen_time = GeneralizedTime::from(
-            Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000),
-        );
-        gen_time.format = TimeFormat::YYYYmmddHHMMSSZ;
-        assert_eq!(
-            vec![
-                0x18, 0xf, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36,
-                0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x5a
-            ],
-            gen_time.build()
-        );
-    }
-
-    #[test]
-    fn test_parse() {
-        let mut gentime = GeneralizedTime::from(
-                Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)
-        );
-        gentime.format = TimeFormat::YYYYmmddHHMMSS_DZ;
+    fn test_build_without_deciseconds() {
+        let gentime =
+            GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms(21, 6, 27));
         assert_eq!(
             gentime,
             GeneralizedTime::parse(&[
-                0x18, 0x11, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36,
-                0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33, 0x5a
+                0x18, 0xf, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36,
+                0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x5a
             ])
             .unwrap()
             .1
@@ -162,14 +167,15 @@ mod tests {
     }
 
     #[test]
-    fn test_build_without_deciseconds() {
-        let mut gentime = GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms(21, 6, 27));
-        gentime.format = TimeFormat::YYYYmmddHHMMSSZ;
+    fn test_parse() {
+        let gentime = GeneralizedTime::from(
+            Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000),
+        );
         assert_eq!(
             gentime,
             GeneralizedTime::parse(&[
-                0x18, 0xf, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36,
-                0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x5a
+                0x18, 0x11, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36,
+                0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33, 0x5a
             ])
             .unwrap()
             .1
@@ -195,7 +201,9 @@ mod tests {
         );
     }
 
-    #[should_panic(expected = "IncorrectValue(\"No octects for GeneralizedTime\")")]
+    #[should_panic(
+        expected = "IncorrectValue(\"No octects for GeneralizedTime\")"
+    )]
     #[test]
     fn test_parse_without_enough_value_octets() {
         GeneralizedTime::parse(&[

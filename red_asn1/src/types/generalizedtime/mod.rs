@@ -1,5 +1,2 @@
 mod generalizedtime;
-pub use generalizedtime::*;
-
-mod timeformat;
-pub use timeformat::*;
+pub use generalizedtime::{GeneralizedTime, GENERALIZED_TIME_TAG_NUMBER};
