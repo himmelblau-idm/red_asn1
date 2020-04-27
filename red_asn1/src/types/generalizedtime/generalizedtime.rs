@@ -44,10 +44,12 @@ impl Asn1Object for GeneralizedTime {
         let minute: u32 = minute_str.parse()?;
         let second: u32 = second_str.parse()?;
         let mut decisecond: u32 = 0;
+        self.format = TimeFormat::YYYYmmddHHMMSSZ;
 
         if raw.len() >= 17 {
             let decisecond_str = str::from_utf8(&raw[15..16])?;
             decisecond = decisecond_str.parse()?;
+            self.format = TimeFormat::YYYYmmddHHMMSS_DZ;
         }
 
         let is_utc: bool = raw[raw.len() - 1] == 'Z' as u8;
@@ -144,10 +146,12 @@ mod tests {
 
     #[test]
     fn test_parse() {
-        assert_eq!(
-            GeneralizedTime::from(
+        let mut gentime = GeneralizedTime::from(
                 Utc.ymd(1985, 11, 6).and_hms_nano(21, 6, 27, 300000000)
-            ),
+        );
+        gentime.format = TimeFormat::YYYYmmddHHMMSS_DZ;
+        assert_eq!(
+            gentime,
             GeneralizedTime::parse(&[
                 0x18, 0x11, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36,
                 0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x2e, 0x33, 0x5a
@@ -159,8 +163,10 @@ mod tests {
 
     #[test]
     fn test_build_without_deciseconds() {
+        let mut gentime = GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms(21, 6, 27));
+        gentime.format = TimeFormat::YYYYmmddHHMMSSZ;
         assert_eq!(
-            GeneralizedTime::from(Utc.ymd(1985, 11, 6).and_hms(21, 6, 27)),
+            gentime,
             GeneralizedTime::parse(&[
                 0x18, 0xf, 0x31, 0x39, 0x38, 0x35, 0x31, 0x31, 0x30, 0x36,
                 0x32, 0x31, 0x30, 0x36, 0x32, 0x37, 0x5a
