@@ -11,7 +11,7 @@ pub static GENERALIZED_TIME_TAG_NUMBER: u8 = 0x18;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct GeneralizedTime {
-    time: DateTime<Utc>,
+    pub time: DateTime<Utc>,
 }
 
 impl Deref for GeneralizedTime {

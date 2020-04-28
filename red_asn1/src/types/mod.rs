@@ -5,7 +5,7 @@ mod boolean;
 pub use boolean::*;
 
 mod generalizedtime;
-pub use generalizedtime::*;
+pub use generalizedtime::{GeneralizedTime, GENERALIZED_TIME_TAG_NUMBER};
 
 mod generalstring;
 pub use generalstring::*;
