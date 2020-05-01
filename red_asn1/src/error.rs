@@ -63,7 +63,7 @@ pub enum Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(&self, f)
+        write!(f, "{:?}", self)
     }
 }
 
