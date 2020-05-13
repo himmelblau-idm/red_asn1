@@ -5,7 +5,7 @@ use crate::traits::Asn1Object;
 pub static BIT_STRING_TAG_NUMBER: u8 = 0x3;
 
 /// Class to build/parse BitSring ASN1
-#[derive(Debug, PartialEq, Default)]
+#[derive(Debug, PartialEq, Default, Clone)]
 pub struct BitString {
     pub bytes: Vec<u8>,
     pub padding_length: u8,
