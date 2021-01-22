@@ -13,6 +13,9 @@ pub use generalstring::*;
 mod ia5string;
 pub use ia5string::*;
 
+mod enumerated;
+pub use enumerated::{Enumerated, ENUMERATED_TAG_NUMBER};
+
 mod integer;
 pub use integer::*;
 
@@ -39,6 +42,7 @@ mod tests {
         assert_eq!(vec![0x02], Integer::tag().build());
         assert_eq!(vec![0x03], BitString::tag().build());
         assert_eq!(vec![0x04], OctetString::tag().build());
+        assert_eq!(vec![0x0a], Enumerated::<u32>::tag().build());
         assert_eq!(vec![0x30], SequenceOf::<Integer>::tag().build());
         assert_eq!(vec![0x16], IA5String::tag().build());
         assert_eq!(vec![0x18], GeneralizedTime::tag().build());
