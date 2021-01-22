@@ -1,29 +1,22 @@
 use super::general::{build_integer_value, parse_integer_value};
-use super::INTEGER_TAG_NUMBER;
 use crate::error as asn1err;
-use crate::tag::Tag;
-use crate::traits::Asn1Object;
 use std::convert::TryInto;
+use super::Asn1Int;
 
-impl Asn1Object for i64 {
-    fn tag() -> Tag {
-        return Tag::new_primitive_universal(INTEGER_TAG_NUMBER);
-    }
-
-    fn build_value(&self) -> Vec<u8> {
+impl Asn1Int for i64 {
+    fn build_int_value(&self) -> Vec<u8> {
         return build_integer_value(*self as i128);
     }
 
-    fn parse_value(&mut self, raw: &[u8]) -> asn1err::Result<()> {
+    fn parse_int_value(raw: &[u8]) -> asn1err::Result<Self> {
         let value = parse_integer_value(raw, 8)?;
-        *self = value.try_into().expect("Error parsing i64, too much data");
-        return Ok(());
+        return Ok(value.try_into().expect("Error parsing i64, too much data"));
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::traits::Asn1Object;
 
     #[test]
     fn test_build() {

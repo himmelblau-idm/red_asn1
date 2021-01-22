@@ -9,3 +9,5 @@ mod uint32;
 pub static INTEGER_TAG_NUMBER: u8 = 0x2;
 /// Class to build/parse Integer ASN1
 pub type Integer = i128;
+
+pub use int_trait::Asn1Int;
