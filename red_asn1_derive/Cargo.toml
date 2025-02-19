@@ -12,7 +12,7 @@ documentation = "https://docs.rs/himmelblau_red_asn1_derive/"
 proc-macro = true
 
 [dependencies]
-syn = "0.15"
+syn = "2.0"
 quote = "0.6"
 proc-macro2 = "0.4"
 
