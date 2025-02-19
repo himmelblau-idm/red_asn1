@@ -19,8 +19,8 @@
 //! }
 //! */
 //!
-//! use red_asn1::*;
-//! use red_asn1_derive::Sequence;
+//! use himmelblau_red_asn1::*;
+//! use himmelblau_red_asn1_derive::Sequence;
 //!
 //! #[derive(Sequence, Default)]
 //! #[seq(application_tag = 1)]

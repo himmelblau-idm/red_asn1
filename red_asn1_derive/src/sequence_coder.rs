@@ -29,16 +29,16 @@ pub fn code_sequence(sequence: &SequenceDefinition) -> TokenStream {
             fn _parse_application_tag<'a>(
                 &self,
                 raw: &'a [u8]
-            ) -> red_asn1::Result<&'a [u8]> {
-                let (raw, parsed_tag) = red_asn1::Tag::parse(raw)?;
+            ) -> himmelblau_red_asn1::Result<&'a [u8]> {
+                let (raw, parsed_tag) = himmelblau_red_asn1::Tag::parse(raw)?;
 
-                if parsed_tag != red_asn1::Tag::new(
+                if parsed_tag != himmelblau_red_asn1::Tag::new(
                     #app_tag_number,
-                    red_asn1::TagType::Constructed,
-                    red_asn1::TagClass::Application
+                    himmelblau_red_asn1::TagType::Constructed,
+                    himmelblau_red_asn1::TagClass::Application
                 ) {
-                    return Err(red_asn1::Error::UnmatchedTag(
-                        red_asn1::TagClass::Application
+                    return Err(himmelblau_red_asn1::Error::UnmatchedTag(
+                        himmelblau_red_asn1::TagClass::Application
                     ))?;
                 }
 
@@ -55,7 +55,7 @@ pub fn code_sequence(sequence: &SequenceDefinition) -> TokenStream {
         };
 
         parse = quote! {
-            fn parse(raw: &[u8]) -> red_asn1::Result<(&[u8], Self)> {
+            fn parse(raw: &[u8]) -> himmelblau_red_asn1::Result<(&[u8], Self)> {
                 let mut sequence = Self::default();
                 let raw = sequence._inner_parse(raw)?;
                 return Ok((raw, sequence));
@@ -64,10 +64,10 @@ pub fn code_sequence(sequence: &SequenceDefinition) -> TokenStream {
     }
 
     let total_exp = quote! {
-        impl red_asn1::Asn1Object for #seq_name {
-            fn tag() -> red_asn1::Tag {
-                return red_asn1::Tag::new_constructed_universal(
-                    red_asn1::SEQUENCE_TAG_NUMBER
+        impl himmelblau_red_asn1::Asn1Object for #seq_name {
+            fn tag() -> himmelblau_red_asn1::Tag {
+                return himmelblau_red_asn1::Tag::new_constructed_universal(
+                    himmelblau_red_asn1::SEQUENCE_TAG_NUMBER
                 );
             }
 
@@ -106,14 +106,14 @@ fn code_parse_value(
     seq_name: &Ident,
 ) -> TokenStream {
     return quote! {
-        fn parse_value(&mut self, raw: &[u8]) -> red_asn1::Result<()> {
+        fn parse_value(&mut self, raw: &[u8]) -> himmelblau_red_asn1::Result<()> {
             #parse_calls
 
             if raw.len() > 0 {
-                return Err(red_asn1::Error::SequenceError(
+                return Err(himmelblau_red_asn1::Error::SequenceError(
                     stringify!(#seq_name).to_string(),
-                    Box::new(red_asn1::Error::from(
-                        red_asn1::Error::NoAllDataConsumed
+                    Box::new(himmelblau_red_asn1::Error::from(
+                        himmelblau_red_asn1::Error::NoAllDataConsumed
                     ))
                 ))?;
             }
@@ -128,7 +128,7 @@ fn code_inner_build() -> TokenStream {
         fn _inner_build(&self) -> Vec<u8> {
             let mut built = Self::tag().build();
             let mut built_value = self.build_value();
-            let mut built_length = red_asn1::build_length(built_value.len());
+            let mut built_length = himmelblau_red_asn1::build_length(built_value.len());
 
             built.append(&mut built_length);
             built.append(&mut built_value);
@@ -147,36 +147,36 @@ fn code_inner_parse(seq_name: &Ident) -> TokenStream {
         fn _inner_parse<'a>(
             &mut self,
             raw: &'a [u8]
-        ) -> red_asn1::Result<&'a [u8]> {
-            let (raw, parsed_tag) = red_asn1::Tag::parse(raw).or_else( |error|
-                Err(red_asn1::Error::SequenceError(
+        ) -> himmelblau_red_asn1::Result<&'a [u8]> {
+            let (raw, parsed_tag) = himmelblau_red_asn1::Tag::parse(raw).or_else( |error|
+                Err(himmelblau_red_asn1::Error::SequenceError(
                     stringify!(#seq_name).to_string(),
                     Box::new(error.clone())
                 ))
             )?;
 
             if parsed_tag != Self::tag() {
-                return Err(red_asn1::Error::SequenceError(
+                return Err(himmelblau_red_asn1::Error::SequenceError(
                     stringify!(#seq_name).to_string(),
                     Box::new(
-                        red_asn1::Error::UnmatchedTag(
-                            red_asn1::TagClass::Universal
+                        himmelblau_red_asn1::Error::UnmatchedTag(
+                            himmelblau_red_asn1::TagClass::Universal
                         )
                     )
                 ))
             }
 
-            let (raw, length) = red_asn1::parse_length(raw).or_else( |error|
-                Err(red_asn1::Error::SequenceError(
+            let (raw, length) = himmelblau_red_asn1::parse_length(raw).or_else( |error|
+                Err(himmelblau_red_asn1::Error::SequenceError(
                     stringify!(#seq_name).to_string(),
                     Box::new(error.clone())
                 ))
             )?;
 
             if length > raw.len() {
-                return Err(red_asn1::Error::SequenceError(
+                return Err(himmelblau_red_asn1::Error::SequenceError(
                     stringify!(#seq_name).to_string(),
-                    Box::new(red_asn1::Error::from(red_asn1::Error::NoDataForLength))
+                    Box::new(himmelblau_red_asn1::Error::from(himmelblau_red_asn1::Error::NoDataForLength))
                 ))?;
             }
 
@@ -193,14 +193,14 @@ fn code_inner_parse(seq_name: &Ident) -> TokenStream {
 fn code_build_with_application_tag(app_tag_number: u8) -> TokenStream {
     return quote! {
         fn build(&self) -> Vec<u8> {
-            let mut built = red_asn1::Tag::new(
+            let mut built = himmelblau_red_asn1::Tag::new(
                 #app_tag_number,
-                red_asn1::TagType::Constructed,
-                red_asn1::TagClass::Application
+                himmelblau_red_asn1::TagType::Constructed,
+                himmelblau_red_asn1::TagClass::Application
             ).build();
 
             let mut built_value = self._inner_build();
-            let mut built_length = red_asn1::build_length(built_value.len());
+            let mut built_length = himmelblau_red_asn1::build_length(built_value.len());
 
             built.append(&mut built_length);
             built.append(&mut built_value);
@@ -214,28 +214,28 @@ fn code_build_with_application_tag(app_tag_number: u8) -> TokenStream {
 /// in case of having an application tag defined by the seq tag
 fn code_parse_with_application_tag(seq_name: &Ident) -> TokenStream {
     return quote! {
-        fn parse(raw: &[u8]) -> red_asn1::Result<(&[u8], Self)> {
+        fn parse(raw: &[u8]) -> himmelblau_red_asn1::Result<(&[u8], Self)> {
             let mut sequence = Self::default();
             let raw = sequence._parse_application_tag(raw).or_else(
                 |error|
-                Err(red_asn1::Error::SequenceError(
+                Err(himmelblau_red_asn1::Error::SequenceError(
                     stringify!(#seq_name).to_string(),
                     Box::new(error.clone())
                 ))
             )?;
 
-            let (raw, length) = red_asn1::parse_length(raw).or_else(
+            let (raw, length) = himmelblau_red_asn1::parse_length(raw).or_else(
                 |error|
-                Err(red_asn1::Error::SequenceError(
+                Err(himmelblau_red_asn1::Error::SequenceError(
                     stringify!(#seq_name).to_string(),
                     Box::new(error.clone())
                 ))
             )?;
 
             if length > raw.len() {
-                return Err(red_asn1::Error::SequenceError(
+                return Err(himmelblau_red_asn1::Error::SequenceError(
                     stringify!(#seq_name).to_string(),
-                    Box::new(red_asn1::Error::from(red_asn1::Error::NoDataForLength))
+                    Box::new(himmelblau_red_asn1::Error::from(himmelblau_red_asn1::Error::NoDataForLength))
                 ))?;
             }
 
@@ -267,7 +267,7 @@ pub fn code_sequence_inner_calls(
         parse_calls = quote! {
             #parse_calls
             let raw = self.#parser_name(raw).or_else(
-                |error| Err(red_asn1::Error::SequenceFieldError(
+                |error| Err(himmelblau_red_asn1::Error::SequenceFieldError(
                     stringify!(#seq_name).to_string(),
                     stringify!(#field_name).to_string(),
                     Box::new(error.clone())

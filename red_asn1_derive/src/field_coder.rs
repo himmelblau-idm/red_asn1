@@ -38,28 +38,28 @@ fn code_required_field_parser_with_context_tag(
         fn #parser_name<'a>(
             &mut self,
             raw: &'a [u8]
-        ) -> red_asn1::Result<&'a [u8]> {
+        ) -> himmelblau_red_asn1::Result<&'a [u8]> {
             let parsed_tag;
             let mut raw = raw;
 
-            match red_asn1::Tag::parse(raw) {
+            match himmelblau_red_asn1::Tag::parse(raw) {
                 Ok((raw_tmp, tag)) => {
                     raw = raw_tmp;
                     parsed_tag = tag;
                 },
                 Err(error) => {
                     match error.clone() {
-                        red_asn1::Error::NotEnoughTagOctets(_) => {
+                        himmelblau_red_asn1::Error::NotEnoughTagOctets(_) => {
                             return Err(
-                                red_asn1::Error::NotEnoughTagOctets(
-                                    red_asn1::TagClass::Context
+                                himmelblau_red_asn1::Error::NotEnoughTagOctets(
+                                    himmelblau_red_asn1::TagClass::Context
                                 )
                             )?;
                         }
-                        red_asn1::Error::EmptyTag(_) => {
+                        himmelblau_red_asn1::Error::EmptyTag(_) => {
                             return Err(
-                                red_asn1::Error::EmptyTag(
-                                    red_asn1::TagClass::Context
+                                himmelblau_red_asn1::Error::EmptyTag(
+                                    himmelblau_red_asn1::TagClass::Context
                                 )
                             )?;
                         }
@@ -70,21 +70,21 @@ fn code_required_field_parser_with_context_tag(
                 }
             }
 
-            if parsed_tag != red_asn1::Tag::new(
+            if parsed_tag != himmelblau_red_asn1::Tag::new(
                 #context_tag_number,
-                red_asn1::TagType::Constructed,
-                red_asn1::TagClass::Context
+                himmelblau_red_asn1::TagType::Constructed,
+                himmelblau_red_asn1::TagClass::Context
             ) {
                 return Err(
-                    red_asn1::Error::UnmatchedTag(
-                        red_asn1::TagClass::Context
+                    himmelblau_red_asn1::Error::UnmatchedTag(
+                        himmelblau_red_asn1::TagClass::Context
                     )
                 )?;
             }
 
-            let (raw, length) = red_asn1::parse_length(raw)?;
+            let (raw, length) = himmelblau_red_asn1::parse_length(raw)?;
             if length > raw.len() {
-                return Err(red_asn1::Error::NoDataForLength)?;
+                return Err(himmelblau_red_asn1::Error::NoDataForLength)?;
             }
 
             let (raw_value, raw) = raw.split_at(length);
@@ -114,11 +114,11 @@ fn code_optional_field_parser_with_context_tag(
         fn #parser_name<'a>(
             &mut self,
             raw: &'a [u8]
-        ) -> red_asn1::Result<&'a [u8]> {
+        ) -> himmelblau_red_asn1::Result<&'a [u8]> {
             let parsed_tag;
             let mut raw_local = raw;
 
-            match red_asn1::Tag::parse(raw) {
+            match himmelblau_red_asn1::Tag::parse(raw) {
                 Ok((raw_tmp, tag)) => {
                     raw_local = raw_tmp;
                     parsed_tag = tag;
@@ -129,27 +129,27 @@ fn code_optional_field_parser_with_context_tag(
                 }
             }
 
-            if parsed_tag != red_asn1::Tag::new(
+            if parsed_tag != himmelblau_red_asn1::Tag::new(
                 #context_tag_number,
-                red_asn1::TagType::Constructed,
-                red_asn1::TagClass::Context
+                himmelblau_red_asn1::TagType::Constructed,
+                himmelblau_red_asn1::TagClass::Context
             ) {
                 self.#field_name = None;
                 return Ok(raw);
             }
 
-            let (raw_local, length) = red_asn1::parse_length(raw_local)?;
+            let (raw_local, length) = himmelblau_red_asn1::parse_length(raw_local)?;
             if length > raw.len() {
-                return Err(red_asn1::Error::NoDataForLength)?;
+                return Err(himmelblau_red_asn1::Error::NoDataForLength)?;
             }
 
             let (raw_value, raw_local) = raw_local.split_at(length);
 
-            let (_, type_tag) = red_asn1::Tag::parse(raw_value)?;
+            let (_, type_tag) = himmelblau_red_asn1::Tag::parse(raw_value)?;
             if type_tag != #field_type::tag() {
                 return Err(
-                    red_asn1::Error::UnmatchedTag(
-                        red_asn1::TagClass::Universal
+                    himmelblau_red_asn1::Error::UnmatchedTag(
+                        himmelblau_red_asn1::TagClass::Universal
                     )
                 );
             }
@@ -172,7 +172,7 @@ fn code_field_parser_without_context_tag(
         fn #parser_name<'a>(
             &mut self,
             raw: &'a [u8]
-        ) -> red_asn1::Result<&'a [u8]> {
+        ) -> himmelblau_red_asn1::Result<&'a [u8]> {
             let (raw, field) = #field_type::parse(raw)?;
             self.#field_name = field;
             return Ok(raw);
@@ -205,13 +205,13 @@ fn code_field_builder_with_context_tag(
                 return built_value;
             }
 
-            let tag = red_asn1::Tag::new(
+            let tag = himmelblau_red_asn1::Tag::new(
                 #ctx_tag,
-                red_asn1::TagType::Constructed,
-                red_asn1::TagClass::Context
+                himmelblau_red_asn1::TagType::Constructed,
+                himmelblau_red_asn1::TagClass::Context
             );
             let mut built = tag.build();
-            let mut built_length = red_asn1::build_length(built_value.len());
+            let mut built_length = himmelblau_red_asn1::build_length(built_value.len());
 
             built.append(&mut built_length);
             built.append(&mut built_value);

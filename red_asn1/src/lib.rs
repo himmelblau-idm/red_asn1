@@ -4,7 +4,7 @@
 //! ## Examples
 //! Parsing and building `bool`:
 //! ```rust
-//! use red_asn1::Asn1Object;
+//! use himmelblau_red_asn1::Asn1Object;
 //! 
 //! assert_eq!(true, bool::parse(&[0x1, 0x1, 0xff]).unwrap().1);
 //! assert_eq!(false, bool::parse(&[0x1, 0x1, 0x0]).unwrap().1);
@@ -16,7 +16,7 @@
 //! 
 //! Parsing and building `Integer`:
 //! ```rust
-//! use red_asn1::{Integer, Asn1Object};
+//! use himmelblau_red_asn1::{Integer, Asn1Object};
 //! 
 //! assert_eq!(2, Integer::parse(&[0x2, 0x1, 0x2]).unwrap().1);
 //! assert_eq!(2.build(), vec![0x2, 0x1, 0x2]);
@@ -24,7 +24,7 @@
 //! 
 //! Parsing and building `String`:
 //! ```rust
-//! use red_asn1::Asn1Object;
+//! use himmelblau_red_asn1::Asn1Object;
 //! 
 //! assert_eq!(
 //!     "John".to_string(), 
@@ -49,8 +49,8 @@
 //! }
 //! */
 //! 
-//! use red_asn1::*;
-//! use red_asn1_derive::Sequence;
+//! use himmelblau_red_asn1::*;
+//! use himmelblau_red_asn1_derive::Sequence;
 //! 
 //! #[derive(Sequence, Default)]
 //! #[seq(application_tag = 1)]

@@ -1,7 +1,7 @@
 [package]
 name = "himmelblau_red_asn1_derive"
 description = "macros for red_asn1"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["Eloy Perez <zer1t0ps@protonmail.com>", "dmulder@himmelblau-idm.org"]
 edition = "2018"
 license = "AGPL-3.0"
